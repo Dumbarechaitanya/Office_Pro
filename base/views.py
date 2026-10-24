@@ -773,6 +773,7 @@ MODULES_REGISTRY = {
 }
 
 
+@login_required_ir
 def home(request):
     current_user = get_current_ir_user(request)
     is_admin = is_admin_user(current_user) if current_user else False

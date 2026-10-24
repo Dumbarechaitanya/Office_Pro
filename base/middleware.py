@@ -124,3 +124,41 @@ class GlobalExceptionDiagnosticMiddleware:
             'request_user': getattr(request, 'user', None),
         }, status=500)
 
+
+class EnforceLoginMiddleware:
+    """
+    Enterprise Security Middleware:
+    Guarantees that unauthenticated visitors cannot view or access the home page,
+    apps, settings, or any internal ERP module.
+    Redirects all unauthenticated requests directly to the login screen (/login/).
+    """
+    EXEMPT_PREFIXES = (
+        '/login',
+        '/logout',
+        '/forgot-password',
+        '/reset-password',
+        '/auth/',
+        '/static/',
+        '/media/',
+        '/favicon.ico',
+        '/admin/',
+    )
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.path_info
+        if any(path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
+            return self.get_response(request)
+
+        from base.auth_helpers import get_current_ir_user
+        user = get_current_ir_user(request)
+        if not user or not getattr(user, 'is_active', False):
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('accept', ''):
+                return JsonResponse({'error': 'Authentication required. Please log in.'}, status=401)
+            next_url = request.get_full_path()
+            return HttpResponseRedirect(f"/login/?next={next_url}")
+
+        return self.get_response(request)
+
