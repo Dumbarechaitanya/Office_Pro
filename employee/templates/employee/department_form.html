@@ -1,0 +1,70 @@
+{% extends "employee/employee_base.html" %}
+
+{% block content %}
+<form method="post" action="{% url 'department_create' %}">
+  {% csrf_token %}
+
+  <div class="emp-control-bar">
+    <div class="emp-actions-left">
+      <div style="font-size: 14px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px;">
+        <a href="{% url 'department_list' %}" style="color: #64748b; text-decoration: none;">Departments</a>
+        <span>/</span>
+        <span style="color: #0f172a;">New Department</span>
+      </div>
+
+      <button type="submit" class="emp-btn-primary" style="margin-left: 12px;">
+        <span>&#10004;</span> Save
+      </button>
+      <a href="{% url 'department_list' %}" class="emp-btn-secondary">Discard</a>
+    </div>
+  </div>
+
+  <div class="emp-form-container">
+    <div class="emp-sheet">
+      <div class="emp-grid-2col">
+        <div>
+          <div class="emp-field-group">
+            <label class="emp-label">Department Name *</label>
+            <input type="text" name="name" required placeholder="e.g. Architectural Design" class="emp-input" style="font-size: 16px; font-weight: 700;">
+          </div>
+
+          <div class="emp-field-group">
+            <label class="emp-label">Department Code</label>
+            <input type="text" name="code" placeholder="e.g. ARCH" class="emp-input">
+          </div>
+
+          <div class="emp-field-group">
+            <label class="emp-label">Badge Color</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="color" name="color" value="#0284c7" style="width: 40px; height: 36px; padding: 0; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer;">
+              <span style="font-size: 12.5px; color: #64748b;">Choose tag badge color</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="emp-field-group">
+            <label class="emp-label">Department Manager</label>
+            <select name="manager_id" class="emp-select">
+              <option value="">-- No Manager Assigned --</option>
+              {% for m in employees %}
+              <option value="{{ m.id }}">{{ m.name }} ({{ m.employee_code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="emp-field-group">
+            <label class="emp-label">Parent Department (Hierarchy)</label>
+            <select name="parent_id" class="emp-select">
+              <option value="">-- None (Top Level Department) --</option>
+              {% for d in departments %}
+              <option value="{{ d.id }}">{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

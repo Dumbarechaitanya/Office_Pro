@@ -1,0 +1,110 @@
+{% load static %}
+{% if form_action %}
+<div class="op-form-view">
+
+  <div class="op-form-control-bar">
+    <div class="op-form-control-left">
+      {% if create_url %}
+        <a href="{{ create_url }}" class="op-btn-new">New</a>
+      {% endif %}
+      <span class="op-form-title">{{ form_title|default:'' }}</span>
+    </div>
+    <div class="op-form-control-right op-form-dirty-actions" style="display:none;">
+      <button type="button" class="op-discard-changes-btn">Discard</button>
+      <button type="submit" form="op-form-main" class="op-form-save-btn">Save</button>
+    </div>
+  </div>
+
+  <form id="op-form-main"
+        method="post"
+        action="{{ form_action }}"
+        class="op-form-sheet">
+    {% csrf_token %}
+    {% for f in fields %}
+      <div class="op-form-field">
+        <label {% if f.editable %}for="op_field_{{ f.name }}"{% endif %}>
+          {{ f.label }}
+          <span class="op-view-hint">?
+            <div class="op-debug-tooltip">
+              <div class="op-debug-tooltip-meta">
+                <ul>
+                  <li>Label: {{ f.label }}</li>
+                  <li>Field: {{ f.name }}</li>
+                  <li>Type: {{ f.widget|default:'char' }}</li>
+                  {% if f.relation_model_key %}<li>Relation: {{ f.relation_model_key }}</li>{% endif %}
+                </ul>
+              </div>
+            </div>
+          </span>
+        </label>
+
+        {% if f.editable %}
+          {% if f.widget == 'checkbox' %}
+            <input type="checkbox" id="op_field_{{ f.name }}" name="{{ f.name }}"
+                   class="op-form-input" {% if f.value %}checked{% endif %} />
+          {% elif f.widget == 'select' %}
+            <select id="op_field_{{ f.name }}" name="{{ f.name }}" class="op-form-input">
+              {% for val, choice_label in f.choices %}
+                <option value="{{ val }}" {% if val == f.value %}selected{% endif %}>{{ choice_label }}</option>
+              {% endfor %}
+            </select>
+          {% elif f.widget == 'textarea' %}
+            <textarea id="op_field_{{ f.name }}" name="{{ f.name }}" class="op-form-input">{{ f.value|default:'' }}</textarea>
+          {% elif f.widget == 'number' %}
+            <input type="number" id="op_field_{{ f.name }}" name="{{ f.name }}"
+                   value="{{ f.value|default:'' }}" step="{{ f.step|default:'1' }}"
+                   class="op-form-input" />
+          {% elif f.widget == 'date' %}
+            <input type="date" id="op_field_{{ f.name }}" name="{{ f.name }}"
+                   value="{{ f.value|date:'Y-m-d'|default:'' }}"
+                   class="op-form-input" />
+          {% elif f.widget == 'datetime' %}
+            <input type="datetime-local" id="op_field_{{ f.name }}" name="{{ f.name }}"
+                   value="{{ f.value|date:'Y-m-d\TH:i'|default:'' }}"
+                   class="op-form-input" />
+          {% elif f.widget == 'many2one' %}
+            <div class="op-m2o-widget op-form-input"
+                 data-relation-model="{{ f.relation_model_key }}"
+                 data-field-label="{{ f.label }}">
+              <input type="hidden" name="{{ f.name }}" class="op-m2o-value"
+                     value="{% if f.value %}{{ f.value.pk }}{% endif %}" />
+              <div class="op-m2o-chip-area" {% if not f.value %}style="display:none;"{% endif %}>
+                <span class="op-m2o-chip">
+                  <span class="op-m2o-chip-label">{{ f.value|default:'' }}</span>
+                  <button type="button" class="op-m2o-chip-remove" title="Clear">&#10005;</button>
+                </span>
+              </div>
+              <div class="op-m2o-search-area" {% if f.value %}style="display:none;"{% endif %}>
+                <div class="op-m2o-search-row">
+                  <input type="text" class="op-m2o-search" placeholder="Search..." autocomplete="off" />
+                  <button type="button" class="op-m2o-browse-btn" title="Search more...">&#8942;</button>
+                </div>
+                <div class="op-m2o-dropdown"></div>
+              </div>
+            </div>
+          {% else %}
+            <input type="text" id="op_field_{{ f.name }}" name="{{ f.name }}"
+                   value="{{ f.value|default:'' }}"
+                   class="op-form-input" />
+          {% endif %}
+        {% else %}
+          <div class="op-form-value">{{ f.value|default:"â€”" }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </form>
+</div>
+<script src="{% static 'base/js/many2one_widget.js' %}"></script>
+<script src="{% static 'base/js/form_dirty.js' %}"></script>
+{% else %}
+<div class="op-form-view">
+  <div class="op-form-sheet">
+    {% for f in fields %}
+      <div class="op-form-field">
+        <label>{{ f.label }}</label>
+        <div class="op-form-value">{{ f.value|default:"â€”" }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

@@ -1,0 +1,71 @@
+{% extends "base/layout.html" %}
+{% load static %}
+
+{% block navbar_title %}Employees{% endblock %}
+
+{% block app_icon %}
+<!-- Employee Person Icon -->
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+  <circle cx="12" cy="7" r="4"></circle>
+</svg>
+{% endblock %}
+
+{% block app_menus %}
+<a href="{% url 'employee_list' %}" class="menu-link {% if request.resolver_match.url_name in 'employee_list,employee_detail,employee_create,employee_home' %}active{% endif %}">Employees</a>
+<a href="{% url 'department_list' %}" class="menu-link {% if 'department' in request.resolver_match.url_name %}active{% endif %}">Departments</a>
+
+<!-- Learning Dropdown (Matching Reference Screenshot) -->
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle">Learning</button>
+  <div class="menu-dropdown">
+    <a href="javascript:void(0)" onclick="alert('Certifications module opened.')">Certifications</a>
+    <a href="javascript:void(0)" onclick="alert('Training Attendances log opened.')">Training Attendances</a>
+  </div>
+</div>
+
+<!-- Reporting -->
+<a href="{% url 'employee_org_chart' %}" class="menu-link {% if request.resolver_match.url_name == 'employee_org_chart' %}active{% endif %}">Reporting</a>
+
+<!-- Configuration Dropdown (Matching Reference Screenshot) -->
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle">Configuration</button>
+  <div class="menu-dropdown" style="max-height: 480px; overflow-y: auto; min-width: 230px;">
+    {% if is_admin %}
+    <a href="{% url 'settings_general' %}" style="font-weight: 700; color: #1e293b; border-bottom: 1px solid #f1f5f9;">Settings</a>
+    {% endif %}
+
+    <div style="padding: 6px 10px 2px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Employee</div>
+    {% if is_hr %}
+    <a href="{% url 'employee_onboarding_templates' %}">Onboarding / Offboarding</a>
+    {% endif %}
+    <a href="{% url 'employee_config_locations' %}">Work Locations</a>
+    <a href="{% url 'employee_config_schedules' %}">Working Schedules</a>
+    <a href="{% url 'employee_config_departure_reasons' %}">Departure Reasons</a>
+    <a href="{% url 'employee_config_skills' %}">Skill Types</a>
+    <a href="javascript:void(0)" onclick="alert('Tags configuration')">Tags</a>
+
+    <div style="padding: 8px 10px 2px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-top: 1px solid #f1f5f9;">Resume</div>
+    <a href="javascript:void(0)" onclick="alert('Resume Sections configuration')">Sections</a>
+
+    <div style="padding: 8px 10px 2px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-top: 1px solid #f1f5f9;">Recruitment</div>
+    <a href="javascript:void(0)" onclick="alert('Job Positions list')">Job Positions</a>
+    <a href="javascript:void(0)" onclick="alert('Contract Templates list')">Contract Templates</a>
+    <a href="javascript:void(0)" onclick="alert('Employment Types list')">Employment Types</a>
+
+    <div style="padding: 8px 10px 2px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-top: 1px solid #f1f5f9;">Challenges</div>
+    <a href="javascript:void(0)" onclick="alert('Badges configuration')">Badges</a>
+    <a href="javascript:void(0)" onclick="alert('Challenges configuration')">Challenges</a>
+    <a href="javascript:void(0)" onclick="alert('Goals History')">Goals History</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}?v={{ static_version }}">
+<link rel="stylesheet" href="{% static 'employee/css/employee_app.css' %}?v={{ static_version }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'employee/js/employee_app.js' %}?v={{ static_version }}"></script>
+{% endblock %}

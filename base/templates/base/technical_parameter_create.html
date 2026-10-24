@@ -1,0 +1,90 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-form-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 24px 32px;
+    max-width: 850px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  .op-form-title-input {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    border: none;
+    border-bottom: 2px solid #cbd5e1;
+    width: 100%;
+    padding: 4px 0;
+    outline: none;
+    margin-bottom: 24px;
+    font-family: monospace;
+  }
+  .op-form-title-input:focus {
+    border-bottom-color: var(--op-primary-color, #714b67);
+  }
+  .op-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .op-field-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #475569;
+  }
+  .op-field-input,
+  .op-field-textarea {
+    padding: 8px 12px;
+    font-size: 13.5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    outline: none;
+    background: #ffffff;
+    font-family: inherit;
+  }
+  .op-field-input:focus,
+  .op-field-textarea:focus {
+    border-color: var(--op-primary-color, #714b67);
+    box-shadow: 0 0 0 3px rgba(113, 75, 103, 0.12);
+  }
+  .op-form-actions-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="parameterCreateForm">
+  {% csrf_token %}
+  <div class="op-form-actions-bar">
+    <button type="submit" class="op-view-btn-save">Save</button>
+    <a href="{% url 'technical_parameters' %}" class="op-view-btn-discard">Discard</a>
+  </div>
+
+  <div class="op-form-container">
+    <label class="op-field-label">Parameter Key *</label>
+    <input type="text" name="key" class="op-form-title-input" placeholder="e.g. web.base.url, auth.signup.enabled" required autofocus>
+
+    <div class="op-field-group">
+      <label class="op-field-label">Value *</label>
+      <textarea name="value" class="op-field-textarea" rows="4" placeholder="Enter configuration value or JSON string..." required style="font-family: monospace;"></textarea>
+    </div>
+
+    <div class="op-field-group">
+      <label class="op-field-label">Description / Purpose (Optional)</label>
+      <textarea name="description" class="op-field-textarea" rows="2" placeholder="Document why this parameter is used and what system components it affects..."></textarea>
+    </div>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "employee/employee_base.html" %}
+
+{% block content %}
+<div class="emp-control-bar">
+  <div class="emp-actions-left">
+    {% if is_hr %}
+    <a href="{% url 'department_create' %}" class="emp-btn-primary" id="btnNewDepartment">
+      <span>&#43;</span> New Department
+    </a>
+    {% endif %}
+    <a href="{% url 'employee_list' %}" class="emp-btn-secondary">
+      <span>&#128101;</span> Employees
+    </a>
+    <span style="font-size: 13px; color: #64748b; font-weight: 600; margin-left: 8px;">
+      {{ departments.count }} Departments
+    </span>
+  </div>
+</div>
+
+<div class="emp-kanban-container">
+  <div class="emp-kanban-grid">
+    {% for dept in departments %}
+    <a href="{% url 'department_detail' dept.id %}" class="emp-kanban-card" data-dept-card="{{ dept.color|default:'#0284c7' }}">
+      <div class="emp-card-header">
+        <div class="emp-dept-icon-box" data-dept-color="{{ dept.color|default:'#0284c7' }}">
+          &#127970;
+        </div>
+        <div class="emp-title-area">
+          <h4 class="emp-name">{{ dept.name }}</h4>
+          <span style="font-size: 11px; font-weight: 600; color: #64748b; font-family: monospace;">{{ dept.code|default:"DEP" }}</span>
+        </div>
+      </div>
+
+      <div class="emp-card-body">
+        <div class="emp-meta-row">
+          <span class="emp-meta-icon">&#128100;</span>
+          <span>Manager: <strong>{{ dept.manager.name|default:"Not Assigned" }}</strong></span>
+        </div>
+        {% if dept.parent %}
+        <div class="emp-meta-row">
+          <span class="emp-meta-icon">&#9650;</span>
+          <span>Parent: {{ dept.parent.name }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="emp-card-footer">
+        <span class="emp-dept-badge" data-dept-color="{{ dept.color|default:'#0284c7' }}">
+          {{ dept.total_members }} Active Members
+        </span>
+        <span style="font-size: 12px; color: #0284c7; font-weight: 600;">View &rarr;</span>
+      </div>
+    </a>
+    {% empty %}
+    <div style="grid-column: 1 / -1; text-align: center; padding: 60px; background: #fff; border-radius: 8px; border: 1px dashed #cbd5e1;">
+      <p style="font-size: 16px; color: #64748b; margin-bottom: 12px;">No departments found.</p>
+      {% if is_hr %}
+      <a href="{% url 'department_create' %}" class="emp-btn-primary">&#43; Create Department</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

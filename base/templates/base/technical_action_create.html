@@ -1,0 +1,70 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-action-create-form" method="post" action="{% url 'technical_action_create' %}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_actions' %}">Actions</a> / New
+        </span>
+      </div>
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_actions' %}" class="op-view-btn-discard">Discard</a>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_name">Action Name</label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_name" name="name" class="op-view-input" placeholder="e.g. My Action" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_action_type">Action Type</label>
+            <div class="op-view-input-wrap">
+              <select id="id_action_type" name="action_type" class="op-view-select">
+                {% for val, label in action_type_choices %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_res_model">Related Model</label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_res_model" name="res_model" class="op-view-input" placeholder="e.g. hr.employee">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_view_mode">View Mode</label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_view_mode" name="view_mode" class="op-view-input" value="list,form">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

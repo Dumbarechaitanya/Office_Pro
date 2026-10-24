@@ -1,0 +1,109 @@
+{% extends "attendance/attendance_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #ffffff; min-height: calc(100vh - 50px);">
+
+  <!-- Top Control Bar (Matching Screenshot 1) -->
+  <div class="att-control-bar" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 10px 24px;">
+    <div class="att-control-left" style="display: flex; align-items: center; gap: 14px;">
+      <a href="{% url 'attendance_create' %}" class="btn-att-new" style="background: #714b67; color: #fff; padding: 6px 14px; border-radius: 4px; font-weight: 700; font-size: 13px; text-decoration: none;">
+        New
+      </a>
+      <h1 class="att-title" style="font-size: 17px; font-weight: 700; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px;">
+        Pending Attendance Review
+        <span class="att-title-cog" title="Configure Reviews" style="color: #94a3b8; font-size: 15px; cursor: pointer;">&#9881;</span>
+      </h1>
+    </div>
+
+    <!-- Search Box -->
+    <form method="GET" action="{% url 'attendance_pending_reviews' %}" class="att-search-box" style="margin: 0; max-width: 480px; flex: 1;">
+      <input 
+        type="text" 
+        name="q" 
+        value="{{ search_q }}" 
+        class="att-search-input" 
+        placeholder="Search..."
+        style="width: 100%; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;"
+      >
+      <span style="color: #94a3b8; font-size: 11px; cursor: pointer; padding-left: 6px;">&#9660;</span>
+    </form>
+
+    <div class="att-control-right" style="display: flex; align-items: center; gap: 16px;">
+      <!-- Pager (1-1 / 1 or 1-4 / 4) -->
+      <div class="att-pager" style="font-size: 13px; color: #64748b; font-weight: 500;">
+        <span>1-{{ total_count }} / {{ total_count }}</span>
+        <button type="button" class="att-pager-btn" disabled style="padding: 2px 8px; border: 1px solid #cbd5e1; background: #fff; border-radius: 3px; cursor: not-allowed;">&lt;</button>
+        <button type="button" class="att-pager-btn" disabled style="padding: 2px 8px; border: 1px solid #cbd5e1; background: #fff; border-radius: 3px; cursor: not-allowed;">&gt;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Attendance Reviews Table -->
+  <div class="att-table-container" style="overflow-x: auto;">
+    <table class="att-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <thead>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc; text-align: left; color: #475569; font-size: 12.5px;">
+          <th style="width: 36px; padding: 10px 16px;"><input type="checkbox" id="selectAllPending"></th>
+          <th style="padding: 10px 16px;">Employee</th>
+          <th style="padding: 10px 16px;">Check In</th>
+          <th style="padding: 10px 16px;">Check Out</th>
+          <th style="padding: 10px 16px;">Worked Hours</th>
+          <th style="padding: 10px 16px;">Worked Extra Hours</th>
+          <th style="padding: 10px 16px;">Input Mode (In)</th>
+          <th style="padding: 10px 16px;">Input Mode (Out)</th>
+          <th style="width: 32px; padding: 10px 16px; text-align: right; color: #94a3b8;">&#8801;</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for att in pending_list %}
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 16px;"><input type="checkbox" class="pending-row-checkbox" value="{{ att.id }}"></td>
+          <td style="padding: 12px 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; background: {% cycle '#65a30d' '#0284c7' '#714b67' '#d97706' %}; color: #ffffff; font-weight: 700; font-size: 12px;">
+                {{ att.employee.name|slice:":1"|upper }}
+              </span>
+              <span style="color: #1e293b; font-weight: 500;">{{ att.employee.name }}</span>
+            </div>
+          </td>
+          <td style="padding: 12px 16px; color: #334155;">
+            {{ att.check_in|date:"M d, g:i A"|default:"--" }}
+          </td>
+          <td style="padding: 12px 16px; color: #334155;">
+            {{ att.check_out|date:"M d, g:i A"|default:"--" }}
+          </td>
+          <td style="padding: 12px 16px; font-variant-numeric: tabular-nums; color: #334155;">
+            {{ att.worked_hours_str }}
+          </td>
+          <td style="padding: 12px 16px; font-variant-numeric: tabular-nums; color: #334155;">
+            {{ att.worked_extra_hours_str }}
+          </td>
+          <td style="padding: 12px 16px;">
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; background: #f1f5f9; color: #475569; font-weight: 500;">
+              {{ att.input_mode_in }}
+            </span>
+          </td>
+          <td style="padding: 12px 16px;">
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; background: #e0f2fe; color: #0284c7; font-weight: 600;">
+              {{ att.input_mode_out }}
+            </span>
+          </td>
+          <td style="padding: 12px 16px; text-align: right; color: #94a3b8; cursor: pointer;">
+            <span title="Review options">&#8942;</span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 48px; color: #94a3b8;">
+            <p style="font-size: 15px; margin: 0 0 4px 0;">&#10003; No pending attendance reviews.</p>
+            <p style="font-size: 12.5px; margin: 0;">All punches, overtime hours, and input modes are regularized.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

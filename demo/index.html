@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Office Pro — Enterprise ERP Platform (Interactive Presentation Demo)</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22><text y=%2222%22 font-size=%2222%22>🏢</text></svg>">
+</head>
+<body>
+
+  <!-- Topbar Header -->
+  <header class="op-topbar">
+    <div class="op-topbar-left">
+      <!-- Odoo 9-dots App Switcher Button -->
+      <button class="op-app-launcher-btn" onclick="toggleAppSwitcher()" title="Apps Matrix (Alt+A)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="4" cy="4" r="2.5"></circle>
+          <circle cx="12" cy="4" r="2.5"></circle>
+          <circle cx="20" cy="4" r="2.5"></circle>
+          <circle cx="4" cy="12" r="2.5"></circle>
+          <circle cx="12" cy="12" r="2.5"></circle>
+          <circle cx="20" cy="12" r="2.5"></circle>
+          <circle cx="4" cy="20" r="2.5"></circle>
+          <circle cx="12" cy="20" r="2.5"></circle>
+          <circle cx="20" cy="20" r="2.5"></circle>
+        </svg>
+      </button>
+
+      <div class="op-brand-title" onclick="navigateTo('home')">
+        <span>Office Pro</span>
+        <span class="op-brand-badge">ERP v2.6</span>
+      </div>
+
+      <div class="op-breadcrumb" id="topBreadcrumb">
+        <span class="op-breadcrumb-item">Office Pro Dashboard</span>
+      </div>
+    </div>
+
+    <div class="op-topbar-right">
+      <!-- Quick Webmail Shortcut -->
+      <button class="op-icon-btn" onclick="navigateTo('mail')" title="Webmail Suite">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        <span class="op-badge-pill">1</span>
+      </button>
+
+      <!-- Chatter / Conversations Popover Toggle -->
+      <button class="op-icon-btn" onclick="togglePopover('conversationsPopover')" title="Conversations & Chatter Feed">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        <span class="op-badge-pill">3</span>
+      </button>
+
+      <!-- Activities Popover Toggle -->
+      <button class="op-icon-btn" onclick="togglePopover('activitiesPopover')" title="Scheduled Activities">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span class="op-badge-pill" style="background-color: var(--warning);">2</span>
+      </button>
+
+      <!-- Live Theme Selector -->
+      <select class="op-theme-select" onchange="changeTheme(this.value)" title="Change ERP UI Theme">
+        <option value="default">🎨 Odoo Purple</option>
+        <option value="slate">🌑 Dark Slate</option>
+        <option value="ocean">🌊 Ocean Blue</option>
+        <option value="emerald">🌲 Emerald Green</option>
+      </select>
+
+      <!-- Developer Mode Toggle (?debug=1) -->
+      <button id="debugToggleBtn" class="op-debug-toggle" onclick="toggleDebugMode()" title="Toggle Technical Inspectability (?debug=1)">
+        <span>🐞 Debug</span>
+      </button>
+
+      <!-- User Profile -->
+      <div class="op-user-profile" onclick="navigateTo('defense')" title="User Profile / Guide Presentation Mode">
+        <div class="op-avatar">AD</div>
+        <span style="font-size: 12.5px; font-weight: 600;">Admin User</span>
+      </div>
+    </div>
+  </header>
+
+
+
+  <!-- Conversations Popover Panel -->
+  <div id="conversationsPopover" class="op-popover-panel">
+    <div class="op-popover-header">
+      <span class="op-popover-title">Direct Messages & Chatter Feed</span>
+      <button class="op-btn op-btn-sm op-btn-secondary" onclick="alert('Simulation: Open Direct Message Window')">+ New Chat</button>
+    </div>
+    <div class="op-popover-body">
+      <div class="op-popover-item" onclick="navigateTo('mail')">
+        <div class="op-avatar" style="background: #0284c7; color: white;">RP</div>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between;">
+            <b>Ramesh Patil</b>
+            <span style="font-size: 11px; color: var(--text-muted);">11:45 AM</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted);">Uploaded revised structural drawings for Tech Park Phase 2.</div>
+        </div>
+      </div>
+      <div class="op-popover-item" onclick="navigateTo('timesheet')">
+        <div class="op-avatar" style="background: #059669; color: white;">PS</div>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between;">
+            <b>Priya Sharma</b>
+            <span style="font-size: 11px; color: var(--text-muted);">10:20 AM</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted);">Submitted Week 40 timesheet with 4h Saturday overtime.</div>
+        </div>
+      </div>
+      <div class="op-popover-item" onclick="navigateTo('leave')">
+        <div class="op-avatar" style="background: #d97706; color: white;">AV</div>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between;">
+            <b>Amit Verma</b>
+            <span style="font-size: 11px; color: var(--text-muted);">Yesterday</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted);">Submitted 3-day Vacation Leave request for executive approval.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activities Popover Panel -->
+  <div id="activitiesPopover" class="op-popover-panel">
+    <div class="op-popover-header">
+      <span class="op-popover-title">Scheduled Activities & Deadlines</span>
+      <span style="font-size: 11px; font-weight: bold; color: var(--danger);">🔴 1 Overdue</span>
+    </div>
+    <div class="op-popover-body">
+      <div class="op-popover-item" onclick="navigateTo('timesheet')">
+        <div style="font-size: 20px;">⏱️</div>
+        <div>
+          <div style="font-weight: 700; color: var(--danger);">🔴 Timesheet Approval Review</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Review and validate Week 40 timesheets by Tuesday 5:00 PM.</div>
+        </div>
+      </div>
+      <div class="op-popover-item" onclick="navigateTo('accounting')">
+        <div style="font-size: 20px;">💰</div>
+        <div>
+          <div style="font-weight: 700; color: var(--warning);">🟡 Milestone Invoice Issue</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Generate Tax Invoice for FinTech Hub Interior Milestone #1.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Viewport Area -->
+  <main class="op-main-viewport">
+    <div class="op-content-area" id="mainContentArea">
+      <!-- Content dynamically rendered by app.js -->
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>

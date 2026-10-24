@@ -1,0 +1,434 @@
+{% extends "leave/leave_base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Base Universal List Toolbar with Search Panel, Filter/Group-by/Favorites, Pager & Cog Actions -->
+{% include 'base/_list_toolbar.html' with title="Time Off" create_url=create_url search_model_key="hr.leave" %}
+
+<div style="padding: 12px 20px; background: #fafbfc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+  <!-- Quick Status Filter Pills -->
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <span style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Filter:</span>
+    <a href="{% url 'leave_management_requests' %}?filter=all&view_mode={{ view_mode }}" 
+       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; {% if filter_mode == 'all' or not filter_mode %}background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(15,23,42,0.06);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
+      All ({{ total_count }})
+    </a>
+    <a href="{% url 'leave_management_requests' %}?filter=to_approve&view_mode={{ view_mode }}" 
+       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; {% if filter_mode == 'to_approve' %}background: #fef3c7; color: #b45309; border: 1px solid #fde68a; box-shadow: 0 1px 2px rgba(180,83,9,0.1);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
+      To Approve ({{ to_approve_count }})
+    </a>
+    <a href="{% url 'leave_management_requests' %}?filter=approved&view_mode={{ view_mode }}" 
+       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; {% if filter_mode == 'approved' %}background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; box-shadow: 0 1px 2px rgba(21,128,61,0.1);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+      Approved ({{ approved_count }})
+    </a>
+    <a href="{% url 'leave_management_requests' %}?filter=refused&view_mode={{ view_mode }}" 
+       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; {% if filter_mode == 'refused' %}background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; box-shadow: 0 1px 2px rgba(185,28,28,0.1);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
+      Refused
+    </a>
+  </div>
+
+  <!-- View Mode Switcher -->
+  <div style="display: flex; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; background: #fff;">
+    <a href="?view_mode=kanban{% if filter_mode %}&filter={{ filter_mode }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}{% if active_group_by %}&group_by={{ active_group_by }}{% endif %}" 
+       style="padding: 6px 12px; font-size: 13px; text-decoration: none; {% if view_mode == 'kanban' %}background: #eff6ff; color: #1d4ed8; font-weight: 700;{% else %}color: #64748b;{% endif %}" title="Kanban Cards">
+      &#9638; Kanban
+    </a>
+    <a href="?view_mode=list{% if filter_mode %}&filter={{ filter_mode }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}{% if active_group_by %}&group_by={{ active_group_by }}{% endif %}" 
+       style="padding: 6px 12px; font-size: 13px; text-decoration: none; border-left: 1px solid #e2e8f0; {% if view_mode == 'list' %}background: #eff6ff; color: #1d4ed8; font-weight: 700;{% else %}color: #64748b;{% endif %}" title="List Table">
+      &#9776; List
+    </a>
+  </div>
+</div>
+
+<div style="padding: 20px;">
+
+  {% if view_mode == 'kanban' %}
+    <!-- =========================================================================
+         KANBAN VIEW
+         ========================================================================= -->
+    {% if groups %}
+      <!-- Odoo-Style Grouped Kanban Multi-Column Panels / Swimlanes -->
+      <div class="op-kanban-board" style="display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; padding-bottom: 24px; min-height: calc(100vh - 200px);">
+        {% for grp in groups %}
+          <div class="op-kanban-column" style="width: 310px; min-width: 310px; flex-shrink: 0; display: flex; flex-direction: column;">
+            <!-- Column Header -->
+            <div class="op-kanban-column-header" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 10px 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px;">
+              <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
+                <span>{{ grp.label }}</span>
+                <span style="color: #64748b; font-weight: 600; margin-left: 4px;">({{ grp.count }})</span>
+              </div>
+              {% if create_url %}
+              <a href="{{ create_url }}" class="op-column-plus-btn" style="text-decoration: none; color: #64748b; font-size: 20px; font-weight: 400; line-height: 1; padding: 0 4px;" title="New request">&#43;</a>
+              {% else %}
+              <span style="color: #94a3b8; font-size: 18px; line-height: 1;">&#43;</span>
+              {% endif %}
+            </div>
+
+            <!-- Column Cards Stack -->
+            <div class="op-kanban-column-cards" style="display: flex; flex-direction: column; gap: 12px;">
+              {% for req in grp.rows %}
+                <div class="leave-kanban-card" id="leaveCard_{{ req.id }}" style="margin: 0;">
+                  <!-- Diagonal Ribbon -->
+                  <div class="op-ribbon-wrapper">
+                    {% if req.status == 'confirm' or req.status == 'Pending' %}
+                      <div class="op-ribbon op-ribbon-to-approve">To Approve</div>
+                    {% elif req.status == 'validate' or req.status == 'Approved' %}
+                      <div class="op-ribbon op-ribbon-approved">Approved</div>
+                    {% elif req.status == 'refuse' or req.status == 'Rejected' %}
+                      <div class="op-ribbon op-ribbon-refused">Refused</div>
+                    {% else %}
+                      <div class="op-ribbon" style="background: #94a3b8;">Draft</div>
+                    {% endif %}
+                  </div>
+
+                  <!-- Card Header: Employee Avatar & Info -->
+                  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-right: 50px;">
+                    <div style="width: 38px; height: 38px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; background-color: {{ req.employee.avatar_color|default:'#2563eb' }}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                      {{ req.employee.name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                      <div style="font-size: 14px; font-weight: 700; color: #1e293b; line-height: 1.2;">{{ req.employee.name }}</div>
+                      <div style="font-size: 11.5px; color: #64748b;">{{ req.employee.job_title|default:"Staff Member" }}</div>
+                    </div>
+                  </div>
+
+                  <!-- Leave Type & Duration Pill -->
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; color: #fff; background: {{ req.leave_type.color|default:'#10b981' }};">
+                      {{ req.leave_type.name }}
+                    </span>
+                    <span style="font-size: 12px; font-weight: 700; color: #1e293b;">
+                      {{ req.duration_days }} Day{% if req.duration_days > 1 %}s{% endif %}
+                    </span>
+                  </div>
+
+                  <!-- Date Range & Reason -->
+                  <div style="font-size: 12.5px; color: #334155; margin-bottom: 8px;">
+                    <strong>{{ req.start_date|date:"M d, Y" }}</strong>
+                    {% if req.start_date != req.end_date %}
+                      <span style="color: #94a3b8;"> &rarr; </span>
+                      <strong>{{ req.end_date|date:"M d, Y" }}</strong>
+                    {% endif %}
+                  </div>
+
+                  {% if req.reason %}
+                    <p style="font-size: 12px; color: #64748b; margin: 0 0 14px 0; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px dashed #e2e8f0; font-style: italic;">
+                      &ldquo;{{ req.reason }}&rdquo;
+                    </p>
+                  {% endif %}
+
+                  <!-- Action Buttons / Approver Status -->
+                  <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 10px; margin-top: auto;">
+                    {% if req.status == 'confirm' or req.status == 'Pending' %}
+                      <div style="display: flex; gap: 8px; width: 100%;">
+                        <form method="POST" action="{% url 'leave_request_action' req.id %}" style="flex: 1; margin: 0;">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="validate">
+                          <button type="submit" style="width: 100%; padding: 6px 12px; background: #10b981; color: #fff; border: none; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 1px 2px rgba(16,185,129,0.2);">
+                            &#10003; Validate
+                          </button>
+                        </form>
+                        <form method="POST" action="{% url 'leave_request_action' req.id %}" style="margin: 0;">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="refuse">
+                          <button type="submit" style="padding: 6px 12px; background: #f1f5f9; color: #dc2626; border: 1px solid #fecaca; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                            &#10005; Refuse
+                          </button>
+                        </form>
+                      </div>
+                    {% elif req.status == 'validate' or req.status == 'Approved' %}
+                      <div style="font-size: 11.5px; color: #059669; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                        <span>&#10004; Approved</span>
+                        {% if req.approved_by %}
+                          <span style="color: #64748b;">by {{ req.approved_by.name }}</span>
+                        {% endif %}
+                      </div>
+                    {% elif req.status == 'refuse' or req.status == 'Rejected' %}
+                      <div style="font-size: 11.5px; color: #dc2626; font-weight: 600;">
+                        <span>&#10006; Refused</span>
+                        {% if req.refusal_reason %}
+                          <span style="color: #64748b;">({{ req.refusal_reason }})</span>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <!-- Plain Kanban Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+        {% for req in requests %}
+          <div class="leave-kanban-card" id="leaveCard_{{ req.id }}">
+            
+            <!-- Diagonal Ribbon -->
+            <div class="op-ribbon-wrapper">
+              {% if req.status == 'confirm' or req.status == 'Pending' %}
+                <div class="op-ribbon op-ribbon-to-approve">To Approve</div>
+              {% elif req.status == 'validate' or req.status == 'Approved' %}
+                <div class="op-ribbon op-ribbon-approved">Approved</div>
+              {% elif req.status == 'refuse' or req.status == 'Rejected' %}
+                <div class="op-ribbon op-ribbon-refused">Refused</div>
+              {% else %}
+                <div class="op-ribbon" style="background: #94a3b8;">Draft</div>
+              {% endif %}
+            </div>
+
+            <!-- Card Header: Employee Avatar & Info -->
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-right: 50px;">
+              <div style="width: 38px; height: 38px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; background-color: {{ req.employee.avatar_color|default:'#2563eb' }}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                {{ req.employee.name|slice:":1"|upper }}
+              </div>
+              <div>
+                <div style="font-size: 14px; font-weight: 700; color: #1e293b; line-height: 1.2;">{{ req.employee.name }}</div>
+                <div style="font-size: 11.5px; color: #64748b;">{{ req.employee.job_title|default:"Staff Member" }}</div>
+              </div>
+            </div>
+
+            <!-- Leave Type & Duration Pill -->
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+              <span style="font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; color: #fff; background: {{ req.leave_type.color|default:'#10b981' }};">
+                {{ req.leave_type.name }}
+              </span>
+              <span style="font-size: 12px; font-weight: 700; color: #1e293b;">
+                {{ req.duration_days }} Day{% if req.duration_days > 1 %}s{% endif %}
+              </span>
+            </div>
+
+            <!-- Date Range & Reason -->
+            <div style="font-size: 12.5px; color: #334155; margin-bottom: 8px;">
+              <strong>{{ req.start_date|date:"M d, Y" }}</strong>
+              {% if req.start_date != req.end_date %}
+                <span style="color: #94a3b8;"> &rarr; </span>
+                <strong>{{ req.end_date|date:"M d, Y" }}</strong>
+              {% endif %}
+            </div>
+
+            {% if req.reason %}
+              <p style="font-size: 12px; color: #64748b; margin: 0 0 14px 0; background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px dashed #e2e8f0; font-style: italic;">
+                &ldquo;{{ req.reason }}&rdquo;
+              </p>
+            {% else %}
+              <div style="margin-bottom: 14px;"></div>
+            {% endif %}
+
+            <!-- Action Buttons / Approver Status -->
+            <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 10px; margin-top: auto;">
+              {% if req.status == 'confirm' or req.status == 'Pending' %}
+                <div style="display: flex; gap: 8px; width: 100%;">
+                  <form method="POST" action="{% url 'leave_request_action' req.id %}" style="flex: 1; margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="validate">
+                    <button type="submit" style="width: 100%; padding: 6px 12px; background: #10b981; color: #fff; border: none; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 1px 2px rgba(16,185,129,0.2);">
+                      &#10003; Validate
+                    </button>
+                  </form>
+                  <form method="POST" action="{% url 'leave_request_action' req.id %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="refuse">
+                    <button type="submit" style="padding: 6px 12px; background: #f1f5f9; color: #dc2626; border: 1px solid #fecaca; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                      &#10005; Refuse
+                    </button>
+                  </form>
+                </div>
+              {% elif req.status == 'validate' or req.status == 'Approved' %}
+                <div style="font-size: 11.5px; color: #059669; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                  <span>&#10004; Approved</span>
+                  {% if req.approved_by %}
+                    <span style="color: #64748b;">by {{ req.approved_by.name }}</span>
+                  {% endif %}
+                </div>
+              {% elif req.status == 'refuse' or req.status == 'Rejected' %}
+                <div style="font-size: 11.5px; color: #dc2626; font-weight: 600;">
+                  <span>&#10006; Refused</span>
+                  {% if req.refusal_reason %}
+                    <span style="color: #64748b;">({{ req.refusal_reason }})</span>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </div>
+
+          </div>
+        {% empty %}
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: #fff; border-radius: 8px; border: 1px dashed #cbd5e1;">
+            <p style="font-size: 15px; color: #64748b; margin-bottom: 12px;">No time off requests found matching your filters.</p>
+            {% if create_url %}
+            <a href="{{ create_url }}" class="btn-new" style="background: var(--op-primary-color, #2563eb); color: #fff; text-decoration: none; padding: 6px 16px; border-radius: 4px; font-size: 13px; font-weight: 700; display: inline-block;">+ New Request</a>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+  {% else %}
+    <!-- =========================================================================
+         LIST VIEW (Base Universal Single-Table Structure with Grouping & Selection)
+         ========================================================================= -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <table class="att-table" style="margin: 0; width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+            <th style="width: 36px; padding: 10px 14px;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
+            <th style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: #475569;">Employee</th>
+            <th style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: #475569;">Time Off Type</th>
+            <th style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: #475569;">Start Date</th>
+            <th style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: #475569;">End Date</th>
+            <th style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: #475569;">Duration</th>
+            <th style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: #475569;">Status</th>
+            <th style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: #475569;">Reason</th>
+            <th style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: #475569;">Approver</th>
+            <th style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: #475569; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if groups %}
+            <!-- Odoo-Style Single Table Grouped Rows -->
+            {% for grp in groups %}
+              <!-- Group Header Row -->
+              <tr class="op-group-header-row" data-group-id="grp-{{ forloop.counter }}" style="cursor: pointer; background: #ffffff; border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;">
+                <td colspan="10" style="padding: 10px 16px; font-weight: 700; color: #1e293b; user-select: none;">
+                  <span class="op-group-caret" style="display: inline-block; width: 14px; font-size: 10px; color: #334155; margin-right: 4px;">
+                    {% if forloop.first %}&#9660;{% else %}&#9654;{% endif %}
+                  </span>
+                  <span class="op-group-label" style="font-size: 13.5px;">{{ grp.label }}</span>
+                  <span class="op-group-count" style="font-size: 12.5px; font-weight: 600; color: #475569; margin-left: 4px;">({{ grp.count }})</span>
+                </td>
+              </tr>
+
+              <!-- Child Rows for this Group -->
+              {% for req in grp.rows %}
+              <tr class="op-group-row grp-{{ forloop.parentloop.counter }}" {% if not forloop.parentloop.first %}style="display: none;"{% endif %}>
+                <td class="op-select-col" onclick="event.stopPropagation()" style="padding: 10px 14px; vertical-align: middle;"><input type="checkbox" class="op-row-select-checkbox" value="{{ req.id }}" onchange="handleRowSelect(this, event)"></td>
+                <td style="padding: 10px 14px; vertical-align: middle;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; background-color: {{ req.employee.avatar_color|default:'#2563eb' }};">
+                      {{ req.employee.name|slice:":1"|upper }}
+                    </div>
+                    <strong>{{ req.employee.name }}</strong>
+                  </div>
+                </td>
+                <td style="padding: 10px 14px; vertical-align: middle;">
+                  <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; color: #fff; background: {{ req.leave_type.color|default:'#10b981' }};">
+                    {{ req.leave_type.name }}
+                  </span>
+                </td>
+                <td style="padding: 10px 14px; font-size: 12.5px; color: #334155; vertical-align: middle;">{{ req.start_date|date:"d M Y" }}</td>
+                <td style="padding: 10px 14px; font-size: 12.5px; color: #334155; vertical-align: middle;">{{ req.end_date|date:"d M Y" }}</td>
+                <td style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; vertical-align: middle;">{{ req.duration_days }} Days</td>
+                <td style="padding: 10px 14px; vertical-align: middle;">
+                  {% if req.status == 'confirm' or req.status == 'Pending' %}
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #fef3c7; color: #b45309;">To Approve</span>
+                  {% elif req.status == 'validate' or req.status == 'Approved' %}
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #15803d;">Approved</span>
+                  {% elif req.status == 'refuse' or req.status == 'Rejected' %}
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #fee2e2; color: #b91c1c;">Refused</span>
+                  {% else %}
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #f1f5f9; color: #475569;">Draft</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 10px 14px; font-size: 12px; color: #64748b; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;">
+                  {{ req.reason|default:"&mdash;" }}
+                </td>
+                <td style="padding: 10px 14px; font-size: 12px; color: #64748b; vertical-align: middle;">
+                  {{ req.approved_by.name|default:"&mdash;" }}
+                </td>
+                <td style="padding: 10px 14px; text-align: right; vertical-align: middle;">
+                  {% if req.status == 'confirm' or req.status == 'Pending' %}
+                    <div style="display: inline-flex; gap: 4px;">
+                      <form method="POST" action="{% url 'leave_request_action' req.id %}" style="display: inline; margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="validate">
+                        <button type="submit" style="padding: 3px 8px; font-size: 11px; font-weight: 700; background: #10b981; color: #fff; border: none; border-radius: 3px; cursor: pointer;">&#10003; Validate</button>
+                      </form>
+                      <form method="POST" action="{% url 'leave_request_action' req.id %}" style="display: inline; margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="refuse">
+                        <button type="submit" style="padding: 3px 8px; font-size: 11px; font-weight: 700; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 3px; cursor: pointer;">&#10005; Refuse</button>
+                      </form>
+                    </div>
+                  {% else %}
+                    <span style="color: #94a3b8; font-size: 12px;">&mdash;</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            {% endfor %}
+          {% else %}
+            <!-- Flat Plain List Rows -->
+            {% for req in requests %}
+              <tr>
+                <td class="op-select-col" onclick="event.stopPropagation()" style="padding: 10px 14px; vertical-align: middle;"><input type="checkbox" class="op-row-select-checkbox" value="{{ req.id }}" onchange="handleRowSelect(this, event)"></td>
+                <td style="padding: 10px 14px; vertical-align: middle;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; background-color: {{ req.employee.avatar_color|default:'#2563eb' }};">
+                      {{ req.employee.name|slice:":1"|upper }}
+                    </div>
+                    <strong>{{ req.employee.name }}</strong>
+                  </div>
+                </td>
+                <td style="padding: 10px 14px; vertical-align: middle;">
+                  <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; color: #fff; background: {{ req.leave_type.color|default:'#10b981' }};">
+                    {{ req.leave_type.name }}
+                  </span>
+                </td>
+                <td style="padding: 10px 14px; font-size: 12.5px; color: #334155; vertical-align: middle;">{{ req.start_date|date:"d M Y" }}</td>
+                <td style="padding: 10px 14px; font-size: 12.5px; color: #334155; vertical-align: middle;">{{ req.end_date|date:"d M Y" }}</td>
+                <td style="padding: 10px 14px; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; vertical-align: middle;">{{ req.duration_days }} Days</td>
+                <td style="padding: 10px 14px; vertical-align: middle;">
+                  {% if req.status == 'confirm' or req.status == 'Pending' %}
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #fef3c7; color: #b45309;">To Approve</span>
+                  {% elif req.status == 'validate' or req.status == 'Approved' %}
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #15803d;">Approved</span>
+                  {% elif req.status == 'refuse' or req.status == 'Rejected' %}
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #fee2e2; color: #b91c1c;">Refused</span>
+                  {% else %}
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #f1f5f9; color: #475569;">Draft</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 10px 14px; font-size: 12px; color: #64748b; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;">
+                  {{ req.reason|default:"&mdash;" }}
+                </td>
+                <td style="padding: 10px 14px; font-size: 12px; color: #64748b; vertical-align: middle;">
+                  {{ req.approved_by.name|default:"&mdash;" }}
+                </td>
+                <td style="padding: 10px 14px; text-align: right; vertical-align: middle;">
+                  {% if req.status == 'confirm' or req.status == 'Pending' %}
+                    <div style="display: inline-flex; gap: 4px;">
+                      <form method="POST" action="{% url 'leave_request_action' req.id %}" style="display: inline; margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="validate">
+                        <button type="submit" style="padding: 3px 8px; font-size: 11px; font-weight: 700; background: #10b981; color: #fff; border: none; border-radius: 3px; cursor: pointer;">&#10003; Validate</button>
+                      </form>
+                      <form method="POST" action="{% url 'leave_request_action' req.id %}" style="display: inline; margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="refuse">
+                        <button type="submit" style="padding: 3px 8px; font-size: 11px; font-weight: 700; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 3px; cursor: pointer;">&#10005; Refuse</button>
+                      </form>
+                    </div>
+                  {% else %}
+                    <span style="color: #94a3b8; font-size: 12px;">&mdash;</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="10" style="text-align: center; padding: 48px; color: #94a3b8;">
+                  No time off records found.
+                </td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+</div>
+
+<script src="{% static 'base/js/list_view.js' %}"></script>
+{% endblock %}

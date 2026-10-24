@@ -1,0 +1,188 @@
+{% extends "attendance/attendance_base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+.device-name-container {
+  position: relative;
+  display: inline-block;
+}
+.device-custom-tooltip {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  z-index: 100;
+  pointer-events: none;
+}
+.device-custom-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent #1e293b transparent;
+}
+.device-name-container:hover .device-custom-tooltip {
+  display: block;
+}
+</style>
+<div>
+
+  <!-- Top Control Bar (Matching Screenshot 1) -->
+  <div class="att-control-bar">
+    <div class="att-control-left">
+      <a href="{% url 'biometric_device_create' %}" class="btn-att-new">
+        <span>New</span>
+      </a>
+      <h1 class="att-title">
+        Biometric Devices
+        <span class="att-title-cog" title="Configure Devices">&#9881;</span>
+      </h1>
+    </div>
+
+    <!-- Search Box -->
+    <form method="GET" action="{% url 'biometric_devices' %}" class="att-search-box" style="margin: 0; max-width: 480px;">
+      <input 
+        type="text" 
+        name="q" 
+        value="{{ search_q }}" 
+        class="att-search-input" 
+        placeholder="Search..."
+      >
+      <span style="color: #94a3b8; font-size: 11px; cursor: pointer; padding-left: 6px;">&#9660;</span>
+    </form>
+
+    <div class="att-control-right">
+      <!-- Pager (Matching Screenshot 1: 1-1 / 1) -->
+      <div class="att-pager">
+        <span>1-{{ total_count }} / {{ total_count }}</span>
+        <button type="button" class="att-pager-btn" disabled>&lt;</button>
+        <button type="button" class="att-pager-btn" disabled>&gt;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Devices Table (Matching Screenshot 1) -->
+  <div class="att-table-container">
+    <table class="att-table">
+      <thead>
+        <tr>
+          <th style="width: 32px;"><input type="checkbox" id="selectAllDev"></th>
+          <th>Device Name</th>
+          <th>Serial Number</th>
+          <th>ADMS Enabled</th>
+          <th>Status</th>
+          <th>Last Push</th>
+          <th>Total Users</th>
+          <th>Mapped ...</th>
+          <th>Unmapp...</th>
+          <th style="text-align: right;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dev in devices %}
+        <tr>
+          <td><input type="checkbox" class="dev-row-checkbox" value="{{ dev.id }}"></td>
+          <td>
+            <div class="device-name-container" style="position: relative; display: inline-block;">
+              <a href="{% url 'biometric_device_detail' dev.id %}" style="color: #1e293b; font-weight: 500; text-decoration: none;">
+                {{ dev.name }}
+              </a>
+              <!-- Dark Tooltip matching Screenshot 1 -->
+              <div class="device-custom-tooltip">
+                {{ dev.name }}
+              </div>
+            </div>
+          </td>
+          <td style="color: #475569; font-family: monospace;">
+            {{ dev.serial_number }}
+          </td>
+          <td>
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 4px; background: #ede9fe; color: #714b67; font-size: 12px; font-weight: 700;">
+              &#10003;
+            </span>
+          </td>
+          <td>
+            <span style="color: #059669; font-weight: 600;">
+              {{ dev.status }}
+            </span>
+          </td>
+          <td style="color: #475569;">
+            {{ dev.last_push|date:"M d, g:i A"|default:"Just now" }}
+          </td>
+          <td style="font-variant-numeric: tabular-nums;">
+            {{ dev.total_users_count }}
+          </td>
+          <td style="font-variant-numeric: tabular-nums;">
+            {{ dev.mapped_users_count }}
+          </td>
+          <td style="font-variant-numeric: tabular-nums;">
+            {{ dev.unmapped_users_count }}
+          </td>
+          <td style="text-align: right;">
+            <button type="button" onclick="showAdmsInfoModal('{{ dev.name }}', '{{ dev.serial_number }}', '{{ dev.push_url }}', '{{ dev.device_menu_info }}')" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer;">
+              &#128268; ADMS Info
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" style="text-align: center; padding: 48px; color: #94a3b8;">
+            No biometric devices configured.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ADMS Info Popover Modal -->
+<div id="admsInfoModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+  <div style="background: #ffffff; border-radius: 10px; width: 100%; max-width: 520px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+    <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;" id="modalDevTitle">ADMS Terminal Info</h3>
+      <button type="button" onclick="closeAdmsInfoModal()" style="border: none; background: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+    </div>
+    <div style="padding: 20px;">
+      <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+        <div style="font-size: 12px; font-weight: 700; color: #065f46; margin-bottom: 4px;">Configure this URL on the eSSL / ZKTeco device:</div>
+        <code style="font-size: 13.5px; font-weight: 700; color: #047857; word-break: break-all;" id="modalPushUrl">http://connect.nexuswave.in/iclock/cdata</code>
+        <div style="font-size: 11.5px; color: #065f46; margin-top: 6px;" id="modalMenuInfo">Device menu: Comm &rarr; ADMS &rarr; Server Address / Port</div>
+      </div>
+      <div style="font-size: 13px; color: #475569;">
+        <div><strong>Status:</strong> <span style="color: #059669; font-weight: 600;">Push Active (Live Heartbeat)</span></div>
+        <div style="margin-top: 4px;"><strong>Timezone:</strong> Asia/Kolkata (IST)</div>
+        <div style="margin-top: 4px;"><strong>Company:</strong> NexusWave Technologies (Hinjawadi, Pune)</div>
+      </div>
+    </div>
+    <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+      <button type="button" onclick="closeAdmsInfoModal()" style="padding: 6px 14px; background: #714b67; color: #fff; border: none; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showAdmsInfoModal(name, serial, pushUrl, menuInfo) {
+  document.getElementById('modalDevTitle').innerText = name + ' (' + serial + ')';
+  document.getElementById('modalPushUrl').innerText = pushUrl;
+  document.getElementById('modalMenuInfo').innerText = menuInfo;
+  document.getElementById('admsInfoModal').style.display = 'flex';
+}
+function closeAdmsInfoModal() {
+  document.getElementById('admsInfoModal').style.display = 'none';
+}
+</script>
+{% endblock %}

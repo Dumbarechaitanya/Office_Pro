@@ -1,0 +1,368 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block title %}Paper Formats - Office Pro{% endblock %}
+{% block navbar_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<style>
+  .op-paper-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="list-container">
+  <!-- Top Control / Search Bar -->
+  <div class="list-control-bar">
+    <div class="control-left">
+      <a href="{% url 'technical_paperformat_create' %}" class="btn btn-primary op-btn-new">New</a>
+      <h2 class="list-title" style="display: flex; align-items: center; margin: 0 0 0 12px; font-size: 18px; font-weight: 600;">
+        Paper Formats
+      </h2>
+
+      <!-- Selection Badge -->
+      <span id="opSelectionBadge" class="op-selected-badge">
+        <span id="opSelectionCount">0</span> selected
+        <span class="op-clear-selection" onclick="clearSelection()" title="Clear Selection">&times;</span>
+      </span>
+
+      <!-- Actions Cog Icon & Dropdown Menu -->
+      <div class="op-actions-container">
+        <button type="button" id="opActionsBtn" class="op-btn-cog" aria-label="Actions" onclick="toggleActionsMenu(event)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+          </svg>
+        </button>
+        <div class="op-tooltip">Actions</div>
+
+        <div id="opActionsDropdownMenu" class="op-actions-menu">
+          <button type="button" class="op-action-item" onclick="openImportModal()">
+            <span class="op-action-item-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </span>
+            <span>Import records</span>
+          </button>
+
+          <button type="button" class="op-action-item" id="opExportActionBtn" onclick="openExportModal()">
+            <span class="op-action-item-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </span>
+            <span id="opExportActionLabel">Export All</span>
+          </button>
+
+          <div id="opBatchActionsSection" class="op-batch-actions-section" style="display: none;">
+            <div class="op-action-divider"></div>
+            
+            <button type="button" class="op-action-item" onclick="executeBatchAction('duplicate', 'report.paperformat')">
+              <span class="op-action-item-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </span>
+              <span>Duplicate</span>
+            </button>
+
+            <button type="button" class="op-action-item" onclick="executeBatchAction('archive', 'report.paperformat')">
+              <span class="op-action-item-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                  <rect x="1" y="3" width="22" height="5"></rect>
+                  <line x1="10" y1="12" x2="14" y2="12"></line>
+                </svg>
+              </span>
+              <span>Archive</span>
+            </button>
+
+            <button type="button" class="op-action-item" onclick="executeBatchAction('unarchive', 'report.paperformat')">
+              <span class="op-action-item-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                  <rect x="1" y="3" width="22" height="5"></rect>
+                  <line x1="12" y1="10" x2="12" y2="16"></line>
+                  <line x1="9" y1="13" x2="15" y2="13"></line>
+                </svg>
+              </span>
+              <span>Unarchive</span>
+            </button>
+
+            <div class="op-action-divider"></div>
+
+            <button type="button" class="op-action-item op-action-item-danger" onclick="executeBatchAction('delete', 'report.paperformat')">
+              <span class="op-action-item-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </span>
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Search Panel -->
+    <div class="control-center list-toolbar-center" style="flex: 2 1 auto; display: flex; justify-content: center; max-width: 500px; margin: 0 auto; width: 100%;">
+      <div class="op-cp-searchview" style="width: 100%; max-width: 460px; height: 32px;">
+        <form method="get" action="{% url 'technical_paperformats' %}" class="op-searchview" style="display: flex; align-items: center; flex: 1; border: none; padding: 2px 8px; gap: 6px; height: 100%;">
+          <span class="op-search-icon" style="color: #6b7280; font-size: 13px; display: flex; align-items: center;">&#128269;</span>
+          <input type="search" name="q" value="{{ query }}" placeholder="Search paper formats..." class="op-searchview-input" style="border: none; outline: none; flex: 1; font-size: 13px; background: transparent; color: #1f2937;">
+        </form>
+        <button type="button" class="op-searchview-toggle" title="Toggle Search Panel" aria-expanded="false" style="border: none; border-left: 1px solid #e5e7eb; background: #f9fafb; border-radius: 0 4px 4px 0; cursor: pointer; padding: 0 10px; height: 100%; color: #6b7280; display: flex; align-items: center; justify-content: center;">&#9662;</button>
+      </div>
+    </div>
+
+    <!-- Right Controls: Pager -->
+    <div class="control-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex: 1 1 0; min-width: 0;">
+      <!-- Pager -->
+      <div class="pagination" style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b;">
+        <span class="page-info">{{ page_start }}-{{ page_end }} / {{ total_count }}</span>
+        <div class="page-arrows" style="display: flex; align-items: center; gap: 4px;">
+          {% if page > 1 %}
+            <a href="?page={{ page|add:'-1' }}{% if query %}&q={{ query }}{% endif %}" class="page-arrow" title="Previous Page" style="text-decoration: none; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 4px; color: inherit;">&lt;</a>
+          {% else %}
+            <span class="page-arrow disabled" style="padding: 2px 6px; border: 1px solid #e2e8f0; border-radius: 4px; color: #cbd5e1;">&lt;</span>
+          {% endif %}
+
+          {% if page < total_pages %}
+            <a href="?page={{ page|add:'1' }}{% if query %}&q={{ query }}{% endif %}" class="page-arrow" title="Next Page" style="text-decoration: none; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 4px; color: inherit;">&gt;</a>
+          {% else %}
+            <span class="page-arrow disabled" style="padding: 2px 6px; border: 1px solid #e2e8f0; border-radius: 4px; color: #cbd5e1;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="table-responsive">
+    <table class="op-list-table">
+      <thead>
+        <tr>
+          <th style="width: 38px; text-align: center;">
+            <input type="checkbox" id="opSelectAll" onchange="toggleSelectAll(this)">
+          </th>
+          <th>Name</th>
+          <th>Paper Size</th>
+          <th>Orientation</th>
+          <th>Top Margin (mm)</th>
+          <th>Bottom Margin (mm)</th>
+          <th>Left Margin (mm)</th>
+          <th>Right Margin (mm)</th>
+          <th>Output DPI</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pf in paperformats %}
+        <tr class="op-table-row" data-id="{{ pf.id }}">
+          <td style="text-align: center;" onclick="event.stopPropagation();">
+            <input type="checkbox" class="op-row-check" value="{{ pf.id }}" onchange="updateSelectionState()">
+          </td>
+          <td>
+            <a href="{% url 'technical_paperformat_detail' pf.id %}" style="text-decoration: none; color: inherit; font-weight: 500;">
+              {{ pf.name }}
+            </a>
+          </td>
+          <td>
+            <span class="op-paper-tag">{{ pf.get_format_size_display|default:pf.format_size }}</span>
+          </td>
+          <td>{{ pf.orientation }}</td>
+          <td>{{ pf.margin_top }}</td>
+          <td>{{ pf.margin_bottom }}</td>
+          <td>{{ pf.margin_left }}</td>
+          <td>{{ pf.margin_right }}</td>
+          <td>{{ pf.dpi }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 32px; color: #94a3b8;">
+            No paper formats found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div id="opExportModal" class="op-modal-backdrop" style="display: none;">
+  <div class="op-modal-dialog">
+    <div class="op-modal-header">
+      <h3 class="op-modal-title">Export Records</h3>
+      <button type="button" class="op-modal-close" onclick="closeExportModal()">&times;</button>
+    </div>
+    <div class="op-modal-body">
+      <p style="margin-bottom: 16px; color: #475569; font-size: 13.5px;">
+        Choose export format for <strong id="opExportCountText">all records</strong>:
+      </p>
+      <div style="display: flex; gap: 16px;">
+        <button type="button" class="btn btn-primary" onclick="submitExport('export_xlsx', 'report.paperformat')">
+          Export as XLSX
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="submitExport('export_csv', 'report.paperformat')">
+          Export as CSV
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div id="opImportModal" class="op-modal-backdrop" style="display: none;">
+  <div class="op-modal-dialog">
+    <div class="op-modal-header">
+      <h3 class="op-modal-title">Import Records</h3>
+      <button type="button" class="op-modal-close" onclick="closeImportModal()">&times;</button>
+    </div>
+    <form method="post" action="{% url 'batch_action' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="import_records">
+      <input type="hidden" name="model_key" value="report.paperformat">
+      <div class="op-modal-body">
+        <p style="margin-bottom: 12px; color: #475569; font-size: 13.5px;">Select a CSV or Excel file to import:</p>
+        <input type="file" name="import_file" accept=".csv, .xlsx, .xls" required style="font-size: 13px;">
+      </div>
+      <div class="op-modal-footer" style="padding: 12px 16px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Import</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let selectedIds = [];
+
+  function updateSelectionState() {
+    const checkboxes = document.querySelectorAll('.op-row-check');
+    selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    
+    const countBadge = document.getElementById('opSelectionBadge');
+    const countSpan = document.getElementById('opSelectionCount');
+    const batchSection = document.getElementById('opBatchActionsSection');
+    const exportLabel = document.getElementById('opExportActionLabel');
+    const selectAll = document.getElementById('opSelectAll');
+
+    if (selectedIds.length > 0) {
+      countBadge.style.display = 'inline-flex';
+      countSpan.textContent = selectedIds.length;
+      batchSection.style.display = 'block';
+      exportLabel.textContent = `Export Selected (${selectedIds.length})`;
+      selectAll.checked = selectedIds.length === checkboxes.length;
+    } else {
+      countBadge.style.display = 'none';
+      batchSection.style.display = 'none';
+      exportLabel.textContent = 'Export All';
+      selectAll.checked = false;
+    }
+  }
+
+  function toggleSelectAll(master) {
+    const checkboxes = document.querySelectorAll('.op-row-check');
+    checkboxes.forEach(cb => cb.checked = master.checked);
+    updateSelectionState();
+  }
+
+  function clearSelection() {
+    const checkboxes = document.querySelectorAll('.op-row-check');
+    checkboxes.forEach(cb => cb.checked = false);
+    updateSelectionState();
+  }
+
+  function toggleActionsMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('opActionsDropdownMenu');
+    menu.classList.toggle('show');
+  }
+
+  document.addEventListener('click', function(e) {
+    const menu = document.getElementById('opActionsDropdownMenu');
+    if (menu && !menu.contains(e.target)) {
+      menu.classList.remove('show');
+    }
+  });
+
+  function openExportModal() {
+    document.getElementById('opExportModal').style.display = 'flex';
+    document.getElementById('opExportCountText').textContent = selectedIds.length > 0 ? `${selectedIds.length} selected record(s)` : 'all records';
+  }
+
+  function closeExportModal() {
+    document.getElementById('opExportModal').style.display = 'none';
+  }
+
+  function openImportModal() {
+    document.getElementById('opImportModal').style.display = 'flex';
+  }
+
+  function closeImportModal() {
+    document.getElementById('opImportModal').style.display = 'none';
+  }
+
+  function submitExport(actionType, modelKey) {
+    let url = `{% url 'batch_action' %}?action=${actionType}&model_key=${modelKey}`;
+    if (selectedIds.length > 0) {
+      url += `&ids=${selectedIds.join(',')}`;
+    }
+    window.location.href = url;
+    closeExportModal();
+  }
+
+  function executeBatchAction(actionType, modelKey) {
+    if (selectedIds.length === 0) return;
+    if (actionType === 'delete' && !confirm(`Are you sure you want to delete ${selectedIds.length} record(s)?`)) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = "{% url 'batch_action' %}";
+
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = 'csrfmiddlewaretoken';
+    csrf.value = '{{ csrf_token }}';
+    form.appendChild(csrf);
+
+    const act = document.createElement('input');
+    act.type = 'hidden';
+    act.name = 'action';
+    act.value = actionType;
+    form.appendChild(act);
+
+    const mdl = document.createElement('input');
+    mdl.type = 'hidden';
+    mdl.name = 'model_key';
+    mdl.value = modelKey;
+    form.appendChild(mdl);
+
+    const ids = document.createElement('input');
+    ids.type = 'hidden';
+    ids.name = 'ids';
+    ids.value = selectedIds.join(',');
+    form.appendChild(ids);
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+</script>
+{% endblock %}

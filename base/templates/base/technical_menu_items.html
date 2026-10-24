@@ -1,0 +1,33 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include 'base/_list_toolbar.html' with title="Menu Items" create_url=create_url total_count=total_count %}
+<div class="op-list-view">
+  <table>
+    <thead>
+      <tr>
+        <th>Menu</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in menu_list %}
+        <tr>
+          <td>
+            <a style="text-decoration: none; color: inherit; display: block;" href="{% url 'technical_menu_item_detail' item.obj.id %}">{{ item.full_path }}</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td style="color: #9ca3af; padding: 16px; text-align: center;">No menu items found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

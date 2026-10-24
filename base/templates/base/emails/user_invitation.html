@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Office Pro ERP</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
+    .email-container {
+      max-width: 580px;
+      margin: 30px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    }
+    .email-header {
+      background: linear-gradient(135deg, #714b67 0%, #4a2842 100%);
+      padding: 32px 30px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .email-logo-icon {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      line-height: 48px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    .email-header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .email-header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .email-body {
+      padding: 32px 30px;
+    }
+    .greeting {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 12px;
+    }
+    .lead-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #475569;
+      margin-bottom: 24px;
+    }
+    .credentials-card {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+    .credentials-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #714b67;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .credential-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed #e2e8f0;
+      font-size: 13.5px;
+    }
+    .credential-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .credential-label {
+      color: #64748b;
+      font-weight: 500;
+    }
+    .credential-value {
+      font-weight: 600;
+      color: #0f172a;
+      font-family: 'Courier New', Courier, monospace;
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .note-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 14px 16px;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 28px;
+    }
+    .note-box p {
+      margin: 0;
+      font-size: 13px;
+      color: #1e40af;
+      line-height: 1.5;
+    }
+    .btn-container {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .btn-login {
+      display: inline-block;
+      background: #714b67;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 12px 32px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(113, 75, 103, 0.35);
+      transition: background 0.15s ease;
+    }
+    .btn-login:hover {
+      background: #5a3c53;
+    }
+    .email-footer {
+      background: #f8fafc;
+      padding: 20px 30px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="email-header">
+      <div class="email-logo-icon">&#128188;</div>
+      <h1>Office Pro ERP</h1>
+      <p>Enterprise Management Platform</p>
+    </div>
+
+    <!-- Body -->
+    <div class="email-body">
+      <div class="greeting">Hello {{ user.name|default:username }},</div>
+      <p class="lead-text">
+        You have been given access to the <strong>Office Pro ERP</strong> system. Your user account has been successfully created with the credentials below:
+      </p>
+
+      <!-- Credentials Card -->
+      <div class="credentials-card">
+        <div class="credentials-title">&#128273; Account Login Credentials</div>
+        <div class="credential-row">
+          <span class="credential-label">Login / Username:</span>
+          <span class="credential-value">{{ username }}</span>
+        </div>
+        <div class="credential-row">
+          <span class="credential-label">Email Address:</span>
+          <span class="credential-value">{{ email }}</span>
+        </div>
+        <div class="credential-row">
+          <span class="credential-label">Default Password:</span>
+          <span class="credential-value" style="color: #b91c1c; font-weight: 700;">{{ default_password }}</span>
+        </div>
+      </div>
+
+      <!-- Note Callout -->
+      <div class="note-box">
+        <p>
+          <strong>&#9432; Note:</strong> This is a default temporary password. You may change this password at any time in your <strong>Profile page</strong> after logging in.
+        </p>
+      </div>
+
+      <!-- Action Button -->
+      <div class="btn-container">
+        <a href="{{ login_url }}" class="btn-login" target="_blank">Log In to Office Pro</a>
+      </div>
+
+      <p style="font-size: 12.5px; color: #64748b; text-align: center; margin: 0;">
+        Direct link: <a href="{{ login_url }}" style="color: #714b67; word-break: break-all;">{{ login_url }}</a>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="email-footer">
+      <p style="margin: 0 0 6px;">Copyright &copy; 2026 Office Pro ERP. All rights reserved.</p>
+      <p style="margin: 0;">This email was sent automatically. If you did not expect this, please contact your system administrator.</p>
+    </div>
+  </div>
+</body>
+</html>

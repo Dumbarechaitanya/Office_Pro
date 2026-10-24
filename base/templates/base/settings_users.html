@@ -1,0 +1,18 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include 'base/_list_toolbar.html' with title="Users" create_url=create_url total_count=total_count search_model_key=search_model_key can_delete=can_delete view_mode=view_mode has_kanban=True %}
+
+{% if view_mode == 'kanban' %}
+  {% include 'base/_kanban_view.html' with object_list=users_list groups=groups detail_url_name='settings_user_detail' %}
+{% else %}
+  {% include 'base/_list_view.html' with columns=columns object_list=users_list groups=groups detail_url_name='settings_user_detail' %}
+{% endif %}
+{% endblock %}
+

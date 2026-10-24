@@ -1,0 +1,105 @@
+{% extends "leave/leave_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #fafbfc; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    {% if is_officer or is_manager %}
+    <a href="{% url 'leave_management_requests' %}" style="text-decoration: none; color: #64748b; font-size: 13px; font-weight: 600;">
+      &larr; Back to Requests
+    </a>
+    {% else %}
+    <a href="{% url 'my_time_off' %}" style="text-decoration: none; color: #64748b; font-size: 13px; font-weight: 600;">
+      &larr; Back to My Time Off
+    </a>
+    {% endif %}
+    <h1 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0;">New Time Off Request</h1>
+  </div>
+</div>
+
+<div style="max-width: 760px; margin: 30px auto; padding: 0 20px;">
+  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <form method="POST">
+      {% csrf_token %}
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Employee *</label>
+          {% if is_officer %}
+          <select name="employee_id" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+            {% for emp in employees %}
+              <option value="{{ emp.id }}" {% if emp.id == current_emp.id %}selected{% endif %}>{{ emp.name }} ({{ emp.employee_code }})</option>
+            {% endfor %}
+          </select>
+          {% else %}
+          <input type="hidden" name="employee_id" value="{{ current_emp.id }}">
+          <div style="padding: 9px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; color: #1e293b;">
+            {{ current_emp.name }} ({{ current_emp.employee_code }})
+          </div>
+          {% endif %}
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Time Off Type *</label>
+          <select name="leave_type_id" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+            {% for lt in leave_types %}
+              <option value="{{ lt.id }}">{{ lt.name }} ({{ lt.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Start Date *</label>
+          <input type="date" name="start_date" id="reqStartDate" value="2026-10-26" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required onchange="calculateFormDays()">
+        </div>
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">End Date *</label>
+          <input type="date" name="end_date" id="reqEndDate" value="2026-10-27" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required onchange="calculateFormDays()">
+        </div>
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Duration (Days) *</label>
+          <input type="number" step="0.5" name="duration_days" id="reqDurationDays" value="2.0" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Description / Reason</label>
+        <textarea name="reason" rows="3" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" placeholder="Describe purpose of time off (medical, family, holiday travel, etc.)..."></textarea>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; border-top: 1px solid #f1f5f9; padding-top: 18px;">
+        {% if is_officer or is_manager %}
+        <a href="{% url 'leave_management_requests' %}" style="padding: 8px 18px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; color: #475569;">
+          Cancel
+        </a>
+        {% else %}
+        <a href="{% url 'my_time_off' %}" style="padding: 8px 18px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; color: #475569;">
+          Cancel
+        </a>
+        {% endif %}
+        <button type="submit" style="padding: 8px 24px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
+          Save &amp; Submit Request
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function calculateFormDays() {
+  const sStr = document.getElementById('reqStartDate').value;
+  const eStr = document.getElementById('reqEndDate').value;
+  if (sStr && eStr) {
+    const s = new Date(sStr);
+    const e = new Date(eStr);
+    if (e >= s) {
+      const diffTime = Math.abs(e - s);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      document.getElementById('reqDurationDays').value = diffDays.toFixed(1);
+    }
+  }
+}
+</script>
+{% endblock %}

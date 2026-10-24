@@ -1,0 +1,436 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-model-checkbox-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .op-model-checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 26px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-model-form" method="post" action="{{ form_action }}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        {% if create_url %}
+          <a href="{{ create_url }}" class="op-view-btn-new">New</a>
+        {% endif %}
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_models' %}">Models</a> / {{ model.description|default:model.model_name }}
+        </span>
+      </div>
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_models' %}" class="op-view-btn-discard">Discard</a>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <!-- 2-Column Grid Header -->
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_description">
+              Model Description
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Model Description</li>
+                      <li>Field: description</li>
+                      <li>Model: ir.model</li>
+                      <li>Type: char</li>
+                      <li>Required: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_description" name="description" class="op-view-input" value="{{ model.description|default:'' }}" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label">
+              Model
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Model</li>
+                      <li>Field: model_name</li>
+                      <li>Model: ir.model</li>
+                      <li>Type: char</li>
+                      <li>Readonly: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <div class="op-view-input" style="border-bottom: 1px solid #e2e8f0; color: #4b5563; font-weight: 500;">{{ model.model_name }}</div>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_model_order">
+              Order
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Order</li>
+                      <li>Field: model_order</li>
+                      <li>Model: ir.model</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_model_order" name="model_order" class="op-view-input" value="{{ model.model_order|default:'id' }}">
+            </div>
+          </div>
+
+          <div class="op-model-checkbox-grid">
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="id_abstract">
+                Abstract Model
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Abstract Model</li>
+                        <li>Field: abstract</li>
+                        <li>Model: ir.model</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_abstract" name="abstract" {% if model.abstract %}checked{% endif %}>
+            </div>
+
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="id_transient">
+                Transient Model
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Transient Model</li>
+                        <li>Field: transient</li>
+                        <li>Model: ir.model</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_transient" name="transient" {% if model.transient %}checked{% endif %}>
+            </div>
+
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="id_is_mail_thread">
+                Has Mail Thread
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Has Mail Thread</li>
+                        <li>Field: is_mail_thread</li>
+                        <li>Model: ir.model</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_is_mail_thread" name="is_mail_thread" {% if model.is_mail_thread %}checked{% endif %}>
+            </div>
+
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="id_is_mail_activity">
+                Has Mail Activity
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Has Mail Activity</li>
+                        <li>Field: is_mail_activity</li>
+                        <li>Model: ir.model</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_is_mail_activity" name="is_mail_activity" {% if model.is_mail_activity %}checked{% endif %}>
+            </div>
+
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="id_is_mail_blacklist">
+                Has Mail Blacklist
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Has Mail Blacklist</li>
+                        <li>Field: is_mail_blacklist</li>
+                        <li>Model: ir.model</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_is_mail_blacklist" name="is_mail_blacklist" {% if model.is_mail_blacklist %}checked{% endif %}>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label">
+              Type
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Type</li>
+                      <li>Field: state</li>
+                      <li>Model: ir.model</li>
+                      <li>Type: selection</li>
+                      <li>Selection:
+                        <ul class="sub-list">
+                          <li>[base] - Base Object</li>
+                          <li>[manual] - Custom Object</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <div class="op-view-input" style="border-bottom: 1px solid #e2e8f0; color: #4b5563;">{{ model.get_state_display }}</div>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label">
+              In Apps
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: In Apps</li>
+                      <li>Field: module_id</li>
+                      <li>Model: ir.model</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: ir.module</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <div class="op-view-input" style="border-bottom: 1px solid #e2e8f0; color: #4b5563;">{{ model.module.name|default:'base' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-view-tabs">
+        <button type="button" class="op-view-tab-btn active" data-tab="tab-fields">Fields ({{ fields_qs|length }})</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-access-rights">Access Rights ({{ access_rights|length }})</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-record-rules">Record Rules ({{ rules|length }})</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-notes">Notes</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-views">Views ({{ views|length }})</button>
+      </div>
+
+      <!-- Tab 1: Fields -->
+      <div id="tab-fields" class="op-view-tab-pane active">
+        <table class="op-sub-table">
+          <thead>
+            <tr>
+              <th>Field Name</th>
+              <th>Field Label</th>
+              <th>Field Type</th>
+              <th>Required</th>
+              <th>Readonly</th>
+              <th>Indexed</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in fields_qs %}
+              <tr>
+                <td><a href="{% url 'technical_field_detail' f.id %}" class="op-sub-link">{{ f.field_name }}</a></td>
+                <td>{{ f.field_name|title }}</td>
+                <td>{{ f.field_type|lower }}</td>
+                <td>{% if f.is_required %}&#10003;{% endif %}</td>
+                <td>{% if f.field_name == 'id' or f.field_name == 'created_at' or f.field_name == 'updated_at' %}&#10003;{% endif %}</td>
+                <td>{% if f.field_name == 'id' or f.field_name == 'code' or f.field_name == 'email' or f.field_name == 'username' %}&#10003;{% endif %}</td>
+                <td>{% if model.state == 'base' %}Base Field{% else %}Custom Field{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" style="color: #9ca3af; padding: 16px; text-align: center;">No fields registered for this model.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab 2: Access Rights -->
+      <div id="tab-access-rights" class="op-view-tab-pane">
+        <table class="op-sub-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Group</th>
+              <th>Read Access</th>
+              <th>Write Access</th>
+              <th>Create Access</th>
+              <th>Delete Access</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ar in access_rights %}
+              <tr>
+                <td>{{ model.model_name }}_{{ ar.group.name|slugify }}_access</td>
+                <td>{{ ar.group.name }}</td>
+                <td>{% if ar.can_read %}&#10003;{% endif %}</td>
+                <td>{% if ar.can_write %}&#10003;{% endif %}</td>
+                <td>{% if ar.can_create %}&#10003;{% endif %}</td>
+                <td>{% if ar.can_delete %}&#10003;{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" style="color: #9ca3af; padding: 16px; text-align: center;">No access rights specified.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <a href="{% url 'technical_access_rights' %}" class="op-add-line-btn">+ Add a line</a>
+      </div>
+
+      <!-- Tab 3: Record Rules -->
+      <div id="tab-record-rules" class="op-view-tab-pane">
+        <table class="op-sub-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Groups</th>
+              <th>Domain</th>
+              <th>Read</th>
+              <th>Write</th>
+              <th>Create</th>
+              <th>Delete</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rules %}
+              <tr>
+                <td><a href="{% url 'technical_record_rule_detail' r.id %}" class="op-sub-link">{{ r.rule_name }}</a></td>
+                <td>{{ r.group.name|default:'Global' }}</td>
+                <td><code>[('{{ r.condition_field }}', '=', '{{ r.condition_value }}')]</code></td>
+                <td>&#10003;</td>
+                <td>&#10003;</td>
+                <td>&#10003;</td>
+                <td>&#10003;</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" style="color: #9ca3af; padding: 16px; text-align: center;">No record rules configured.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <a href="{% url 'technical_record_rules' %}" class="op-add-line-btn">+ Add a line</a>
+      </div>
+
+      <!-- Tab 4: Notes -->
+      <div id="tab-notes" class="op-view-tab-pane">
+        <div style="padding: 10px 0;">
+          <textarea class="op-arch-textarea" placeholder="Technical notes or documentation for this model..." style="min-height: 160px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Tab 5: Views -->
+      <div id="tab-views" class="op-view-tab-pane">
+        <table class="op-sub-table">
+          <thead>
+            <tr>
+              <th>View Name</th>
+              <th>View Type</th>
+              <th>Model</th>
+              <th>External ID</th>
+              <th>Inherited View</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in views %}
+              <tr>
+                <td><a href="{% url 'technical_view_detail' v.id %}" class="op-sub-link">{{ v.name }}</a></td>
+                <td>{{ v.view_type|title }}</td>
+                <td>{{ model.model_name }}</td>
+                <td>{{ v.external_id|default:'—' }}</td>
+                <td>{{ v.inherit_id.name|default:'—' }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" style="color: #9ca3af; padding: 16px; text-align: center;">No views registered for this model.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const tabBtns = document.querySelectorAll('.op-view-tab-btn');
+  const tabPanes = document.querySelectorAll('.op-view-tab-pane');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabPanes.forEach(p => p.classList.remove('active'));
+
+      this.classList.add('active');
+      const target = document.getElementById(this.dataset.tab);
+      if (target) {
+        target.classList.add('active');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

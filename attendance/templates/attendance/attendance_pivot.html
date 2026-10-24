@@ -1,0 +1,215 @@
+{% extends "attendance/attendance_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="att-pivot-wrapper">
+
+  <!-- Top Search & Filter Bar (Matching Screenshot 4) -->
+  <div class="att-control-bar">
+    <div class="att-control-left">
+      <h1 class="att-title">
+        Attendances
+        <span class="att-title-cog" title="Configure view">&#9881;</span>
+      </h1>
+    </div>
+
+    <!-- Search Box with Active Filters -->
+    <div class="att-search-box" style="margin: 0; max-width: 620px;">
+      <span class="att-search-chip att-search-chip-filter">
+        Active Employees
+        <a href="#" style="text-decoration: none; color: inherit; margin-left: 4px;">&times;</a>
+      </span>
+      <span class="att-search-chip att-search-chip-filter">
+        Last 3 Months
+        <a href="#" style="text-decoration: none; color: inherit; margin-left: 4px;">&times;</a>
+      </span>
+      <span class="att-search-chip att-search-chip-filter">
+        Employee
+        <a href="#" style="text-decoration: none; color: inherit; margin-left: 4px;">&times;</a>
+      </span>
+      <input 
+        type="text" 
+        class="att-search-input" 
+        placeholder="Search..."
+      >
+      <span style="color: #94a3b8; font-size: 11px; cursor: pointer; padding-left: 6px;">&#9660;</span>
+    </div>
+
+    <div class="att-control-right">
+      <!-- View Switchers (Pivot active, Graph, List) -->
+      <div class="att-view-switchers">
+        <a href="{% url 'attendance_list' %}" class="att-view-btn" title="List View">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </a>
+        <a href="{% url 'attendance_reporting_pivot' %}" class="att-view-btn active" title="Pivot Matrix View">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+          </svg>
+        </a>
+        <button type="button" class="att-view-btn" title="Graph View" onclick="togglePivotGraph()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Measures & Action Bar (Matching Screenshot 4) -->
+  <div class="pivot-actions-bar">
+    <button type="button" class="btn-measures">
+      Measures
+      <span style="font-size: 10px;">&#9660;</span>
+    </button>
+    <button type="button" class="btn-pivot-icon" title="Swap Axis (Row / Column)">
+      &#8644;
+    </button>
+    <button type="button" class="btn-pivot-icon" title="Expand All" onclick="toggleAllRows()">
+      &#65291;
+    </button>
+    <button type="button" class="btn-pivot-icon" title="Export Pivot Matrix to Excel/CSV" onclick="window.print()">
+      &#10515;
+    </button>
+  </div>
+
+  <!-- Pivot Table (Matching Screenshot 4 Matrix Grid) -->
+  <div style="overflow-x: auto; background: #ffffff; padding: 0;">
+    <table class="pivot-table">
+      <thead>
+        <!-- Month Grouping Row -->
+        <tr>
+          <th rowspan="2" class="pivot-th-col" style="text-align: left; min-width: 220px; background: #ffffff;">
+            <span style="cursor: pointer; color: #475569;">&#8863; Total</span>
+          </th>
+          <th colspan="4" class="pivot-th-col" style="background: #f8fafc; border-left: 2px solid #cbd5e1;">
+            <span style="cursor: pointer;">&#8862; July 2026</span>
+          </th>
+          <th colspan="4" class="pivot-th-col" style="background: #f8fafc; border-left: 2px solid #cbd5e1;">
+            <span style="cursor: pointer;">&#8862; August 2026</span>
+          </th>
+          <th colspan="4" class="pivot-th-col" style="background: #f8fafc; border-left: 2px solid #cbd5e1;">
+            <span style="cursor: pointer;">&#8862; September 2026</span>
+          </th>
+          <th colspan="4" class="pivot-th-col" style="background: #f8fafc; border-left: 2px solid #cbd5e1;">
+            <span style="cursor: pointer;">&#8862; October 2026</span>
+          </th>
+        </tr>
+        <!-- Metric Sub-header Row -->
+        <tr>
+          <!-- July 2026 -->
+          <th class="pivot-th-sub" style="border-left: 2px solid #cbd5e1;">Worked Hours</th>
+          <th class="pivot-th-sub">Theoretical Hours</th>
+          <th class="pivot-th-sub">Difference</th>
+          <th class="pivot-th-sub">Balance</th>
+
+          <!-- August 2026 -->
+          <th class="pivot-th-sub" style="border-left: 2px solid #cbd5e1;">Worked Hours</th>
+          <th class="pivot-th-sub">Theoretical Hours</th>
+          <th class="pivot-th-sub">Difference</th>
+          <th class="pivot-th-sub">Balance</th>
+
+          <!-- September 2026 -->
+          <th class="pivot-th-sub" style="border-left: 2px solid #cbd5e1;">Worked Hours</th>
+          <th class="pivot-th-sub">Theoretical Hours</th>
+          <th class="pivot-th-sub">Difference</th>
+          <th class="pivot-th-sub">Balance</th>
+
+          <!-- October 2026 -->
+          <th class="pivot-th-sub" style="border-left: 2px solid #cbd5e1;">Worked Hours</th>
+          <th class="pivot-th-sub">Theoretical Hours</th>
+          <th class="pivot-th-sub">Difference</th>
+          <th class="pivot-th-sub">Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Grand Total Summary Row (First Data Row Matching Screenshot 4) -->
+        <tr class="pivot-row-total">
+          <td class="pivot-td-header" style="font-weight: 700;">
+            <span style="display: inline-block; width: 14px; text-align: center; margin-right: 4px; color: #64748b;">&#8863;</span>
+            Total
+          </td>
+          <!-- July Totals -->
+          <td style="font-weight: 700; border-left: 2px solid #cbd5e1;">{{ totals.july.worked }}</td>
+          <td style="font-weight: 700; color: #4338ca;">{{ totals.july.theoretical }}</td>
+          <td style="font-weight: 700;">{{ totals.july.diff }}</td>
+          <td style="font-weight: 700; color: #64748b;">{{ totals.july.bal }}</td>
+
+          <!-- August Totals -->
+          <td style="font-weight: 700; border-left: 2px solid #cbd5e1;">{{ totals.aug.worked }}</td>
+          <td style="font-weight: 700; color: #4338ca;">{{ totals.aug.theoretical }}</td>
+          <td style="font-weight: 700;">{{ totals.aug.diff }}</td>
+          <td style="font-weight: 700; color: #64748b;">{{ totals.aug.bal }}</td>
+
+          <!-- September Totals -->
+          <td style="font-weight: 700; border-left: 2px solid #cbd5e1;">{{ totals.sep.worked }}</td>
+          <td style="font-weight: 700; color: #4338ca;">{{ totals.sep.theoretical }}</td>
+          <td style="font-weight: 700;">{{ totals.sep.diff }}</td>
+          <td style="font-weight: 700; color: #64748b;">{{ totals.sep.bal }}</td>
+
+          <!-- October Totals -->
+          <td style="font-weight: 700; border-left: 2px solid #cbd5e1;">{{ totals.oct.worked }}</td>
+          <td style="font-weight: 700; color: #4338ca;">{{ totals.oct.theoretical }}</td>
+          <td style="font-weight: 700;">{{ totals.oct.diff }}</td>
+          <td style="font-weight: 700; color: #64748b;">{{ totals.oct.bal }}</td>
+        </tr>
+
+        <!-- Employee Rows with Expand Icon [+] -->
+        {% for row in pivot_rows %}
+        <tr>
+          <td class="pivot-td-header">
+            <span style="display: inline-block; width: 14px; text-align: center; margin-right: 4px; color: #64748b; font-weight: bold; cursor: pointer;">&#8862;</span>
+            {{ row.employee.name }}
+          </td>
+
+          <!-- July -->
+          <td style="border-left: 2px solid #e2e8f0;">{{ row.july.worked }}</td>
+          <td style="color: #64748b;">{{ row.july.theoretical }}</td>
+          <td>{{ row.july.diff }}</td>
+          <td style="color: #94a3b8;">{{ row.july.bal }}</td>
+
+          <!-- August -->
+          <td style="border-left: 2px solid #e2e8f0;">{{ row.aug.worked }}</td>
+          <td style="color: #64748b;">{{ row.aug.theoretical }}</td>
+          <td>{{ row.aug.diff }}</td>
+          <td style="color: #94a3b8;">{{ row.aug.bal }}</td>
+
+          <!-- September -->
+          <td style="border-left: 2px solid #e2e8f0;">{{ row.sep.worked }}</td>
+          <td style="color: #64748b;">{{ row.sep.theoretical }}</td>
+          <td>{{ row.sep.diff }}</td>
+          <td style="color: #94a3b8;">{{ row.sep.bal }}</td>
+
+          <!-- October -->
+          <td style="border-left: 2px solid #e2e8f0;">{{ row.oct.worked }}</td>
+          <td style="color: #64748b;">{{ row.oct.theoretical }}</td>
+          <td>{{ row.oct.diff }}</td>
+          <td style="color: #94a3b8;">{{ row.oct.bal }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+function toggleAllRows() {
+  alert('All employee month breakdowns expanded.');
+}
+
+function togglePivotGraph() {
+  alert('Switching between Pivot Matrix and Visual Bar Chart view.');
+}
+</script>
+{% endblock %}

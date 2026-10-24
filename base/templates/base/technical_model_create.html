@@ -1,0 +1,169 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/model_create.css' %}">
+<style>
+  .op-model-checkbox-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .op-model-checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 26px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form method="post" id="op-model-create-form" class="op-model-create">
+    {% csrf_token %}
+    <input type="hidden" name="fields_json" id="op-fields-json" value="[]">
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_models' %}">Models</a> / New
+        </span>
+      </div>
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_models' %}" class="op-view-btn-discard">Discard</a>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <!-- 2-Column Grid Header -->
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="op_description">Model Description <span class="op-view-hint" title="Human-readable title of the model">?</span></label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="op_description" name="description" class="op-view-input" placeholder="e.g. Custom Project Task" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="op_model_name">Model <span class="op-view-hint" title="Technical model key">?</span></label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="op_model_name" name="model_name" class="op-view-input" placeholder="e.g. x_project_task" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="op_table_name">Table Name <span class="op-view-hint" title="Database table name">?</span></label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="op_table_name" name="table_name" class="op-view-input" placeholder="e.g. x_project_task" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="op_model_order">Order <span class="op-view-hint" title="Default SQL ordering clause">?</span></label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="op_model_order" name="model_order" class="op-view-input" value="id">
+            </div>
+          </div>
+
+          <div class="op-model-checkbox-grid">
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="op_abstract">Abstract Model <span class="op-view-hint" title="Abstract base class">?</span></label>
+              <input type="checkbox" id="op_abstract" name="abstract">
+            </div>
+
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="op_transient">Transient Model <span class="op-view-hint" title="Temporary wizard / dialog model">?</span></label>
+              <input type="checkbox" id="op_transient" name="transient">
+            </div>
+
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="op_is_mail_thread">Has Mail Thread <span class="op-view-hint" title="Chatter and message history support">?</span></label>
+              <input type="checkbox" id="op_is_mail_thread" name="is_mail_thread">
+            </div>
+
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="op_is_mail_activity">Has Mail Activity <span class="op-view-hint" title="Activity scheduling support">?</span></label>
+              <input type="checkbox" id="op_is_mail_activity" name="is_mail_activity">
+            </div>
+
+            <div class="op-model-checkbox-row">
+              <label class="op-view-label" for="op_is_mail_blacklist">Has Mail Blacklist <span class="op-view-hint" title="Email opt-out / blacklist tracking">?</span></label>
+              <input type="checkbox" id="op_is_mail_blacklist" name="is_mail_blacklist">
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label">Type <span class="op-view-hint" title="Base object or manual custom object">?</span></label>
+            <div class="op-view-input-wrap">
+              <div class="op-view-input" style="border-bottom: 1px solid #e2e8f0; color: #4b5563;">Custom Object</div>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label">In Apps <span class="op-view-hint" title="Module defining this model">?</span></label>
+            <div class="op-view-input-wrap">
+              <div class="op-view-input" style="border-bottom: 1px solid #e2e8f0; color: #4b5563;">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-view-tabs">
+        <button type="button" class="op-view-tab-btn active" data-tab="tab-fields">Fields</button>
+      </div>
+
+      <!-- Tab 1: Fields -->
+      <div id="tab-fields" class="op-view-tab-pane active">
+        <table class="op-inline-table" id="op-inline-fields-table">
+          <thead>
+            <tr>
+              <th>Field Name</th>
+              <th>Field Type</th>
+              <th>Relation (if FK)</th>
+              <th>Required</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="op-inline-fields-body">
+            <tr class="op-inline-row">
+              <td><input type="text" class="op-row-field-name" value="x_name"></td>
+              <td>
+                <select class="op-row-field-type">
+                  {% for val, label in field_type_choices %}
+                    <option value="{{ val }}" {% if val == 'VARCHAR' %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <select class="op-row-relation" disabled>
+                  <option value="">-- none --</option>
+                  {% for val, label in relation_model_choices %}
+                    <option value="{{ val }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="checkbox" class="op-row-required"></td>
+              <td><button type="button" class="op-row-delete" title="Remove row">&#10005;</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" id="op-add-field-row" class="op-add-line">+ Add a line</button>
+      </div>
+
+    </div>
+  </form>
+</div>
+<script src="{% static 'base/js/model_create.js' %}"></script>
+{% endblock %}

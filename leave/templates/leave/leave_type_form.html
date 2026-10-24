@@ -1,0 +1,77 @@
+{% extends "leave/leave_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #fafbfc; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <a href="{% url 'leave_config_types' %}" style="text-decoration: none; color: #64748b; font-size: 13px; font-weight: 600;">
+      &larr; Back to Types
+    </a>
+    <h1 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0;">New Time Off Type</h1>
+  </div>
+</div>
+
+<div style="max-width: 680px; margin: 30px auto; padding: 0 20px;">
+  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <form method="POST">
+      {% csrf_token %}
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Time Off Type Name *</label>
+        <input type="text" name="name" placeholder="e.g. Paid Time Off, Bereavement, Sabbatical..." style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Code *</label>
+          <input type="text" name="code" value="PTO" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+        </div>
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Color Badge</label>
+          <input type="color" name="color" value="#10b981" style="width: 100%; height: 40px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Take Time Off In</label>
+          <select name="take_time_off_in" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+            <option value="day">Day</option>
+            <option value="half_day">Half-day</option>
+            <option value="hours">Hours</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Standard Annual Quota</label>
+          <input type="number" name="max_days_per_year" value="15" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Approval Rule</label>
+        <select name="approval_type" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+          <option value="officer">By Time Off Officer</option>
+          <option value="both">By Employee's Approver and Time Off Officer</option>
+          <option value="no_validation">No Validation Needed</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;">
+          <input type="checkbox" name="requires_allocation" checked style="accent-color: var(--op-primary-color, #2563eb); width: 16px; height: 16px;">
+          <span>Requires Pre-Allocation (Deducts from granted quota balance)</span>
+        </label>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; border-top: 1px solid #f1f5f9; padding-top: 18px;">
+        <a href="{% url 'leave_config_types' %}" style="padding: 8px 18px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; color: #475569;">
+          Cancel
+        </a>
+        <button type="submit" style="padding: 8px 24px; background: var(--op-primary-color, #2563eb); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;">
+          Create Type
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block title %}New Paper Format - Office Pro{% endblock %}
+{% block navbar_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  
+  <!-- Control Bar -->
+  <div class="op-view-control-bar">
+    <div class="op-view-control-left">
+      <div class="op-view-breadcrumb" style="display: flex; align-items: center; gap: 6px;">
+        <a href="{% url 'technical_paperformats' %}">Paper Formats</a>
+        <span>/</span>
+        <span>New</span>
+      </div>
+
+      <button type="submit" form="paperformatCreateForm" class="op-view-btn-save" style="margin-left: 12px;">Save</button>
+      <a href="{% url 'technical_paperformats' %}" class="op-view-btn-discard">Discard</a>
+    </div>
+  </div>
+
+  <!-- Sheet Card -->
+  <div class="op-view-sheet">
+    <form id="paperformatCreateForm" method="post" action="{% url 'technical_paperformat_create' %}">
+      {% csrf_token %}
+
+      <!-- Top Title Area -->
+      <div class="op-form-title-group" style="margin-bottom: 24px;">
+        <label class="op-field-label" style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 600;">Name <span class="op-view-hint" title="Paper format display name">?</span></label>
+        <input type="text" name="name" required class="op-form-title-input" placeholder="e.g. A4" style="font-size: 20px; font-weight: 600; width: 100%; max-width: 450px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px;">
+      </div>
+
+      <!-- Form Grid -->
+      <div class="op-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+        
+        <!-- Left Column -->
+        <div class="op-form-col">
+          
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Paper size <span class="op-view-hint" title="Standard paper size format">?</span></label>
+            <select name="format_size" id="id_format_size" class="op-form-input" onchange="handleSizeChange(this.value)">
+              {% for val, label in format_size_choices %}
+                <option value="{{ val }}" {% if val == 'A4' %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div id="custom_dimensions_row" style="display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+            <div class="op-form-group">
+              <label class="op-field-label">Page Height (mm) <span class="op-view-hint" title="Page height in millimeters">?</span></label>
+              <input type="number" name="page_height" value="0" class="op-form-input" min="0">
+            </div>
+            <div class="op-form-group">
+              <label class="op-field-label">Page Width (mm) <span class="op-view-hint" title="Page width in millimeters">?</span></label>
+              <input type="number" name="page_width" value="0" class="op-form-input" min="0">
+            </div>
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Orientation <span class="op-view-hint" title="Paper printing orientation">?</span></label>
+            <select name="orientation" class="op-form-input">
+              {% for val, label in orientation_choices %}
+                <option value="{{ val }}" {% if val == 'Portrait' %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Top Margin (mm) <span class="op-view-hint" title="Top page margin in millimeters">?</span></label>
+            <input type="number" step="0.01" name="margin_top" value="52.00" class="op-form-input">
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Bottom Margin (mm) <span class="op-view-hint" title="Bottom page margin in millimeters">?</span></label>
+            <input type="number" step="0.01" name="margin_bottom" value="32.00" class="op-form-input">
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Left Margin (mm) <span class="op-view-hint" title="Left page margin in millimeters">?</span></label>
+            <input type="number" step="0.01" name="margin_left" value="0.00" class="op-form-input">
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Right Margin (mm) <span class="op-view-hint" title="Right page margin in millimeters">?</span></label>
+            <input type="number" step="0.01" name="margin_right" value="0.00" class="op-form-input">
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="op-form-col">
+          
+          <div class="op-form-group" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="header_line" id="id_header_line" class="op-form-checkbox">
+            <label for="id_header_line" class="op-field-label" style="margin-bottom: 0;">Display a header line <span class="op-view-hint" title="Display a line separating header from body">?</span></label>
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Header spacing <span class="op-view-hint" title="Spacing in mm between header and body">?</span></label>
+            <input type="number" name="header_spacing" value="52" class="op-form-input">
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="disable_shrinking" id="id_disable_shrinking" class="op-form-checkbox">
+            <label for="id_disable_shrinking" class="op-field-label" style="margin-bottom: 0;">Disable smart shrinking <span class="op-view-hint" title="Disable automatic shrinking of wide content">?</span></label>
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Output DPI <span class="op-view-hint" title="Rendering DPI resolution">?</span></label>
+            <input type="number" name="dpi" value="90" class="op-form-input">
+          </div>
+
+        </div>
+
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  function handleSizeChange(val) {
+    const customRow = document.getElementById('custom_dimensions_row');
+    if (val === 'custom') {
+      customRow.style.display = 'grid';
+    } else {
+      customRow.style.display = 'none';
+    }
+  }
+</script>
+{% endblock %}

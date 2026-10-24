@@ -1,0 +1,692 @@
+/* Office Pro - Apps Store & Module Details Styling (Odoo 16/17 parity) */
+
+:root {
+  --apps-primary: #714b67;
+  --apps-primary-hover: #5a3c53;
+  --apps-bg-gray: #f8fafc;
+  --apps-border: #e2e8f0;
+  --apps-text-dark: #1e293b;
+  --apps-text-muted: #64748b;
+  --apps-pink: #a21caf;
+}
+
+/* Base Top Navigation */
+.apps-navbar-subbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.apps-navbar-sublink {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.apps-navbar-sublink:hover,
+.apps-navbar-sublink.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Apps Store Layout */
+.apps-store-layout {
+  display: flex;
+  min-height: calc(100vh - 46px);
+  background-color: #f1f5f9;
+}
+
+/* Left Sidebar Categories */
+.apps-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: #ffffff;
+  border-right: 1px solid var(--apps-border);
+  padding: 18px 0;
+}
+
+.apps-sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--apps-text-muted);
+  padding: 0 20px 10px 20px;
+}
+
+.apps-category-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.apps-category-item a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 20px;
+  font-size: 13.5px;
+  color: var(--apps-text-dark);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+  border-left: 3px solid transparent;
+}
+
+.apps-category-item a:hover {
+  background: #f8fafc;
+  color: var(--apps-primary);
+}
+
+.apps-category-item.active a {
+  background: #fdf2f8;
+  color: var(--apps-primary);
+  font-weight: 600;
+  border-left-color: var(--apps-primary);
+}
+
+.apps-category-badge {
+  font-size: 11.5px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: #e2e8f0;
+  color: #475569;
+  font-weight: 600;
+}
+
+.apps-category-item.active .apps-category-badge {
+  background: var(--apps-primary);
+  color: #ffffff;
+}
+
+/* Right Content Area */
+.apps-content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Apps Control Bar (Search & Filter) */
+.apps-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid var(--apps-border);
+  padding: 10px 24px;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.apps-search-box {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 10px;
+  flex: 1;
+  max-width: 520px;
+}
+
+.apps-search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.apps-search-chip-close {
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.apps-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  color: var(--apps-text-dark);
+  flex: 1;
+  padding: 5px 0;
+}
+
+/* Apps Grid */
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  padding: 24px;
+}
+
+/* App Card (matching Screenshot 5) */
+.app-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  position: relative;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.app-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.app-card-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.app-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.app-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.app-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--apps-text-dark);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.app-card-techname {
+  font-size: 13.5px;
+  color: var(--apps-pink);
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.app-card-kebab {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.app-card-kebab:hover {
+  color: var(--apps-text-dark);
+}
+
+.app-card-actions {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-learn-more {
+  display: inline-block;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-learn-more:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+.btn-install {
+  display: inline-block;
+  background: var(--apps-primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 4px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-install:hover {
+  background: var(--apps-primary-hover);
+}
+
+.app-card-status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* ==========================================================================
+   Module Detail View (matching Screenshots 1, 2, 3, 4)
+   ========================================================================== */
+
+.module-detail-container {
+  background: #f1f5f9;
+  min-height: calc(100vh - 46px);
+  padding: 16px 24px 48px;
+}
+
+/* Sub-header / Breadcrumbs Control Panel */
+.module-control-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid var(--apps-border);
+  border-radius: 6px 6px 0 0;
+  padding: 10px 20px;
+  margin-bottom: -1px;
+}
+
+.module-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--apps-text-dark);
+}
+
+.module-breadcrumbs a {
+  color: var(--apps-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.module-breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.module-breadcrumbs-sep {
+  color: #94a3b8;
+}
+
+.module-breadcrumbs-current {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.module-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-upgrade {
+  background: var(--apps-primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--apps-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-upgrade:hover {
+  background: var(--apps-primary-hover);
+  border-color: var(--apps-primary-hover);
+}
+
+.btn-uninstall {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-uninstall:hover {
+  background: #cbd5e1;
+  color: #1e293b;
+}
+
+.module-pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.module-pager-btn {
+  background: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 7px;
+  cursor: pointer;
+  color: #475569;
+  text-decoration: none;
+}
+
+.module-pager-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Odoo Form Sheet */
+.module-sheet {
+  background: #ffffff;
+  border: 1px solid var(--apps-border);
+  border-radius: 0 0 6px 6px;
+  padding: 32px 40px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Module Sheet Top Info (Header & Logo) */
+.module-sheet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.module-sheet-header-left {
+  flex: 1;
+}
+
+.module-title {
+  font-size: 26px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+}
+
+.module-summary {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0 0 14px 0;
+}
+
+.module-meta-author {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.module-meta-author a {
+  color: var(--apps-primary);
+  text-decoration: none;
+}
+
+.module-meta-author a:hover {
+  text-decoration: underline;
+}
+
+.module-sheet-logo {
+  width: 90px;
+  height: 90px;
+  min-width: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+/* Tabs Navigation */
+.module-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.module-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.module-tab-btn:hover {
+  color: #1e293b;
+}
+
+.module-tab-btn.active {
+  color: var(--apps-primary);
+  border-bottom-color: var(--apps-primary);
+  font-weight: 600;
+}
+
+/* Information Tab Metadata Fields */
+.module-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 360px));
+  gap: 12px 24px;
+  margin-bottom: 30px;
+}
+
+.module-meta-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13.5px;
+}
+
+.module-meta-label {
+  width: 140px;
+  color: #475569;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.module-help-icon {
+  color: #94a3b8;
+  font-size: 11px;
+  cursor: help;
+}
+
+.module-meta-val {
+  color: #1e293b;
+  font-weight: 400;
+}
+
+/* Technical Data Tab */
+.tech-flags-row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 30px;
+  max-width: 320px;
+}
+
+.tech-flag-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  color: #475569;
+}
+
+.tech-flag-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: default;
+}
+
+.tech-deps-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 20px;
+}
+
+.tech-deps-col h3 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #334155;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+}
+
+.tech-deps-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tech-deps-table th {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 8px 10px;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.tech-deps-table td {
+  font-size: 13.5px;
+  color: #334155;
+  padding: 10px 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Rich Description HTML (matching Screenshots 2, 3) */
+.module-desc-wrapper {
+  position: relative;
+  margin-top: 10px;
+}
+
+.module-desc-html {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #334155;
+}
+
+.module-desc-html h1,
+.module-desc-html h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 28px 0 10px 0;
+}
+
+.module-desc-html h1:first-child {
+  margin-top: 0;
+}
+
+.module-desc-html h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #475569;
+  margin: 16px 0 6px 0;
+}
+
+.module-desc-html p {
+  margin: 0 0 12px 0;
+}
+
+.module-desc-html a {
+  color: var(--apps-primary);
+  text-decoration: underline;
+}
+
+/* Debug Tooltip (matching Screenshot 3) */
+.odoo-debug-tooltip {
+  display: none;
+  position: absolute;
+  top: -50px;
+  left: 20px;
+  background: #1e1e2f;
+  color: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  padding: 8px 14px;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  pointer-events: none;
+  white-space: pre-line;
+}
+
+.module-desc-wrapper:hover .odoo-debug-tooltip,
+.module-desc-wrapper.debug-active .odoo-debug-tooltip {
+  display: block;
+}
+
+/* Installed Features Tab */
+.features-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.features-table th {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 8px 12px;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.features-table td {
+  font-size: 13.5px;
+  color: #334155;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.feature-type-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+}

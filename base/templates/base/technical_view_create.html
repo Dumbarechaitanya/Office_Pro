@@ -1,0 +1,334 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-view-create-form" method="post" action="{{ form_action }}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_views' %}">Views</a> / New
+        </span>
+      </div>
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_views' %}" class="op-view-btn-discard">Discard</a>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <!-- 2-Column Grid -->
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_name">
+              View Name
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: View Name</li>
+                      <li>Field: name</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: char</li>
+                      <li>Required: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_name" name="name" class="op-view-input" placeholder="e.g. res.partner.form" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_view_type">
+              View Type
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: View Type</li>
+                      <li>Field: view_type</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: selection</li>
+                      <li>Required: True</li>
+                      <li>Selection:
+                        <ul class="sub-list">
+                          <li>[list] - List / Tree</li>
+                          <li>[form] - Form</li>
+                          <li>[search] - Search</li>
+                          <li>[kanban] - Kanban</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_view_type" name="view_type" class="op-view-select">
+                {% for val, label in view_types %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_key">
+              Key
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Key</li>
+                      <li>Field: key</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_key" name="key" class="op-view-input">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_visibility">
+              Visibility
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Visibility</li>
+                      <li>Field: visibility</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_visibility" name="visibility" class="op-view-input">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_model">
+              Model of the view
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Model of the view</li>
+                      <li>Field: model_id</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: ir.model</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_model" name="model" class="op-view-select">
+                <option value="">-- None --</option>
+                {% for m in models_list %}
+                  <option value="{{ m.id }}">{{ m.model_name }} ({{ m.description|default:m.table_name }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_priority">
+              Sequence
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Sequence</li>
+                      <li>Field: priority</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: integer</li>
+                      <li>Required: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="number" id="id_priority" name="priority" class="op-view-input" value="16">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label">
+              Active
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Active</li>
+                      <li>Field: is_active</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: boolean</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <label class="op-switch">
+                <input type="checkbox" name="is_active" checked>
+                <span class="op-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_inherit_id">
+              Inherited View
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Inherited View</li>
+                      <li>Field: inherit_id</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: ir.ui.view</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_inherit_id" name="inherit_id" class="op-view-select">
+                <option value="">-- None --</option>
+                {% for v in inherit_choices %}
+                  <option value="{{ v.id }}">{{ v.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_mode">
+              View inheritance mode
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip has-help">
+                  <div class="op-debug-tooltip-help">
+                    Only applies if this view inherits from an other one (inherit_id is not False/Null).<br><br>
+                    * if extension (default), if this view is requested the closest primary view is looked up (via inherit_id), then all views inheriting from it with this view's model are applied<br>
+                    * if primary, the closest primary view is fully resolved (even if it uses a different model than this one), then this view's inheritance specs (&lt;xpath/&gt;) are applied, and the result is used as if it were this view's actual arch.
+                  </div>
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: View inheritance mode</li>
+                      <li>Field: mode</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: selection</li>
+                      <li>Context: {}</li>
+                      <li>Required: True</li>
+                      <li>Selection:
+                        <ul class="sub-list">
+                          <li>[primary] - Base view / Primary</li>
+                          <li>[extension] - Extension View</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_mode" name="mode" class="op-view-select">
+                {% for val, label in view_modes %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_model_data">
+              Model Data
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Model Data</li>
+                      <li>Field: model_data</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_model_data" name="model_data" class="op-view-input">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_external_id">
+              External ID
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: External ID</li>
+                      <li>Field: external_id</li>
+                      <li>Model: ir.ui.view</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_external_id" name="external_id" class="op-view-input">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-view-tabs">
+        <button type="button" class="op-view-tab-btn active" data-tab="tab-architecture">Architecture</button>
+      </div>
+
+      <!-- Tab 1: Architecture -->
+      <div id="tab-architecture" class="op-view-tab-pane active">
+        <div class="op-arch-editor-box">
+          <div class="op-arch-toolbar">
+            <span>XML Architecture</span>
+            <span>XML</span>
+          </div>
+          <textarea name="arch" class="op-arch-textarea" spellcheck="false" placeholder="<tree string=&quot;...&quot;>&#10;    <field name=&quot;...&quot;/>&#10;</tree>"></textarea>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
+{% endblock %}

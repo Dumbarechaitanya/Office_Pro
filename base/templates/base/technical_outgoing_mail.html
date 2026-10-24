@@ -1,0 +1,200 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+<style>
+  .op-check-cell {
+    width: 38px;
+    text-align: center;
+  }
+  .op-badge-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: var(--op-primary-color, #714b67);
+    color: #ffffff;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+  .op-badge-uncheck {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+  }
+  .op-test-btn-sm {
+    padding: 3px 9px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 5px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .op-test-btn-sm:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="list-toolbar">
+  <div class="list-toolbar-left">
+    <a href="{% url 'technical_outgoing_mail_create' %}" class="btn-new">New</a>
+    <span class="toolbar-title">Outgoing Mail Servers</span>
+    <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+  </div>
+
+  <div class="list-toolbar-center">
+    {% include 'base/_search_panel.html' %}
+  </div>
+
+  <div class="list-toolbar-right">
+    <div class="toolbar-pagination">
+      {% if total_count %}{{ page_start }}-{{ page_end }} / {{ total_count }} records{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="op-list-view">
+  <table>
+    <thead>
+      <tr>
+        <th class="op-check-cell"><input type="checkbox" id="select-all-servers"></th>
+        <th style="width: 70px;">Sequence</th>
+        <th>Description</th>
+        <th>SMTP Host</th>
+        <th style="width: 80px;">Port</th>
+        <th>Connection Security</th>
+        <th>Username / Email</th>
+        <th style="text-align: center; width: 130px;">Test Diagnostics</th>
+        <th style="text-align: center; width: 70px;">Active</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in servers %}
+        <tr data-href="{% url 'technical_outgoing_mail_detail' s.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
+          <td class="op-check-cell" onclick="event.stopPropagation();">
+            <input type="checkbox" class="op-row-check">
+          </td>
+          <td style="color: #64748b;">{{ s.sequence }}</td>
+          <td>
+            <a href="{% url 'technical_outgoing_mail_detail' s.id %}" style="text-decoration: none; color: inherit; font-weight: 600; display: block;">{{ s.name }}</a>
+          </td>
+          <td style="color: #334155; font-family: monospace;">{{ s.smtp_host }}</td>
+          <td style="color: #334155; font-family: monospace;">{{ s.smtp_port }}</td>
+          <td>
+            <span style="font-size: 12px; font-weight: 500; color: #475569;">{{ s.get_smtp_encryption_display }}</span>
+          </td>
+          <td style="color: #64748b;">{{ s.smtp_user|default:'—' }}</td>
+          <td style="text-align: center;" onclick="event.stopPropagation();">
+            <button type="button" class="op-test-btn-sm" data-server-id="{{ s.id }}" onclick="runConnectionTest(this.dataset.serverId, this)">&#9889; Test</button>
+          </td>
+          <td style="text-align: center;">
+            {% if s.is_active %}
+              <span class="op-badge-check">&#10003;</span>
+            {% else %}
+              <span class="op-badge-uncheck"></span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="9" style="text-align: center; color: #94a3b8; padding: 32px;">
+            No outgoing mail servers configured. Click <strong>New</strong> to add an SMTP host.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Test Connection Result Modal -->
+<div id="opTestModal" class="op-modal-backdrop" style="display: none;">
+  <div class="op-modal-card" style="max-width: 460px;">
+    <div class="op-modal-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span id="opTestModalIcon" style="font-size: 20px;">&#9889;</span>
+        <h3 id="opTestModalTitle" style="margin: 0; font-size: 16px; font-weight: 700; color: #1e293b;">SMTP Diagnostic Test</h3>
+      </div>
+      <button type="button" class="op-modal-close" onclick="document.getElementById('opTestModal').style.display='none'">&times;</button>
+    </div>
+    <div style="padding: 20px;">
+      <div id="opTestModalMessage" style="font-size: 13.5px; line-height: 1.5; color: #334155; margin-bottom: 12px;"></div>
+      <div id="opTestModalBanner" style="font-size: 11.5px; font-family: monospace; background: #f1f5f9; padding: 10px; border-radius: 6px; color: #475569; white-space: pre-wrap; display: none;"></div>
+    </div>
+    <div class="op-modal-footer">
+      <button type="button" class="op-btn-secondary" onclick="document.getElementById('opTestModal').style.display='none'">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function runConnectionTest(serverId, btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Testing...';
+    btn.disabled = true;
+
+    fetch(`/settings/technical/outgoing-mail/${serverId}/test-connection/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      showDiagnosticModal(data);
+    })
+    .catch(err => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      showDiagnosticModal({
+        success: false,
+        message: 'Network error communicating with server diagnostic endpoint.'
+      });
+    });
+  }
+
+  function showDiagnosticModal(res) {
+    const modal = document.getElementById('opTestModal');
+    const icon = document.getElementById('opTestModalIcon');
+    const msg = document.getElementById('opTestModalMessage');
+    const banner = document.getElementById('opTestModalBanner');
+
+    if (res.success) {
+      icon.innerHTML = '&#9989;';
+      msg.innerHTML = `<span style="color: #059669; font-weight: 700;">${res.message}</span>`;
+    } else {
+      icon.innerHTML = '&#10060;';
+      msg.innerHTML = `<span style="color: #dc2626; font-weight: 700;">${res.message}</span>`;
+    }
+
+    let extraText = '';
+    if (res.details) {
+      extraText += res.details;
+    }
+    if (res.banner && res.banner.trim() !== '') {
+      extraText += (extraText ? '\n\n' : '') + 'Server Banner:\n' + res.banner;
+    }
+
+    if (extraText) {
+      banner.textContent = extraText;
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+
+    modal.style.display = 'flex';
+  }
+</script>
+{% endblock %}

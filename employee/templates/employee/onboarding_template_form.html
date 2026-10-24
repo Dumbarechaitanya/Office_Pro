@@ -1,0 +1,142 @@
+{% extends "employee/employee_base.html" %}
+
+{% block content %}
+<form method="post" action="{% if tmpl %}{% url 'employee_onboarding_template_detail' tmpl.id %}{% else %}{% url 'employee_onboarding_template_create' %}{% endif %}">
+  {% csrf_token %}
+
+  <div class="emp-control-bar">
+    <div class="emp-actions-left">
+      <div style="font-size: 14px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px;">
+        <a href="{% url 'employee_onboarding_templates' %}" style="color: #64748b; text-decoration: none;">Templates</a>
+        <span>/</span>
+        <span style="color: #0f172a;">{% if tmpl %}{{ tmpl.name }}{% else %}New Template{% endif %}</span>
+      </div>
+
+      <button type="submit" class="emp-btn-primary" style="margin-left: 12px;">
+        <span>&#10004;</span> Save
+      </button>
+      <a href="{% url 'employee_onboarding_templates' %}" class="emp-btn-secondary">Discard</a>
+    </div>
+  </div>
+
+  <div class="emp-form-container">
+    <div class="emp-sheet">
+      <div class="emp-grid-2col" style="margin-bottom: 24px;">
+        <div>
+          <div class="emp-field-group">
+            <label class="emp-label">Template Name *</label>
+            <input type="text" name="name" value="{{ tmpl.name|default:'' }}" required placeholder="e.g. Standard Architectural Onboarding" class="emp-input" style="font-size: 16px; font-weight: 700;">
+          </div>
+
+          <div class="emp-field-group">
+            <label class="emp-label">Department</label>
+            <select name="department_id" class="emp-select">
+              <option value="">-- General / Any Department --</option>
+              {% for d in departments %}
+              <option value="{{ d.id }}" {% if tmpl.department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="emp-field-group">
+            <label class="emp-label">Default Job Position</label>
+            <input type="text" name="job_title" value="{{ tmpl.job_title|default:'' }}" placeholder="e.g. Project Associate" class="emp-input">
+          </div>
+        </div>
+
+        <div>
+          <div class="emp-field-group">
+            <label class="emp-label">Default Employment Type</label>
+            <select name="employment_type" class="emp-select">
+              <option value="Full-Time" {% if tmpl.employment_type == 'Full-Time' %}selected{% endif %}>Full-Time</option>
+              <option value="Part-Time" {% if tmpl.employment_type == 'Part-Time' %}selected{% endif %}>Part-Time</option>
+              <option value="Contract" {% if tmpl.employment_type == 'Contract' %}selected{% endif %}>Contract</option>
+              <option value="Intern" {% if tmpl.employment_type == 'Intern' %}selected{% endif %}>Intern</option>
+            </select>
+          </div>
+
+          <div class="emp-field-group">
+            <label class="emp-label">Default Branch</label>
+            <input type="text" name="branch" value="{{ tmpl.branch|default:'Mumbai' }}" class="emp-input">
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 15px; font-weight: 700; color: #1e293b; margin: 24px 0 16px 0; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+        Pre-Configured Approver Matrices
+      </h3>
+
+      <div class="emp-grid-2col">
+        <div class="emp-approver-box">
+          <div class="emp-approver-title">
+            <span>&#9200;</span> Default Timesheet Approver
+          </div>
+          <div class="emp-field-group">
+            <select name="timesheet_approver_id" class="emp-select">
+              <option value="">-- Auto-Assign to Direct Manager --</option>
+              {% for m in employees %}
+              <option value="{{ m.id }}" {% if tmpl.timesheet_approver_id == m.id %}selected{% endif %}>{{ m.name }} ({{ m.employee_code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="emp-approver-box">
+          <div class="emp-approver-title">
+            <span>&#127807;</span> Default Leave Approvers (2-Tier)
+          </div>
+          <div class="emp-field-group">
+            <label class="emp-label">Level 1 (Reporting Manager)</label>
+            <select name="leave_approver_l1_id" class="emp-select">
+              <option value="">-- Direct Manager --</option>
+              {% for m in employees %}
+              <option value="{{ m.id }}" {% if tmpl.leave_approver_l1_id == m.id %}selected{% endif %}>{{ m.name }} ({{ m.employee_code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="emp-field-group">
+            <label class="emp-label">Level 2 (Executive Approver)</label>
+            <select name="leave_approver_l2_id" class="emp-select">
+              <option value="">-- Executive Approver --</option>
+              {% for m in employees %}
+              <option value="{{ m.id }}" {% if tmpl.leave_approver_l2_id == m.id %}selected{% endif %}>{{ m.name }} ({{ m.employee_code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="emp-approver-box" style="grid-column: 1 / -1;">
+          <div class="emp-approver-title">
+            <span>&#128178;</span> Default Expense Approvers (2-Tier)
+          </div>
+          <div class="emp-grid-2col">
+            <div class="emp-field-group">
+              <label class="emp-label">Level 1: Direct Manager</label>
+              <select name="expense_approver_l1_id" class="emp-select">
+                <option value="">-- Direct Manager --</option>
+                {% for m in employees %}
+                <option value="{{ m.id }}" {% if tmpl.expense_approver_l1_id == m.id %}selected{% endif %}>{{ m.name }} ({{ m.employee_code }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Level 2: Finance Head</label>
+              <select name="expense_approver_l2_id" class="emp-select">
+                <option value="">-- Finance Head --</option>
+                {% for m in employees %}
+                <option value="{{ m.id }}" {% if tmpl.expense_approver_l2_id == m.id %}selected{% endif %}>{{ m.name }} ({{ m.employee_code }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="emp-field-group" style="margin-top: 16px;">
+        <label class="emp-label">Onboarding Checklist Notes</label>
+        <textarea name="checklist_notes" rows="4" class="emp-textarea" placeholder="List items such as: Issue ID badge, Assign laptop, Configure ERP access, Verify statutory documents...">{{ tmpl.checklist_notes|default:'' }}</textarea>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

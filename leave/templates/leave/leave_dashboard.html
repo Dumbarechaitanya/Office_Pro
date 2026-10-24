@@ -1,0 +1,261 @@
+{% extends "leave/leave_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #fafbfc; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+  <div style="display: flex; align-items: center; gap: 16px;">
+    <button type="button" onclick="openQuickLeaveModal()" class="btn-new" style="background: var(--op-primary-color, #2563eb); color: #fff; text-decoration: none; padding: 6px 16px; border-radius: 4px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+      <span>+ New</span>
+    </button>
+    
+    <h1 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px;">
+      <span>Time Off</span>
+      <span style="font-size: 13px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 12px;">Overview</span>
+    </h1>
+
+    <!-- Month Navigation Pager -->
+    <div style="display: flex; align-items: center; gap: 8px; margin-left: 12px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px 8px;">
+      <a href="?year={{ prev_year }}&month={{ prev_month }}" style="text-decoration: none; color: #475569; font-weight: 700; padding: 4px 8px; border-radius: 4px;" title="Previous Month">&lt;</a>
+      <span style="font-size: 13.5px; font-weight: 700; color: #1e293b; min-width: 120px; text-align: center;">
+        {{ month_name }} {{ year }}
+      </span>
+      <a href="?year={{ next_year }}&month={{ next_month }}" style="text-decoration: none; color: #475569; font-weight: 700; padding: 4px 8px; border-radius: 4px;" title="Next Month">&gt;</a>
+      <a href="?year=2026&month=10" style="font-size: 11px; font-weight: 700; color: #1d4ed8; text-decoration: none; padding: 2px 6px; background: #eff6ff; border-radius: 4px; margin-left: 4px;">Today</a>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <!-- View Switchers -->
+    <div style="display: flex; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; background: #fff;">
+      <a href="{% url 'leave_dashboard' %}" style="padding: 6px 12px; font-size: 12px; font-weight: 700; text-decoration: none; background: #eff6ff; color: #1d4ed8;" title="Calendar View">&#128197; Month</a>
+      {% if is_officer_or_manager %}
+      <a href="{% url 'leave_management_requests' %}" style="padding: 6px 12px; font-size: 12px; font-weight: 600; text-decoration: none; background: #fff; color: #64748b; border-left: 1px solid #e2e8f0;" title="Kanban / List View">&#9776; Requests</a>
+      {% else %}
+      <a href="{% url 'my_time_off' %}" style="padding: 6px 12px; font-size: 12px; font-weight: 600; text-decoration: none; background: #fff; color: #64748b; border-left: 1px solid #e2e8f0;" title="My Requests">&#9776; My Requests</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; padding: 20px 24px; background: #f8fafc; min-height: calc(100vh - 120px);">
+  
+  <!-- Left Side: Interactive Month Calendar Grid -->
+  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+    
+    <!-- Week Header -->
+    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; margin-bottom: 4px;">
+      <div class="leave-cal-header-cell">Sun</div>
+      <div class="leave-cal-header-cell">Mon</div>
+      <div class="leave-cal-header-cell">Tue</div>
+      <div class="leave-cal-header-cell">Wed</div>
+      <div class="leave-cal-header-cell">Thu</div>
+      <div class="leave-cal-header-cell">Fri</div>
+      <div class="leave-cal-header-cell">Sat</div>
+    </div>
+
+    <!-- Month Day Matrix -->
+    <div class="leave-cal-grid">
+      {% for week in calendar_weeks %}
+        {% for day in week %}
+          <div class="leave-cal-cell {% if day.is_today %}is-today{% endif %} {% if day.is_holiday %}is-holiday{% endif %}" 
+               style="{% if not day.in_month %}opacity: 0.45; background: #fbfcfe;{% endif %}">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span class="leave-cal-date-badge">{{ day.day_num }}</span>
+              {% if day.is_today %}
+                <span style="font-size: 10px; font-weight: 800; color: #dc2626; text-transform: uppercase;">Today</span>
+              {% endif %}
+            </div>
+
+            <!-- Public Holidays -->
+            {% for h in day.holidays %}
+              <div style="font-size: 10.5px; font-weight: 700; color: #6b21a8; background: #f3e8ff; border-left: 3px solid {{ h.color }}; padding: 2px 6px; border-radius: 3px; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ h.name }}">
+                &#9733; {{ h.name }}
+              </div>
+            {% endfor %}
+
+            <!-- Leave Requests Plotted -->
+            {% for req in day.leaves %}
+              <div class="leave-event-pill" 
+                   style="background: {{ req.leave_type.color }}18; color: {{ req.leave_type.color }}; border-left: 3px solid {{ req.leave_type.color }};" 
+                   title="{{ req.employee.name }} ({{ req.leave_type.name }}) - {{ req.status_label }}">
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: {{ req.leave_type.color }}; color: #fff; font-size: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">
+                  {{ req.employee.name|slice:":1"|upper }}
+                </div>
+                <span style="font-weight: 700; color: #0f172a; font-size: 11px;">{{ req.employee.name }}</span>
+                <span style="font-size: 9.5px; opacity: 0.85;">({{ req.duration_days }}d)</span>
+              </div>
+            {% endfor %}
+
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <!-- Right Side: Balances & Upcoming Public Holidays -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- Time Off Quotas / Available Balances Card -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px;">
+          Time Off Quotas
+        </h3>
+        <span style="font-size: 11px; font-weight: 700; color: #1d4ed8; background: #eff6ff; padding: 2px 8px; border-radius: 12px;">
+          {{ current_emp.name }}
+        </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        {% for b in balances %}
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: {{ b.type.color }};"></span>
+                <strong style="font-size: 13px; color: #1e293b;">{{ b.type.name }}</strong>
+              </div>
+              <span style="font-size: 13.5px; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums;">
+                {{ b.available }} Days
+              </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #64748b;">
+              <span>Allocated: <strong>{{ b.allocated }}</strong></span>
+              <span>Taken: <strong style="color: #dc2626;">{{ b.taken }}</strong></span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top: 18px;">
+        <button type="button" onclick="openQuickLeaveModal()" style="width: 100%; padding: 10px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s ease;">
+          + Request Time Off
+        </button>
+      </div>
+    </div>
+
+    <!-- Upcoming Public Holidays Card -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px;">
+          Public Holidays
+        </h3>
+        <a href="{% url 'leave_config_mandatory_days' %}" style="font-size: 11.5px; color: #0284c7; text-decoration: none; font-weight: 600;">View All</a>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for h in upcoming_holidays %}
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: #faf5ff; border: 1px solid #f3e8ff; border-radius: 6px;">
+            <div style="background: {{ h.color }}; color: #fff; width: 36px; height: 36px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800;">
+              <span style="font-size: 9px; text-transform: uppercase; line-height: 1;">{{ h.start_date|date:"M" }}</span>
+              <span style="font-size: 13px; line-height: 1.1;">{{ h.start_date|date:"d" }}</span>
+            </div>
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: #1e293b;">{{ h.name }}</div>
+              <div style="font-size: 11.5px; color: #64748b;">{{ h.start_date|date:"l" }}</div>
+            </div>
+          </div>
+        {% empty %}
+          <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 12px 0;">No upcoming holidays scheduled.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Quick Request Time Off Modal Dialog -->
+<div id="quickLeaveModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+  <div style="background: #ffffff; border-radius: 10px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #cbd5e1; overflow: hidden;">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+      <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+        <span style="color: #2563eb;">&#128197;</span>
+        <span>Request Time Off</span>
+      </h3>
+      <button type="button" onclick="closeQuickLeaveModal()" style="background: none; border: none; font-size: 22px; color: #94a3b8; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form method="POST" action="{% url 'leave_request_create' %}">
+      {% csrf_token %}
+      <div style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">Employee</label>
+          {% if is_officer %}
+          <select name="employee_id" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+            {% for emp in all_employees %}
+              <option value="{{ emp.id }}" {% if emp.id == current_emp.id %}selected{% endif %}>{{ emp.name }} ({{ emp.employee_code }})</option>
+            {% endfor %}
+          </select>
+          {% else %}
+          <input type="hidden" name="employee_id" value="{{ current_emp.id }}">
+          <div style="padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; color: #1e293b;">
+            {{ current_emp.name }} ({{ current_emp.employee_code }})
+          </div>
+          {% endif %}
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">Time Off Type</label>
+          <select name="leave_type_id" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+            {% for lt in leave_types %}
+              <option value="{{ lt.id }}">{{ lt.name }} ({{ lt.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">Start Date</label>
+            <input type="date" name="start_date" id="quickStartDate" value="2026-10-26" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required onchange="calculateQuickDays()">
+          </div>
+          <div>
+            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">End Date</label>
+            <input type="date" name="end_date" id="quickEndDate" value="2026-10-27" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required onchange="calculateQuickDays()">
+          </div>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">Duration (Days)</label>
+          <input type="number" step="0.5" name="duration_days" id="quickDurationDays" value="2.0" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">Reason / Note</label>
+          <textarea name="reason" rows="2" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" placeholder="Optional reason or notes..."></textarea>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc;">
+        <button type="button" onclick="closeQuickLeaveModal()" style="padding: 7px 16px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button type="submit" style="padding: 7px 20px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(37,99,235,0.1);">
+          Submit Request
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openQuickLeaveModal() {
+  document.getElementById('quickLeaveModal').style.display = 'flex';
+}
+function closeQuickLeaveModal() {
+  document.getElementById('quickLeaveModal').style.display = 'none';
+}
+function calculateQuickDays() {
+  const startStr = document.getElementById('quickStartDate').value;
+  const endStr = document.getElementById('quickEndDate').value;
+  if (startStr && endStr) {
+    const s = new Date(startStr);
+    const e = new Date(endStr);
+    if (e >= s) {
+      const diffTime = Math.abs(e - s);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      document.getElementById('quickDurationDays').value = diffDays.toFixed(1);
+    }
+  }
+}
+</script>
+{% endblock %}

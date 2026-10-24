@@ -1,0 +1,298 @@
+{% extends 'base/apps_base.html' %}
+{% load static %}
+
+{% block title %}{{ module.name }} - Office Pro Apps{% endblock %}
+
+{% block apps_content %}
+<div class="module-detail-container">
+
+  <!-- Sub-header / Breadcrumbs Control Panel -->
+  <div class="module-control-panel">
+    <div class="module-breadcrumbs">
+      <a href="{% url 'apps_store' %}">Apps</a>
+      <span class="module-breadcrumbs-sep">/</span>
+      <span class="module-breadcrumbs-current">
+        {{ module.name }}
+        <span style="font-size: 14px; color: #94a3b8; cursor: pointer;" title="Module actions">&#9881;</span>
+      </span>
+    </div>
+
+    <div class="module-pager">
+      <span>{{ current_index }} / {{ total_count }}</span>
+      <a href="{% url 'module_detail' prev_key %}" class="module-pager-btn" title="Previous module">&lt;</a>
+      <a href="{% url 'module_detail' next_key %}" class="module-pager-btn" title="Next module">&gt;</a>
+    </div>
+  </div>
+
+  <!-- Main Sheet -->
+  <div class="module-sheet">
+
+    <!-- Header Section -->
+    <div class="module-sheet-header">
+      <div class="module-sheet-header-left">
+        <h1 class="module-title">{{ module.name }}</h1>
+        <div class="module-summary">{{ module.summary }}</div>
+        
+        <div class="module-meta-author">
+          By <a href="{{ module.website }}" target="_blank">{{ module.author }}</a><br>
+          <a href="{{ module.website }}" target="_blank" style="font-size: 12px; color: #64748b; text-decoration: underline;">{{ module.website }}</a>
+        </div>
+
+        <div class="module-header-actions">
+          {% if module.status == 'Installed' %}
+            <form method="POST" style="display: inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="upgrade">
+              <button type="submit" class="btn-upgrade">Upgrade</button>
+            </form>
+
+            <form method="POST" style="display: inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="uninstall">
+              <button type="submit" class="btn-uninstall">Uninstall</button>
+            </form>
+          {% else %}
+            <form method="POST" style="display: inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="install">
+              <button type="submit" class="btn-upgrade">Install</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- App Logo / Emblem -->
+      <div class="module-sheet-logo">
+        {% if module.technical_name == 'hr' %}
+          <svg width="84" height="84" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="32" r="5.5" fill="#f59e0b"/>
+            <path d="M8 49C8 44 11.5 41 16 41H23V49H8Z" fill="#f59e0b"/>
+            <circle cx="32" cy="21" r="8.5" fill="#714b67"/>
+            <path d="M19 49C19 39.5 25 36 32 36C39 36 45 39.5 45 49H19Z" fill="#714b67"/>
+            <circle cx="48" cy="32" r="5.5" fill="#0d9488"/>
+            <path d="M41 41H48C52.5 41 56 44 56 49H41V41Z" fill="#0d9488"/>
+          </svg>
+        {% elif module.technical_name == 'mail' %}
+          <div style="width: 76px; height: 76px; background: #0284c7; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
+          </div>
+        {% else %}
+          <div style="width: 76px; height: 76px; background: #714b67; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="module-tabs">
+      <button type="button" class="module-tab-btn active" onclick="switchModuleTab('tab-information', this)">Information</button>
+      <button type="button" class="module-tab-btn" onclick="switchModuleTab('tab-technical', this)">Technical Data</button>
+      <button type="button" class="module-tab-btn" onclick="switchModuleTab('tab-features', this)">Installed Features</button>
+    </div>
+
+    <!-- TAB 1: Information -->
+    <div id="tab-information" class="module-tab-content">
+      
+      <!-- Metadata Row -->
+      <div class="module-meta-grid">
+        <div class="module-meta-row">
+          <span class="module-meta-label">Category <span class="module-help-icon" title="Application domain category">?</span></span>
+          <span class="module-meta-val">{{ module.category }}</span>
+        </div>
+        <div class="module-meta-row">
+          <span class="module-meta-label">Technical Name <span class="module-help-icon" title="System identifier in ir.module">?</span></span>
+          <span class="module-meta-val">{{ module.technical_name }}</span>
+        </div>
+        <div class="module-meta-row">
+          <span class="module-meta-label">License <span class="module-help-icon" title="Software distribution license">?</span></span>
+          <span class="module-meta-val">{{ module.license }}</span>
+        </div>
+        <div class="module-meta-row">
+          <span class="module-meta-label">Latest Version <span class="module-help-icon" title="Semantic release version">?</span></span>
+          <span class="module-meta-val">{{ module.latest_version }}</span>
+        </div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0 20px 0;">
+
+      <!-- Description HTML Container -->
+      <div class="module-desc-wrapper">
+        <!-- System Debug Monospace Tooltip -->
+        <div class="op-debug-tooltip">• Label: Description HTML
+• Field: description_html
+• Type: html
+• Context: {}
+• Invisible: not description_html
+• Readonly: True</div>
+
+        <div class="module-desc-html">
+          {% for section in module.description_sections %}
+            <h2>{{ section.title }}</h2>
+
+            {% for para in section.paragraphs %}
+              <p>{{ para|linebreaksbr }}</p>
+            {% endfor %}
+
+            {% if section.subsections %}
+              {% for sub in section.subsections %}
+                <h3>### {{ sub.subtitle }}</h3>
+                <p>{{ sub.text }}</p>
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 2: Technical Data -->
+    <div id="tab-technical" class="module-tab-content" style="display: none;">
+      
+      <!-- Flags -->
+      <div class="tech-flags-row">
+        <div class="tech-flag-item">
+          <span>Demo Data <span class="module-help-icon" title="Whether sample demo records were loaded">?</span></span>
+          <input type="checkbox" {% if module.demo_data %}checked{% endif %} disabled>
+        </div>
+        <div class="tech-flag-item">
+          <span>Application <span class="module-help-icon" title="Visible on the main Apps menu">?</span></span>
+          <input type="checkbox" {% if module.is_application %}checked{% endif %} disabled>
+        </div>
+        <div class="tech-flag-item">
+          <span>Status <span class="module-help-icon" title="Installation lifecycle state">?</span></span>
+          <strong style="color: #0f172a;">{{ module.status }}</strong>
+        </div>
+      </div>
+
+      <!-- Dependencies and Exclusions Grid -->
+      <div class="tech-deps-grid">
+        
+        <!-- Dependencies Column -->
+        <div class="tech-deps-col">
+          <h3>Dependencies</h3>
+          <table class="tech-deps-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for dep in module.dependencies %}
+              <tr>
+                <td>{{ dep.name }}</td>
+                <td><span style="color: #475569;">{{ dep.status }}</span></td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="2" style="color: #94a3b8; font-style: italic;">No dependencies</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Exclusions Column -->
+        <div class="tech-deps-col">
+          <h3>Exclusions</h3>
+          <table class="tech-deps-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for excl in module.exclusions %}
+              <tr>
+                <td>{{ excl.name }}</td>
+                <td>{{ excl.status }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="2" style="border-bottom: 1px solid #f1f5f9; height: 42px;"></td>
+              </tr>
+              <tr>
+                <td colspan="2" style="border-bottom: 1px solid #f1f5f9; height: 42px;"></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TAB 3: Installed Features -->
+    <div id="tab-features" class="module-tab-content" style="display: none; padding-top: 10px;">
+      
+      {% if module.created_menus %}
+      <div style="margin-bottom: 32px;">
+        <h3 style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #1e293b; margin: 0 0 16px 0;">Created Menus</h3>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: #334155;">
+          {% for menu in module.created_menus %}
+            <div>{{ menu }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if module.created_views %}
+      <div style="margin-bottom: 32px;">
+        <h3 style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #1e293b; margin: 0 0 16px 0;">Created Views</h3>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: #334155; font-family: inherit;">
+          {% for view in module.created_views %}
+            <div>{{ view }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if module.defined_reports %}
+      <div style="margin-bottom: 32px;">
+        <h3 style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #1e293b; margin: 0 0 16px 0;">Defined Reports</h3>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: #334155;">
+          {% for rep in module.defined_reports %}
+            <div>{{ rep }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if not module.created_menus and not module.created_views %}
+      <p style="color: #94a3b8; font-style: italic;">No features registered for this module.</p>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function switchModuleTab(tabId, btn) {
+  // Hide all tab contents
+  document.querySelectorAll('.module-tab-content').forEach(function(el) {
+    el.style.display = 'none';
+  });
+  // Deactivate all tab buttons
+  document.querySelectorAll('.module-tab-btn').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  // Show selected
+  var selectedTab = document.getElementById(tabId);
+  if (selectedTab) {
+    selectedTab.style.display = 'block';
+  }
+  btn.classList.add('active');
+}
+</script>
+{% endblock %}

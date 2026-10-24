@@ -1,0 +1,11 @@
+﻿{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/form_view.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/form_dirty.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include 'base/_form_view.html' with fields=form_fields form_action=form_action form_title=access_obj.model.model_name create_url=create_url %}
+{% endblock %}

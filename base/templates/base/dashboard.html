@@ -1,0 +1,469 @@
+{% extends "base/layout.html" %}
+{% load static %}
+
+{% block title %}Dashboard &middot; NexusWave Technologies{% endblock %}
+{% block navbar_title %}Dashboard{% endblock %}
+
+{% block app_icon %}
+<!-- Dashboard Gauge / Telemetry Icon (morphs to `<` on hover) -->
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="3" width="7" height="9" rx="1"></rect>
+  <rect x="14" y="3" width="7" height="5" rx="1"></rect>
+  <rect x="14" y="12" width="7" height="9" rx="1"></rect>
+  <rect x="3" y="16" width="7" height="5" rx="1"></rect>
+</svg>
+{% endblock %}
+
+{% block app_menus %}
+<a href="{% url 'dashboard_home' %}?mode=employee" class="menu-link {% if mode == 'employee' %}active{% endif %}">
+  My Workspace
+</a>
+{% if is_manager %}
+<a href="{% url 'dashboard_home' %}?mode=manager" class="menu-link {% if mode == 'manager' %}active{% endif %}">
+  Team Oversight
+</a>
+{% endif %}
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle">Quick Actions</button>
+  <div class="menu-dropdown">
+    <a href="{% url 'attendance_list' %}">View Today Punches</a>
+    {% if is_officer %}
+    <a href="{% url 'employee_list' %}">Employee Directory</a>
+    {% endif %}
+    <a href="{% url 'profile' %}">My Profile</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 24px; max-width: 1400px; margin: 0 auto; background: #f8fafc; min-height: calc(100vh - 50px);">
+
+  <!-- Top Header with Role Switcher (Strictly Guarded: Only visible to Managers) -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <div style="font-size: 12px; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 2px;">
+        NexusWave Technologies &middot; Pune HQ
+      </div>
+      <h1 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0;">
+        {% if mode == 'manager' and is_manager %}Manager &amp; Team Oversight{% else %}Workspace Dashboard{% endif %}
+      </h1>
+    </div>
+
+    {% if is_manager %}
+    <!-- Dual Role Toggle Pill (Strictly hidden for non-managers) -->
+    <div style="background: #e2e8f0; padding: 4px; border-radius: 30px; display: inline-flex; align-items: center; gap: 4px;">
+      <a href="{% url 'dashboard_home' %}?mode=employee" style="padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; text-decoration: none; transition: all 0.15s ease; {% if mode == 'employee' %}background: #ffffff; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.08);{% else %}color: #64748b;{% endif %}">
+        &#128100; My Workspace
+      </a>
+      <a href="{% url 'dashboard_home' %}?mode=manager" style="padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; text-decoration: none; transition: all 0.15s ease; {% if mode == 'manager' %}background: #ffffff; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.08);{% else %}color: #64748b;{% endif %}">
+        &#128101; Team Oversight
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if mode == 'employee' or not is_manager %}
+  <!-- =========================================================================
+       1. EMPLOYEE WORKSPACE
+       ========================================================================= -->
+
+  <!-- Top 6 Metric Pills requested by user:
+       1. Absent
+       2. Early Going
+       3. Late Mark
+       4. Half Day
+       5. My Projects
+       6. My Tasks
+  -->
+  <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 24px;">
+    
+    <!-- Pill 1: Absent -->
+    <div class="workspace-pill" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: transform 0.15s, box-shadow 0.15s;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #fff1f2; color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">
+        &#10006;
+      </div>
+      <div>
+        <div style="font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1;">{{ absent_count }}</div>
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px;">Absent</div>
+      </div>
+    </div>
+
+    <!-- Pill 2: Early Going -->
+    <div class="workspace-pill" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: transform 0.15s, box-shadow 0.15s;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #fffbeb; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">
+        &#9194;
+      </div>
+      <div>
+        <div style="font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1;">{{ early_going_count }}</div>
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px;">Early Going</div>
+      </div>
+    </div>
+
+    <!-- Pill 3: Late Mark -->
+    <div class="workspace-pill" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: transform 0.15s, box-shadow 0.15s;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">
+        &#9201;
+      </div>
+      <div>
+        <div style="font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1;">{{ late_mark_count }}</div>
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px;">Late Mark</div>
+      </div>
+    </div>
+
+    <!-- Pill 4: Half Day -->
+    <div class="workspace-pill" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: transform 0.15s, box-shadow 0.15s;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #f0f9ff; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">
+        &#9680;
+      </div>
+      <div>
+        <div style="font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1;">{{ half_day_count }}</div>
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px;">Half Day</div>
+      </div>
+    </div>
+
+    <!-- Pill 5: My Projects -->
+    <div class="workspace-pill" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: transform 0.15s, box-shadow 0.15s;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">
+        &#128193;
+      </div>
+      <div>
+        <div style="font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1;">{{ my_projects_count }}</div>
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px;">My Projects</div>
+      </div>
+    </div>
+
+    <!-- Pill 6: My Tasks -->
+    <div class="workspace-pill" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: transform 0.15s, box-shadow 0.15s;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">
+        &#128221;
+      </div>
+      <div>
+        <div style="font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1;">{{ my_tasks_count }}</div>
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px;">My Tasks</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Live Stacked Vertical Bar Graph Card (Full Width) -->
+  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); min-height: 480px; display: flex; flex-direction: column;">
+    
+    <!-- Graph Header & Telemetry Legend -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+      <div>
+        <h2 style="font-size: 17px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">
+          Daily Worked Hours &amp; Time Exceeding (October 2026)
+        </h2>
+        <div style="font-size: 13px; color: #64748b;">
+          Live vertically upward stacked graph &bull; Regular hours (base up to 8h) + Exceeded overtime (stacked upward)
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 18px; font-size: 12.5px;">
+        <!-- Legend Items -->
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="width: 12px; height: 12px; border-radius: 3px; background: #2563eb; display: inline-block;"></span>
+          <span style="color: #475569; font-weight: 600;">Regular (Up to 8h)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="width: 12px; height: 12px; border-radius: 3px; background: #10b981; display: inline-block;"></span>
+          <span style="color: #475569; font-weight: 600;">Time Exceeding (+OT)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="width: 16px; height: 0; border-top: 2px dashed #94a3b8; display: inline-block;"></span>
+          <span style="color: #64748b; font-weight: 500;">8h Shift Target</span>
+        </div>
+
+        <!-- Total October Summary Badge -->
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 6px 14px; text-align: right;">
+          <div style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase; letter-spacing: 0.4px;">Total Month</div>
+          <div style="font-size: 15px; font-weight: 800; color: #1e3a8a; font-variant-numeric: tabular-nums;">
+            {{ total_month_hours_str }} <span style="font-size: 12px; color: #059669; font-weight: 700;">({{ total_month_extra_str }})</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Stacked Bar Chart Canvas Container -->
+    <div style="flex: 1; position: relative; width: 100%; min-height: 360px; display: flex; flex-direction: column;">
+      <canvas id="stackedHoursChart" style="width: 100%; height: 360px;"></canvas>
+    </div>
+
+    <!-- Graph Footnote Details -->
+    <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b;">
+      <div>
+        Showing daily attendance sessions for October 2026 &bull; Hover over any stacked bar to inspect exact check-in/out timestamps and overtime variance.
+      </div>
+      <a href="{% url 'attendance_list' %}" style="color: #2563eb; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+        View Detailed Punch Records &rarr;
+      </a>
+    </div>
+
+  </div>
+
+  {% else %}
+  <!-- =========================================================================
+       2. MANAGER / TEAM OVERSIGHT DASHBOARD (Only shown to approving managers)
+       ========================================================================= -->
+
+  <!-- Top 4 Collapsible Key Telemetry Metrics -->
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px;">
+    <!-- Metric 1: Total Employees -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Active Staff</div>
+          <div style="font-size: 32px; font-weight: 800; color: #0f172a; margin: 4px 0;">45</div>
+        </div>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; background: #eff6ff; color: #2563eb; font-size: 20px;">
+          &#128101;
+        </span>
+      </div>
+      <div style="font-size: 12.5px; color: #059669; font-weight: 600; margin-top: 8px;">
+        &bull; 6 Active Departments in Pune HQ
+      </div>
+    </div>
+
+    <!-- Metric 2: Today Clocked In -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Present Today</div>
+          <div style="font-size: 32px; font-weight: 800; color: #059669; margin: 4px 0;">{{ today_present_count }}</div>
+        </div>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; background: #ecfdf5; color: #059669; font-size: 20px;">
+          &#9989;
+        </span>
+      </div>
+      <div style="font-size: 12.5px; color: #059669; font-weight: 600; margin-top: 8px;">
+        &bull; {{ active_clocked_in_count }} currently inside office
+      </div>
+    </div>
+
+    <!-- Metric 3: Total Worked Hours -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">October Team Hours</div>
+          <div style="font-size: 32px; font-weight: 800; color: #2563eb; margin: 4px 0;">3160:07</div>
+        </div>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; background: #eff6ff; color: #2563eb; font-size: 20px;">
+          &#9200;
+        </span>
+      </div>
+      <div style="font-size: 12.5px; color: #2563eb; font-weight: 600; margin-top: 8px;">
+        &bull; +333:45 Overtime Difference
+      </div>
+    </div>
+
+    <!-- Metric 4: Hardware Terminals -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Biometric Terminals</div>
+          <div style="font-size: 32px; font-weight: 800; color: #0284c7; margin: 4px 0;">3 / 3</div>
+        </div>
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; background: #e0f2fe; color: #0284c7; font-size: 20px;">
+          &#128246;
+        </span>
+      </div>
+      <div style="font-size: 12.5px; color: #059669; font-weight: 600; margin-top: 8px;">
+        &bull; 100% Online &amp; Heartbeat Healthy
+      </div>
+    </div>
+  </div>
+
+  <!-- Departmental Attendance Breakdown & Live In-Office Roster -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    
+    <!-- Department Attendance Breakdown -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Department Presence Breakdown</h3>
+        <span style="font-size: 12px; color: #64748b;">Live Today</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for dept in dept_stats %}
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px;">
+            <span style="font-weight: 600; color: #0f172a;">{{ dept.name }}</span>
+            <span style="font-weight: 700; color: #475569;">{{ dept.present }} / {{ dept.total }} Present ({{ dept.pct }}%)</span>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: #f1f5f9; overflow: hidden;">
+            <div style="height: 100%; width: {{ dept.pct }}%; background: {{ dept.color }}; border-radius: 4px;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Live In-Office Clocked-In Roster -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">Live Inside Office</h3>
+          <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Checked in without checkout punch</p>
+        </div>
+        <a href="{% url 'attendance_list' %}" style="font-size: 12px; font-weight: 600; color: #2563eb; text-decoration: none;">View Grid &rarr;</a>
+      </div>
+
+      <div style="max-height: 290px; overflow-y: auto;">
+        <table class="att-table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Dept</th>
+              <th>Punch In</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for act in active_punches %}
+            <tr>
+              <td style="font-weight: 600; color: #0f172a;">{{ act.employee.name }}</td>
+              <td style="color: #64748b; font-size: 12px;">{{ act.employee.display_department }}</td>
+              <td style="color: #059669; font-weight: 600;">{{ act.check_in|date:"g:i A" }}</td>
+              <td>
+                <span style="padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #059669;">
+                  In Office
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: #94a3b8; padding: 24px;">No active punches at this time.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  {% endif %}
+
+</div>
+
+<!-- Chart.js CDN for clean, responsive stacked vertical bar graph -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Initialize Live Stacked Vertical Bar Graph (Starts from 0 and increases vertically upward)
+document.addEventListener('DOMContentLoaded', function() {
+  var rawData = {{ graph_data_json|safe|default:'[]' }};
+  var canvas = document.getElementById('stackedHoursChart');
+  if (!canvas || !rawData || rawData.length === 0) return;
+
+  var labels = rawData.map(function(d) { return d.date_str; });
+  var regularHours = rawData.map(function(d) { return d.regular_hours; });
+  var extraHours = rawData.map(function(d) { return d.extra_hours; });
+
+  var ctx = canvas.getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Regular Hours (Up to 8h)',
+          data: regularHours,
+          backgroundColor: '#2563eb', // Corporate primary blue
+          borderRadius: 4,
+          stack: 'hoursStack'
+        },
+        {
+          label: 'Time Exceeding (+Overtime)',
+          data: extraHours,
+          backgroundColor: '#10b981', // Vibrant emerald green
+          borderRadius: 4,
+          stack: 'hoursStack'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false // Displayed in custom telemetry bar
+        },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          titleFont: { size: 13, weight: 'bold' },
+          bodyFont: { size: 12 },
+          padding: 12,
+          cornerRadius: 8,
+          callbacks: {
+            title: function(items) {
+              var idx = items[0].dataIndex;
+              var d = rawData[idx];
+              return d.date_full;
+            },
+            beforeBody: function(items) {
+              var idx = items[0].dataIndex;
+              var d = rawData[idx];
+              return 'Check-In: ' + d.check_in + ' | Check-Out: ' + d.check_out;
+            },
+            label: function(item) {
+              var idx = item.dataIndex;
+              var d = rawData[idx];
+              if (item.datasetIndex === 0) {
+                return 'Regular Worked: ' + d.regular_hours + ' hrs';
+              } else {
+                return 'Time Exceeded: +' + d.extra_hours + ' hrs';
+              }
+            },
+            afterBody: function(items) {
+              var idx = items[0].dataIndex;
+              var d = rawData[idx];
+              var lines = ['Total Hours: ' + d.formatted_total];
+              if (d.is_late) lines.push('⚠ Late Check-In');
+              if (d.is_early) lines.push('⚠ Early Going');
+              return lines.join('\n');
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: {
+            display: false
+          },
+          ticks: {
+            font: { size: 11, weight: '600' },
+            color: '#64748b'
+          }
+        },
+        y: {
+          stacked: true,
+          min: 0,
+          suggestedMax: 12,
+          grid: {
+            color: '#f1f5f9',
+            drawBorder: false
+          },
+          ticks: {
+            stepSize: 2,
+            font: { size: 11, weight: '600' },
+            color: '#64748b',
+            callback: function(val) {
+              return val + 'h';
+            }
+          }
+        }
+      }
+    }
+  });
+});
+</script>
+
+<style>
+.workspace-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+}
+</style>
+{% endblock %}

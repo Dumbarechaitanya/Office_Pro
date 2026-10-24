@@ -1,0 +1,103 @@
+{% extends "attendance/attendance_base.html" %}
+{% load static %}
+
+{% block content %}
+<div>
+
+  <!-- Top Control Bar -->
+  <div class="att-control-bar">
+    <div class="att-control-left">
+      <h1 class="att-title">
+        Absence Tracking &middot; Absent Days
+        <span class="att-title-cog" title="Configure Absence Tracking">&#9881;</span>
+      </h1>
+    </div>
+
+    <!-- Search Box -->
+    <div class="att-search-box" style="margin: 0; max-width: 500px;">
+      <span class="att-search-chip att-search-chip-filter">
+        Status: Absent
+        <a href="#" style="text-decoration: none; color: inherit; margin-left: 4px;">&times;</a>
+      </span>
+      <input 
+        type="text" 
+        class="att-search-input" 
+        placeholder="Filter absent employee or date..."
+      >
+    </div>
+
+    <div class="att-control-right">
+      <button type="button" class="btn-att-new" onclick="alert('Absent days recomputed across all active employees for current pay cycle.')">
+        Compute Absent Days
+      </button>
+    </div>
+  </div>
+
+  <!-- Absence Tracking Sub-Tabs -->
+  <div style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 0 20px; display: flex; gap: 24px;">
+    <a href="{% url 'absence_tracking' %}" style="padding: 12px 4px; font-size: 13.5px; font-weight: 600; color: #714b67; border-bottom: 2px solid #714b67; text-decoration: none;">
+      Absent Days ({{ absents|length }})
+    </a>
+    <a href="javascript:void(0)" onclick="alert('Full Day Leave Requests are synchronized from the Time Off / Leave module.')" style="padding: 12px 4px; font-size: 13.5px; font-weight: 500; color: #64748b; text-decoration: none;">
+      Full Day Requests
+    </a>
+    <a href="javascript:void(0)" onclick="alert('Displaying absent days for current logged-in employee.')" style="padding: 12px 4px; font-size: 13.5px; font-weight: 500; color: #64748b; text-decoration: none;">
+      My Absent Days
+    </a>
+  </div>
+
+  <!-- Table -->
+  <div class="att-table-container">
+    <table class="att-table">
+      <thead>
+        <tr>
+          <th style="width: 32px;"><input type="checkbox"></th>
+          <th>Employee</th>
+          <th>Department</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Missing Hours</th>
+          <th>Regularization</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ab in absents %}
+        <tr>
+          <td><input type="checkbox"></td>
+          <td style="font-weight: 600; color: #1e293b;">
+            <div class="att-emp-cell">
+              <span class="att-avatar-badge" style="background: #dc2626;">
+                {{ ab.employee.name|slice:":1"|upper }}
+              </span>
+              <span>{{ ab.employee.name }}</span>
+            </div>
+          </td>
+          <td style="color: #64748b;">{{ ab.employee.display_department }}</td>
+          <td style="color: #334155; font-weight: 500;">{{ ab.date|date:"l, M d, Y" }}</td>
+          <td>
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600; background: #fee2e2; color: #b91c1c;">
+              Absent
+            </span>
+          </td>
+          <td style="font-variant-numeric: tabular-nums; color: #b91c1c; font-weight: 600;">
+            -08:20
+          </td>
+          <td>
+            <a href="{% url 'attendance_create' %}?emp={{ ab.employee.id }}&date={{ ab.date|date:'Y-m-d' }}" style="font-size: 12px; color: #0284c7; font-weight: 600; text-decoration: none;">
+              + Regularize Punch
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 48px; color: #94a3b8;">
+            No unexcused absent days recorded. All active employees have valid punches.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

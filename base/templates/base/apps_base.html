@@ -1,0 +1,86 @@
+{% extends 'base/layout.html' %}
+{% load static %}
+
+{% block title %}Apps - Office Pro{% endblock %}
+{% block navbar_title %}Apps{% endblock %}
+
+{% block app_icon %}
+<!-- Apps Matrix Grid Icon -->
+<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+  <circle cx="5" cy="5" r="2.5"></circle>
+  <circle cx="12" cy="5" r="2.5"></circle>
+  <circle cx="19" cy="5" r="2.5"></circle>
+  <circle cx="5" cy="12" r="2.5"></circle>
+  <circle cx="12" cy="12" r="2.5"></circle>
+  <circle cx="19" cy="12" r="2.5"></circle>
+  <circle cx="5" cy="19" r="2.5"></circle>
+  <circle cx="12" cy="19" r="2.5"></circle>
+  <circle cx="19" cy="19" r="2.5"></circle>
+</svg>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'base/css/apps.css' %}?v={{ static_version }}">
+{% endblock %}
+
+{% block app_menus %}
+<div class="apps-navbar-subbar">
+  <a href="{% url 'apps_store' %}" class="apps-navbar-sublink {% if request.resolver_match.url_name == 'apps_store' %}active{% endif %}">Apps</a>
+  <a href="javascript:void(0)" class="apps-navbar-sublink" onclick="triggerUpdateAppsList()">Update Apps List</a>
+  <a href="javascript:void(0)" class="apps-navbar-sublink" onclick="triggerScheduledUpgrades()">Apply Scheduled Upgrades</a>
+  <a href="javascript:void(0)" class="apps-navbar-sublink" onclick="triggerImportModule()">Import Module</a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% block apps_content %}{% endblock %}
+
+<!-- Modal for Update Apps List / Actions -->
+<div id="appsActionModal" class="op-modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); z-index: 9999; align-items: center; justify-content: center;">
+  <div style="background: #ffffff; border-radius: 8px; width: 440px; max-width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.15); overflow: hidden;">
+    <div style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+      <h3 id="appsModalTitle" style="margin: 0; font-size: 16px; font-weight: 600; color: #1e293b;">Action</h3>
+      <button type="button" onclick="closeAppsModal()" style="border: none; background: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
+    </div>
+    <div id="appsModalBody" style="padding: 20px; font-size: 14px; color: #475569; line-height: 1.5;">
+      Content
+    </div>
+    <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+      <button type="button" class="btn-learn-more" onclick="closeAppsModal()">Close</button>
+      <button type="button" id="appsModalConfirmBtn" class="btn-upgrade" onclick="confirmAppsModalAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function triggerUpdateAppsList() {
+  document.getElementById('appsModalTitle').innerText = 'Update Apps List';
+  document.getElementById('appsModalBody').innerHTML = '<p>Scanning installed modules and checking local manifest repositories for newly discovered apps or updates...</p><p style="color: #059669; font-weight: 500;">&#10003; All applications and manifest registries are up to date.</p>';
+  document.getElementById('appsModalConfirmBtn').innerText = 'OK';
+  document.getElementById('appsActionModal').style.display = 'flex';
+}
+
+function triggerScheduledUpgrades() {
+  document.getElementById('appsModalTitle').innerText = 'Apply Scheduled Upgrades';
+  document.getElementById('appsModalBody').innerHTML = '<p>No pending upgrades scheduled across the system modules.</p>';
+  document.getElementById('appsModalConfirmBtn').innerText = 'OK';
+  document.getElementById('appsActionModal').style.display = 'flex';
+}
+
+function triggerImportModule() {
+  document.getElementById('appsModalTitle').innerText = 'Import Module';
+  document.getElementById('appsModalBody').innerHTML = '<p>Upload a zip file containing an Office Pro module package:</p><input type="file" accept=".zip" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px; font-size: 13px; margin-top: 8px;">';
+  document.getElementById('appsModalConfirmBtn').innerText = 'Upload & Install';
+  document.getElementById('appsActionModal').style.display = 'flex';
+}
+
+function closeAppsModal() {
+  document.getElementById('appsActionModal').style.display = 'none';
+}
+
+function confirmAppsModalAction() {
+  closeAppsModal();
+}
+</script>
+{% endblock %}

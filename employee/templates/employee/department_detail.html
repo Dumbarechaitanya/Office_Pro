@@ -1,0 +1,144 @@
+{% extends "employee/employee_base.html" %}
+
+{% block content %}
+<form method="post" action="{% url 'department_detail' dept.id %}">
+  {% csrf_token %}
+
+  <div class="emp-control-bar">
+    <div class="emp-actions-left">
+      {% if is_hr %}
+      <a href="{% url 'department_create' %}" class="emp-btn-secondary">
+        <span>&#43;</span> New
+      </a>
+      {% endif %}
+
+      <div style="font-size: 14px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px;">
+        <a href="{% url 'department_list' %}" style="color: #64748b; text-decoration: none;">Departments</a>
+        <span>/</span>
+        <span style="color: #0f172a;">{{ dept.name }}</span>
+      </div>
+
+      {% if is_hr %}
+      <button type="submit" class="emp-btn-primary" style="margin-left: 12px;">
+        <span>&#10004;</span> Save
+      </button>
+      <a href="{% url 'department_detail' dept.id %}" class="emp-btn-secondary">Discard</a>
+      {% endif %}
+    </div>
+
+    <div class="emp-actions-right">
+      <span class="emp-dept-badge" data-dept-color="{{ dept.color|default:'#0284c7' }}">
+        {{ members.count }} Members
+      </span>
+    </div>
+  </div>
+
+  <div class="emp-form-container">
+    <div class="emp-sheet">
+      <div class="emp-grid-2col" style="margin-bottom: 24px;">
+        <div>
+          <div class="emp-field-group">
+            <label class="emp-label">Department Name *</label>
+            {% if is_hr %}
+            <input type="text" name="name" value="{{ dept.name }}" required class="emp-input" style="font-size: 16px; font-weight: 700;">
+            {% else %}
+            <input type="text" value="{{ dept.name }}" readonly class="emp-input" style="background: #f8fafc; font-size: 16px; font-weight: 700;">
+            {% endif %}
+          </div>
+
+          <div class="emp-field-group">
+            <label class="emp-label">Department Code</label>
+            {% if is_hr %}
+            <input type="text" name="code" value="{{ dept.code|default:'' }}" placeholder="e.g. ENG, HR, ARCH" class="emp-input">
+            {% else %}
+            <input type="text" value="{{ dept.code|default:'—' }}" readonly class="emp-input" style="background: #f8fafc;">
+            {% endif %}
+          </div>
+
+          <div class="emp-field-group">
+            <label class="emp-label">Badge Color</label>
+            {% if is_hr %}
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="color" name="color" value="{{ dept.color|default:'#0284c7' }}" style="width: 40px; height: 36px; padding: 0; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer;">
+              <input type="text" value="{{ dept.color|default:'#0284c7' }}" readonly class="emp-input" style="max-width: 120px;">
+            </div>
+            {% else %}
+            <span class="emp-color-dot" data-dept-color="{{ dept.color|default:'#0284c7' }}"></span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div>
+          <div class="emp-field-group">
+            <label class="emp-label">Department Manager</label>
+            {% if is_hr %}
+            <select name="manager_id" class="emp-select">
+              <option value="">-- No Manager Assigned --</option>
+              {% for m in employees %}
+              <option value="{{ m.id }}" {% if dept.manager_id == m.id %}selected{% endif %}>{{ m.name }} ({{ m.employee_code }})</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <input type="text" value="{{ dept.manager.name|default:'None' }}" readonly class="emp-input" style="background: #f8fafc;">
+            {% endif %}
+          </div>
+
+          <div class="emp-field-group">
+            <label class="emp-label">Parent Department (Hierarchy)</label>
+            {% if is_hr %}
+            <select name="parent_id" class="emp-select">
+              <option value="">-- None (Top Level Department) --</option>
+              {% for d in departments %}
+              <option value="{{ d.id }}" {% if dept.parent_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <input type="text" value="{{ dept.parent.name|default:'Top Level' }}" readonly class="emp-input" style="background: #f8fafc;">
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Department Members Table -->
+      <h3 style="font-size: 15px; font-weight: 700; color: #1e293b; margin: 30px 0 12px 0; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+        Department Members ({{ members.count }})
+      </h3>
+
+      <table class="emp-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Job Title</th>
+            <th>Manager</th>
+            <th>Branch</th>
+            <th>Email</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in members %}
+          <tr>
+            <td><span class="emp-code-badge">{{ m.employee_code }}</span></td>
+            <td><strong>{{ m.name }}</strong></td>
+            <td>{{ m.job_title|default:"Staff" }}</td>
+            <td>{{ m.manager.name|default:"—" }}</td>
+            <td>{{ m.branch }}</td>
+            <td>{{ m.email }}</td>
+            <td style="text-align: right;">
+              <a href="{% url 'employee_detail' m.id %}" class="emp-btn-secondary" style="padding: 3px 8px; font-size: 12px;">Profile &rarr;</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 24px; color: #64748b;">
+              No employees assigned to this department yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</form>
+{% endblock %}

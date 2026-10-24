@@ -1,0 +1,82 @@
+﻿{% load static %}
+<script>
+  window.OP_FILTER_OPERATORS = {{ operators_by_type_json|default:"{}"|safe }};
+</script>
+
+<div class="op-search-panel"
+     data-model-key="{{ search_model_key }}"
+     data-current-domain='{{ current_domain|default:"[]" }}'
+     data-current-group-by="{{ active_group_by }}">
+  {% csrf_token %}
+
+  <div class="op-cp-searchview">
+    <form method="get" class="op-searchview">
+      <span class="op-search-icon">&#128269;</span>
+      <input type="search" name="q" class="op-searchview-input" placeholder="Search..." value="{{ request.GET.q }}" />
+    </form>
+    <button type="button" class="op-searchview-toggle" title="Toggle Search Panel" aria-expanded="false">&#9662;</button>
+  </div>
+
+  <div id="op-search-popover" class="op-search-popover">
+
+    <div class="op-popover-col op-filter-menu">
+      <div class="op-popover-header"><span class="op-header-icon op-icon-filter">&#9873;</span><h5>Filters</h5></div>
+      {% if filterable_fields %}
+        <div class="op-custom-filter-builder">
+          <select class="op-filter-field">
+            {% for f in filterable_fields %}
+              <option value="{{ f.name }}" data-type="{{ f.field_type }}">{{ f.label }}</option>
+            {% endfor %}
+          </select>
+          <select class="op-filter-operator"></select>
+          <input type="text" class="op-filter-value" placeholder="Value" />
+        </div>
+        <span class="op-menu-item op-add-custom-filter" role="menuitem" tabindex="0">Custom Filter...</span>
+      {% else %}
+        <span class="op-empty-hint">No filterable fields found. Run sync_ir_models first.</span>
+      {% endif %}
+    </div>
+
+    <div class="op-popover-col op-groupby-menu">
+      <div class="op-popover-header"><span class="op-header-icon op-icon-group">&#8942;</span><h5>Group By</h5></div>
+      {% for f in groupable_fields %}
+        <a href="#" class="op-groupby-option {% if active_group_by == f.name %}active{% endif %}" data-field="{{ f.name }}">{{ f.label }}</a>
+      {% empty %}
+        <span class="op-empty-hint">No quick group-by fields</span>
+      {% endfor %}
+      {% if filterable_fields %}
+        <div class="op-divider"></div>
+        <select class="op-custom-group-select">
+          <option value="" disabled selected hidden>Custom Group</option>
+          {% for f in filterable_fields %}
+            <option value="{{ f.name }}">{{ f.label }}</option>
+          {% endfor %}
+        </select>
+      {% endif %}
+    </div>
+
+    <div class="op-popover-col op-favorite-menu">
+      <div class="op-popover-header"><span class="op-header-icon op-icon-star">&#9733;</span><h5>Favorites</h5></div>
+      {% for fav in favorites %}
+        <div class="op-favorite-row {% if fav.is_default %}is-default{% endif %}">
+          <a href="#" class="op-load-favorite" data-domain='{{ fav.domain_json }}' data-group-by="{{ fav.context.group_by|default:'' }}">
+            {{ fav.name }}{% if fav.is_default %} <span class="op-default-badge">default</span>{% endif %}
+          </a>
+          <button type="button" class="op-set-default-btn" data-id="{{ fav.id }}" title="Set as default">&#9733;</button>
+          <button type="button" class="op-delete-favorite-btn" data-id="{{ fav.id }}" title="Delete">&#10005;</button>
+        </div>
+      {% empty %}
+        <span class="op-empty-hint">No saved filters yet</span>
+      {% endfor %}
+      <div class="op-divider"></div>
+      <button type="button" class="op-menu-item op-accordion-toggle op-add-favorite" aria-expanded="false">Save current search</button>
+      <div class="op-favorite-form" style="display:none;">
+        <input type="text" class="op-favorite-name" placeholder="Name this search..." />
+        <label><input type="checkbox" class="op-favorite-default" /> Set as default</label>
+        <button type="button" class="op-save-favorite-btn">Save</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script src="{% static 'base/js/search_panel.js' %}"></script>

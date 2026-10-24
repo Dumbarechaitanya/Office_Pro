@@ -1,0 +1,141 @@
+{% extends "attendance/attendance_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #f8fafc; min-height: calc(100vh - 60px); padding-bottom: 40px;">
+
+  <!-- Form Control Bar matching Odoo 16/17 Parity -->
+  <div class="att-control-bar" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 20;">
+    <!-- Left Navigation & Actions -->
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <!-- Breadcrumbs -->
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+        <a href="{% url 'attendance_list' %}" style="color: #64748b; text-decoration: none; font-weight: 500;">Attendances</a>
+        <span style="color: #cbd5e1;">/</span>
+        <span style="color: #0f172a; font-weight: 700;">New Attendance</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px; margin-left: 8px;">
+        <button type="submit" form="attendanceCreateForm" style="padding: 6px 16px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(37,99,235,0.2);">
+          <span>&#10004;</span> Save
+        </button>
+        <a href="{% url 'attendance_list' %}" style="padding: 6px 14px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; font-size: 13px; font-weight: 600; text-decoration: none;">
+          Discard
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Sheet Container -->
+  <div style="max-width: 900px; margin: 24px auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;">
+
+    <!-- Sheet Header -->
+    <div style="padding: 20px 28px; border-bottom: 1px solid #f1f5f9; background: #f8fafc;">
+      <h2 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">New Attendance Punch</h2>
+      <p style="font-size: 12.5px; color: #64748b; margin: 3px 0 0 0;">Record manual check-in or regularize employee punch logs</p>
+    </div>
+
+    <!-- Form -->
+    <form id="attendanceCreateForm" method="POST" action="{% url 'attendance_create' %}" style="padding: 28px;">
+      {% csrf_token %}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 22px;">
+        <!-- Employee Field -->
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+            Employee <span style="color: #dc2626;">*</span>
+          </label>
+          <select name="employee" required style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; color: #0f172a; background: #fff;">
+            <option value="">Select Employee...</option>
+            {% for emp in employees %}
+            <option value="{{ emp.id }}" {% if pre_emp_id == emp.id %}selected{% endif %}>
+              {{ emp.name }} ({{ emp.employee_code }}) - {{ emp.display_department }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Date Field -->
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+            Date <span style="color: #dc2626;">*</span>
+          </label>
+          <input 
+            type="date" 
+            name="date" 
+            value="{{ pre_date|default:today|date:'Y-m-d' }}" 
+            required 
+            style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; color: #0f172a; box-sizing: border-box;"
+          >
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 22px;">
+        <!-- Check In Time -->
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+            Check In Time
+          </label>
+          <input 
+            type="time" 
+            name="check_in" 
+            value="09:30"
+            style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; color: #0f172a; box-sizing: border-box;"
+          >
+        </div>
+
+        <!-- Check Out Time -->
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+            Check Out Time
+          </label>
+          <input 
+            type="time" 
+            name="check_out" 
+            value="18:30"
+            style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; color: #0f172a; box-sizing: border-box;"
+          >
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- Status -->
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+            Status
+          </label>
+          <select name="status" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; color: #0f172a; background: #fff;">
+            {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if val == 'Present' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Input Mode -->
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+            Input Mode
+          </label>
+          <select name="input_mode" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; color: #0f172a; background: #fff;">
+            <option value="Manual" selected>Manual HR Regularization</option>
+            <option value="Biometric">Biometric Device Import</option>
+            <option value="Portal">Web Portal Entry</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Submit Buttons -->
+      <div style="display: flex; gap: 10px; justify-content: flex-end; padding-top: 18px; border-top: 1px solid #f1f5f9;">
+        <a href="{% url 'attendance_list' %}" style="padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 6px; color: #475569; font-size: 13px; font-weight: 600; text-decoration: none;">
+          Cancel
+        </a>
+        <button type="submit" style="padding: 8px 24px; background: #2563eb; color: #ffffff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(37,99,235,0.2);">
+          Save Attendance
+        </button>
+      </div>
+    </form>
+
+  </div>
+
+</div>
+{% endblock %}

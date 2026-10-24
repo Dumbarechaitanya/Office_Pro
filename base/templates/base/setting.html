@@ -1,0 +1,1113 @@
+{% extends 'base/layout.html' %}
+{% load static %}
+
+{% block title %}Settings - NexusWave Office Pro{% endblock %}
+{% block navbar_title %}Settings{% endblock %}
+
+{% block app_icon %}
+<!-- Settings Gear Icon -->
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="3"></circle>
+  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+</svg>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.settings-container {
+  display: flex;
+  min-height: calc(100vh - 50px);
+  background: #f8fafc;
+}
+.settings-sidebar {
+  width: 220px;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 12px 0;
+  flex-shrink: 0;
+}
+.settings-sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+}
+.settings-sidebar-item {
+  padding: 9px 20px;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.settings-sidebar-item:hover {
+  background: #f8fafc;
+  color: #1e293b;
+}
+.settings-sidebar-item.active {
+  background: #ede9fe;
+  color: #714b67;
+  font-weight: 700;
+  border-left-color: #714b67;
+}
+.settings-sidebar-item svg {
+  flex-shrink: 0;
+}
+.settings-pane {
+  display: none;
+}
+.settings-pane.active {
+  display: block;
+}
+.settings-section-header {
+  background: #f1f5f9;
+  padding: 8px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #334155;
+  margin: 24px 0 18px 0;
+  border-radius: 4px;
+}
+.settings-section-header:first-child {
+  margin-top: 0;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px 40px;
+  margin-bottom: 24px;
+}
+.settings-card-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.info-bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: help;
+  vertical-align: middle;
+}
+.presence-tooltip-wrap {
+  position: relative;
+  display: inline-block;
+}
+.presence-custom-tooltip {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  z-index: 100;
+  pointer-events: none;
+}
+.presence-custom-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent #1e293b transparent;
+}
+.presence-tooltip-wrap:hover .presence-custom-tooltip {
+  display: block;
+}
+.action-sublink {
+  color: #714b67;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.action-sublink:hover {
+  text-decoration: underline;
+}
+.dev-tool-link {
+  color: #714b67;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  display: block;
+  padding: 3px 0;
+}
+.dev-tool-link:hover {
+  text-decoration: underline;
+}
+.setting-search-highlight {
+  background: #fef08a;
+  border-radius: 2px;
+}
+</style>
+{% endblock %}
+
+{% block app_menus %}
+<a href="{% url 'settings_general' %}" class="menu-link {% if request.resolver_match.url_name in 'settings_home,settings_general' %}active{% endif %}">General Settings</a>
+
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle {% if 'settings_user' in request.resolver_match.url_name or 'settings_group' in request.resolver_match.url_name or 'settings_privilege' in request.resolver_match.url_name or 'settings_compan' in request.resolver_match.url_name or 'settings_partner' in request.resolver_match.url_name %}active{% endif %}">Users &amp; Companies</button>
+  <div class="menu-dropdown">
+    <a href="{% url 'settings_users' %}">Users</a>
+    <a href="{% url 'settings_groups' %}">Groups</a>
+    <a href="{% url 'settings_privileges' %}">Privileges</a>
+    <a href="{% url 'settings_companies' %}">Companies</a>
+    <a href="{% url 'settings_partners' %}">Contacts</a>
+  </div>
+</div>
+
+{% if is_admin %}
+<!-- Technical Menu (Odoo 17 Technical Suite) -->
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle {% if 'technical_' in request.resolver_match.url_name %}active{% endif %}">Technical</button>
+  <div class="menu-dropdown" style="max-height: 520px; overflow-y: auto; min-width: 240px;">
+    <div style="padding: 6px 12px 2px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Database Structure</div>
+    <a href="{% url 'technical_models' %}">Models</a>
+    <a href="{% url 'technical_fields' %}">Fields</a>
+    <a href="{% url 'technical_m2m' %}">Relations</a>
+
+    <div style="padding: 8px 12px 2px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-top: 1px solid #f1f5f9;">User Interface</div>
+    <a href="{% url 'technical_views' %}">Views</a>
+    <a href="{% url 'technical_menu_items' %}">Menu Items</a>
+    <a href="{% url 'technical_actions' %}">Window Actions</a>
+
+    <div style="padding: 8px 12px 2px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-top: 1px solid #f1f5f9;">Automation &amp; Email</div>
+    <a href="{% url 'technical_sequences' %}">Sequences</a>
+    <a href="{% url 'technical_cron' %}">Scheduled Actions (Cron)</a>
+    <a href="{% url 'technical_outgoing_mail' %}">Outgoing Mail Servers</a>
+
+    <div style="padding: 8px 12px 2px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-top: 1px solid #f1f5f9;">Security &amp; Logging</div>
+    <a href="{% url 'technical_access_rights' %}">Access Rights</a>
+    <a href="{% url 'technical_record_rules' %}">Record Rules</a>
+    <a href="{% url 'technical_logging' %}">Logging</a>
+
+    <div style="padding: 8px 12px 2px; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-top: 1px solid #f1f5f9;">Parameters &amp; Reports</div>
+    <a href="{% url 'technical_parameters' %}">System Parameters</a>
+    <a href="{% url 'technical_paperformats' %}">Paper Formats</a>
+    <a href="{% url 'technical_reports' %}">Reports</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Top Action & Search Bar (Matching Screenshots 1-5) -->
+<div style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <button type="submit" form="masterSettingsForm" style="padding: 6px 16px; background: #714b67; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer;">
+      Save
+    </button>
+    <a href="{% url 'settings_general' %}" style="padding: 6px 14px; background: #ffffff; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; font-weight: 600; text-decoration: none;">
+      Discard
+    </a>
+    <span style="font-size: 14px; font-weight: 700; color: #1e293b; margin-left: 6px;" id="currentSettingsTitle">Settings</span>
+  </div>
+
+  <!-- Search Box with Live Filter -->
+  <div style="max-width: 440px; width: 100%;">
+    <div style="position: relative;">
+      <span style="position: absolute; left: 10px; top: 7px; color: #94a3b8; font-size: 13px;">&#128269;</span>
+      <input type="text" id="settingsSearchInput" placeholder="Search..." oninput="filterSettings(this.value)" style="width: 100%; padding: 6px 12px 6px 32px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; box-sizing: border-box;">
+    </div>
+  </div>
+</div>
+
+<div class="settings-container">
+  
+  <!-- Left Navigation Sidebar ("Ubha Panel" matching Screenshot 1-5) -->
+  <aside class="settings-sidebar">
+    <ul class="settings-sidebar-list">
+      <!-- General Settings -->
+      <li class="settings-sidebar-item {% if active_tab == 'general' or not active_tab %}active{% endif %}" onclick="switchSettingsTab('tab-general', this, 'General Settings')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#ea580c">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>General Settings</span>
+      </li>
+
+
+      <!-- Employees -->
+      <li class="settings-sidebar-item {% if active_tab == 'employees' %}active{% endif %}" onclick="switchSettingsTab('tab-employees', this, 'Employees')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#ea580c">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke="#ea580c" stroke-width="2" fill="none"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="#ea580c" stroke-width="2" fill="none"></path>
+        </svg>
+        <span>Employees</span>
+      </li>
+
+      <!-- Attendances -->
+      <li class="settings-sidebar-item {% if active_tab == 'attendances' %}active{% endif %}" onclick="switchSettingsTab('tab-attendances', this, 'Attendances')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#d97706">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 15 15" stroke="#fff" stroke-width="2" fill="none"></polyline>
+        </svg>
+        <span>Attendances</span>
+      </li>
+
+
+      <!-- Theme & UI -->
+      <li class="settings-sidebar-item {% if active_tab == 'theme' %}active{% endif %}" onclick="switchSettingsTab('tab-theme', this, 'Theme & UI')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2">
+          <circle cx="13.5" cy="6.5" r=".5" fill="#8b5cf6"></circle>
+          <circle cx="17.5" cy="10.5" r=".5" fill="#8b5cf6"></circle>
+          <circle cx="8.5" cy="7.5" r=".5" fill="#8b5cf6"></circle>
+          <circle cx="6.5" cy="12.5" r=".5" fill="#8b5cf6"></circle>
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"></path>
+        </svg>
+        <span>Theme &amp; UI</span>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Right Form Content Area -->
+  <main style="flex: 1; padding: 24px 36px; max-width: 1080px; overflow-y: auto;">
+    <form id="masterSettingsForm" method="POST" action="{% url 'settings_general' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action_type" value="general">
+      <input type="hidden" name="active_tab" id="activeTabInput" value="{{ active_tab|default:'general' }}">
+
+      <!-- ============================================================== -->
+      <!-- PANE 1: GENERAL SETTINGS -->
+      <!-- ============================================================== -->
+      <div id="tab-general" class="settings-pane {% if active_tab == 'general' or not active_tab %}active{% endif %}">
+        
+        <!-- SECTION 1: COMPANIES -->
+        <div class="settings-section-header">Companies</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+          <!-- Company Card -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 18px;">
+            <div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
+              {{ company.name|default:"NexusWave Technologies Pvt Ltd" }}
+            </div>
+            <div style="font-size: 12.5px; color: #64748b; line-height: 1.5; margin-bottom: 8px;">
+              {{ company.street|default:"Alpha Tower, Phase 1" }}<br>
+              {{ company.city|default:"Hinjawadi, Pune" }}, {{ company.state|default:"Maharashtra" }} {{ company.zip_code|default:"411057" }}<br>
+              India<br>
+              <strong>GSTIN:</strong> {{ company.gstin|default:"27AAACN1234F1Z5" }}
+            </div>
+            <a href="{% url 'settings_company_detail' company.id %}" class="action-sublink">&rarr; Update Info</a>
+          </div>
+
+          <div style="padding-top: 18px;">
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+              1 Company
+            </div>
+            <a href="{% url 'settings_companies' %}" class="action-sublink">&rarr; Manage Companies</a>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Document Layout -->
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              Document Layout <span class="info-bubble" title="Choose company document template">&#9432;</span>
+            </div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 8px 0;">Choose the layout of your documents</p>
+            <div style="font-size: 13px; color: #334155; margin-bottom: 8px;">
+              Layout: <code>external_layout_standard</code>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <a href="javascript:void(0)" onclick="alert('Configure Document Layout wizard')" class="action-sublink">&rarr; Configure Document Layout</a>
+              <a href="javascript:void(0)" onclick="alert('Edit Layout editor')" class="action-sublink">&rarr; Edit Layout</a>
+              <a href="javascript:void(0)" onclick="alert('Preview Document PDF opened')" class="action-sublink">&rarr; Preview Document</a>
+            </div>
+          </div>
+
+          <!-- Email Templates -->
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              Email Templates <span class="info-bubble" title="Customize system email layouts">&#9432;</span>
+            </div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 10px 0;">Customize the look and feel of automated emails</p>
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #475569;">
+                Button Text: <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 1px solid #cbd5e1; background: #ffffff;"></span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #475569;">
+                Button Color: <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #714b67;"></span>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <a href="javascript:void(0)" onclick="alert('Update Mail Layout wizard')" class="action-sublink">&rarr; Update Mail Layout</a>
+              <a href="javascript:void(0)" onclick="alert('Review All Templates registry')" class="action-sublink">&rarr; Review All Templates</a>
+            </div>
+          </div>
+
+          <!-- Inter-Company Transactions -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="interCompany" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="interCompany" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Inter-Company Transactions
+                <span style="display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #ede9fe; color: #714b67;">Enterprise</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Create corresponding in/out orders and bills when you sell/buy between your companies.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: EMAILS -->
+        <div class="settings-section-header">Emails</div>
+        <div class="settings-grid">
+          <div class="settings-card-item">
+            <input type="checkbox" id="customEmailServers" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="customEmailServers" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Use Custom Email Servers <span class="info-bubble" title="Configure SMTP/IMAP servers">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Configure your own email servers.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              Alias Domain <span class="info-bubble" title="Domain used for incoming email aliases">&#9432;</span>
+            </div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 8px 0;">Use different domains for your mail aliases</p>
+            <select style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; color: #1e293b; background: #fff; width: 100%; max-width: 320px;">
+              <option selected>@ nexuswave.in</option>
+              <option>@ mail.nexuswave.in</option>
+            </select>
+          </div>
+
+          <div class="settings-card-item">
+            <input type="checkbox" id="digestEmail" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="digestEmail" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Digest Email <span class="info-bubble" title="Periodic summary email sent to team">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 8px 0; line-height: 1.4;">
+                Add new users as recipient of a periodic email with key metrics.
+              </p>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12.5px; color: #334155;">Digest Email: <strong>NexusWave Periodic Digest</strong></span>
+                <a href="javascript:void(0)" onclick="alert('Configure Digest Emails')" class="action-sublink">&rarr;</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card-item">
+            <input type="checkbox" id="restrictTemplate" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="restrictTemplate" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Restrict Template Rendering
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Restrict mail templates edition and QWEB placeholders usage.
+              </p>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- SECTION 4: CONTACTS -->
+        <div class="settings-section-header">Contacts</div>
+        <div class="settings-grid">
+          <!-- Send SMS -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="sendSms" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+                Send SMS <span class="info-bubble" title="Send SMS texts to your contacts">&#9432;</span>
+              </div>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 6px 0; line-height: 1.4;">
+                Send texts to your contacts
+              </p>
+              <a href="javascript:void(0)" onclick="alert('Manage Service & Buy Credits wizard')" class="action-sublink">&rarr; Manage Service &amp; Buy Credits</a>
+            </div>
+          </div>
+
+          <!-- Partner Autocomplete -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="partnerAutocomplete" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+                Partner Autocomplete <span class="info-bubble" title="Automatically enrich your contact base with company data">&#9432;</span>
+              </div>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 6px 0; line-height: 1.4;">
+                Automatically enrich your contact base with company data
+              </p>
+              <a href="javascript:void(0)" onclick="alert('Partner Autocomplete config')" class="action-sublink">&rarr; Manage Service &amp; Buy Credits</a>
+            </div>
+          </div>
+
+          <!-- Odoo IAP / Office Pro IAP -->
+          <div class="settings-card-item">
+            <div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+                Office Pro IAP <span class="info-bubble" title="View your IAP Services and recharge your credits">&#9432;</span>
+              </div>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 6px 0; line-height: 1.4;">
+                View your IAP Services and recharge your credits
+              </p>
+              <a href="javascript:void(0)" onclick="alert('View My Services')" class="action-sublink">&rarr; View My Services</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 5: PERMISSIONS -->
+        <div class="settings-section-header">Permissions</div>
+        <div class="settings-grid">
+          <!-- Password Reset -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="passwordReset" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="passwordReset" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Password Reset
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Enable password reset from Login page
+              </p>
+            </div>
+          </div>
+
+          <!-- Default Access Rights -->
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">Default Access Rights</div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 6px 0;">Set custom access rights for new users</p>
+            <a href="{% url 'settings_groups' %}" class="action-sublink">&rarr; Default Access Rights</a>
+          </div>
+
+          <!-- API Keys -->
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">API Keys</div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 6px 0;">API Keys allow your users to access Office Pro with external tools when multi-factor authentication is enabled.</p>
+            <a href="javascript:void(0)" onclick="alert('Manage API Keys list')" class="action-sublink" style="margin-bottom: 8px;">&rarr; Manage API Keys</a>
+            <div>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer;">
+                <input type="checkbox" id="customerApiKeys" style="accent-color: #714b67;">
+                Customers can generate API Keys
+              </label>
+            </div>
+          </div>
+
+          <!-- Minimum Password Length -->
+          <div>
+            <label style="display: block; font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
+              Minimum Password Length
+            </label>
+            <input type="number" value="8" style="width: 80px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;">
+          </div>
+
+          <!-- Enforce two-factor authentication -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="enforce2fa" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="enforce2fa" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Enforce two-factor authentication
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Enforce the two-factor authentication by email for employees or for all users (including portal users) if they didn't enable any other two-factor authentication method.
+              </p>
+            </div>
+          </div>
+
+          <!-- Import & Export -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="importExport" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="importExport" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Import &amp; Export <span class="info-bubble" title="Allow users to import data from CSV/XLS/XLSX/ODS files">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Allow users to import data from CSV/XLS/XLSX/ODS files
+              </p>
+            </div>
+          </div>
+
+          <!-- Show Effect -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="showEffect" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="showEffect" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Show Effect
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Add fun feedback and motivate your employees
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 6: PROGRESSIVE WEB APP -->
+        <div class="settings-section-header">Progressive Web App</div>
+        <div class="settings-grid">
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+              Web App Name
+            </div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 8px 0;">
+              This name will be used for the application when Office Pro is installed through the browser.
+            </p>
+            <input type="text" name="pwa_name" value="NexusWave Office Pro" style="width: 100%; max-width: 320px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; color: #1e293b;">
+          </div>
+        </div>
+
+        <!-- SECTION 7: INTEGRATIONS -->
+        <div class="settings-section-header">Integrations</div>
+        <div class="settings-grid">
+          <!-- Mail Plugin -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="mailPlugin" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="mailPlugin" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Mail Plugin <span class="info-bubble" title="Integrate with Outlook, Gmail, and Thunderbird mail plugins">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Integrate with mail client plugins
+              </p>
+            </div>
+          </div>
+
+          <!-- OAuth Authentication -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="oauthAuth" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="oauthAuth" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                OAuth Authentication
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Use external accounts to log in (Google, Facebook, etc.)
+              </p>
+            </div>
+          </div>
+
+          <!-- LDAP Authentication -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="ldapAuth" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="ldapAuth" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                LDAP Authentication <span class="info-bubble" title="Authenticate users via LDAP / Active Directory">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Use LDAP credentials to log in
+              </p>
+            </div>
+          </div>
+
+          <!-- Unsplash Image Library -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="unsplashLib" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div style="flex: 1;">
+              <label for="unsplashLib" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Unsplash Image Library <span class="info-bubble" title="Find free high-resolution images from Unsplash">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 10px 0; line-height: 1.4;">
+                Find free high-resolution images from Unsplash
+              </p>
+              
+              <!-- Nested Access Key & Application ID -->
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-top: 6px;">
+                <div style="margin-bottom: 8px;">
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 3px;">Access Key</label>
+                  <input type="text" placeholder="Enter Access Key" style="width: 100%; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px;">
+                </div>
+                <div style="margin-bottom: 8px;">
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 3px;">Application ID</label>
+                  <input type="text" placeholder="Enter Application ID" style="width: 100%; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px;">
+                </div>
+                <a href="https://unsplash.com/developers" target="_blank" class="action-sublink">&rarr; Generate an Access Key</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Geolocation -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="geolocation" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="geolocation" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Geolocation <span class="info-bubble" title="Geolocate your partners and customers">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 8px 0; line-height: 1.4;">
+                Geolocate your partners
+              </p>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12.5px; color: #475569; font-weight: 600;">API:</span>
+                <select style="padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px; color: #1e293b; background: #fff;">
+                  <option selected>Open Street Map</option>
+                  <option>Google Maps API</option>
+                  <option>Mapbox</option>
+                </select>
+                <a href="javascript:void(0)" onclick="alert('Configure OpenStreetMap Geocoding')" style="color: #714b67; font-weight: 700; text-decoration: none;">&rarr;</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enable reCAPTCHA -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="recaptcha" style="margin-top: 3px; accent-color: #714b67;">
+            <div style="flex: 1;">
+              <label for="recaptcha" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Enable reCAPTCHA
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 8px 0; line-height: 1.4;">
+                Protect your forms from spam and abuse. If no keys are provided, no checks will be done.
+              </p>
+              <div style="display: flex; flex-direction: column; gap: 8px; max-width: 380px;">
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 2px;">Site Key</label>
+                  <input type="text" placeholder="Site Key" style="width: 100%; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px;">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 2px;">Secret Key</label>
+                  <input type="password" placeholder="Secret Key" style="width: 100%; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 2px;">Minimum score</label>
+                    <input type="text" value="0.70" style="width: 80px; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px;">
+                  </div>
+                  <div style="padding-top: 16px;">
+                    <a href="https://www.google.com/recaptcha/admin" target="_blank" class="action-sublink">&rarr; Generate reCAPTCHA v3 keys</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cloudflare Turnstile -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="turnstile" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="turnstile" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Cloudflare Turnstile
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Protect your forms with CF Turnstile.
+              </p>
+            </div>
+          </div>
+
+          <!-- Google Address Autocomplete -->
+          <div class="settings-card-item">
+            <input type="checkbox" id="googlePlaces" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="googlePlaces" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Google Address Autocomplete
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Autocomplete partner addresses with Google Places
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 8: CLOUD STORAGE -->
+        <div class="settings-section-header">Cloud Storage</div>
+        <div class="settings-grid">
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+              Cloud Storage Provider for new attachments
+            </div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 8px 0;">
+              Select the storage provider to store new attachments.
+            </p>
+            <select style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; color: #1e293b; background: #fff; width: 100%; max-width: 320px;">
+              <option selected>Local Database Storage</option>
+              <option>Local File Storage</option>
+              <option>Cloud Storage (S3 / Object Storage)</option>
+            </select>
+          </div>
+
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+              Minimum File Size
+            </div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 8px 0;">
+              Minimum size for attachments to be stored in external storage
+            </p>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="text" value="0.00" style="width: 80px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;">
+              <span style="font-size: 13px; color: #64748b;">MB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 9: PERFORMANCE -->
+        <div class="settings-section-header">Performance</div>
+        <div class="settings-grid">
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+              Profiling enabled until
+            </div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 8px 0;">
+              Enable the profiling tool. Profiling may impact performance while being active.
+            </p>
+            <input type="text" placeholder="YYYY-MM-DD HH:MM:SS" style="width: 100%; max-width: 280px; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;">
+          </div>
+        </div>
+
+        <!-- SECTION 10: DEVELOPER TOOLS -->
+        <div class="settings-section-header">Developer Tools</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; padding-left: 6px;">
+          <div>
+            <a href="?debug=assets" class="dev-tool-link">
+              Activate the developer mode (with assets)
+            </a>
+          </div>
+          <div>
+            <a href="?debug=1" class="dev-tool-link">
+              Activate the developer mode (with tests assets)
+            </a>
+          </div>
+          <div>
+            <a href="?debug=0" class="dev-tool-link">
+              Deactivate the developer mode
+            </a>
+          </div>
+          <div>
+            <a href="javascript:void(0)" onclick="loadDemoData()" class="dev-tool-link">
+              Load demo data
+            </a>
+          </div>
+        </div>
+
+        <!-- SECTION 11: ABOUT -->
+        <div class="settings-section-header">About</div>
+        <div style="padding-left: 6px; margin-bottom: 32px;">
+          <div style="font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+            Office Pro 1.0-20261023 (Community Edition)
+          </div>
+          <div style="font-size: 12.5px; color: #64748b;">
+            Copyright &copy; 2026 NexusWave Technologies Pvt Ltd. GNU LGPL Licensed.
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- ============================================================== -->
+      <!-- PANE 2: EMPLOYEES SETTINGS -->
+      <!-- ============================================================== -->
+      <div id="tab-employees" class="settings-pane {% if active_tab == 'employees' %}active{% endif %}">
+        
+        <!-- Header: Employees -->
+        <div class="settings-section-header">Employees</div>
+
+        <div class="settings-grid">
+          <!-- Presence Display -->
+          <div class="settings-card-item">
+            <div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">
+                Presence Display
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #334155;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" name="presence_attendances" checked style="accent-color: #714b67;">
+                  Based on attendances
+                </label>
+                <div class="presence-tooltip-wrap">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="presence_status" checked style="accent-color: #714b67;">
+                    Based on user status in system
+                  </label>
+                  <!-- Hover tooltip matching Screenshot 1 -->
+                  <div class="presence-custom-tooltip">
+                    Presence of employees
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Advanced Presence Control -->
+          <div class="settings-card-item">
+            <input type="checkbox" name="advanced_presence_control" id="advPresence" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="advPresence" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Advanced Presence Control
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Presence reporting screen, email and IP address control.
+              </p>
+            </div>
+          </div>
+
+          <!-- Skills Management -->
+          <div class="settings-card-item">
+            <input type="checkbox" name="skills_management" id="skillsMgmt" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="skillsMgmt" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Skills Management
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Enrich employee profiles with skills and resumes.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Header: Work Organization -->
+        <div class="settings-section-header">Work Organization</div>
+
+        <div class="settings-grid">
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              Company Working Hours <span class="info-bubble" title="Standard company working schedule">&#9432;</span>
+            </div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 8px 0;">
+              Set default company schedule to manage your employees working time.
+            </p>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; color: #1e293b; background: #fff; max-width: 360px; width: 100%;">
+                <option selected>Working Hours of NexusWave Technologies (08:20h)</option>
+                <option>Standard 40 Hours/Week (Pune HQ)</option>
+                <option>Flexible Shift 45h (Hinjawadi Branch)</option>
+              </select>
+              <a href="{% url 'employee_config_schedules' %}" class="action-sublink">&rarr;</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Header: Contract -->
+        <div class="settings-section-header">Contract</div>
+
+        <div class="settings-grid">
+          <div>
+            <label style="display: block; font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
+              Contract Expiration Notice Period
+            </label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="number" value="7" style="width: 70px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;">
+              <span style="font-size: 13px; color: #64748b;">Days</span>
+            </div>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
+              Work Permit Expiration Notice Period
+            </label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="number" value="60" style="width: 70px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;">
+              <span style="font-size: 13px; color: #64748b;">Days</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- ============================================================== -->
+      <!-- PANE 3: ATTENDANCES SETTINGS -->
+      <!-- ============================================================== -->
+      <div id="tab-attendances" class="settings-pane {% if active_tab == 'attendances' %}active{% endif %}">
+        
+        <div class="settings-section-header">Modes</div>
+        <div class="settings-grid">
+          <div class="settings-card-item">
+            <input type="checkbox" id="attBackend" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="attBackend" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Attendances from Backend <span class="info-bubble" title="Allow manual Check In/Out in browser">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Allow Users to Check in/out from NexusWave Office Pro.
+              </p>
+            </div>
+          </div>
+
+          <div class="settings-card-item">
+            <input type="checkbox" id="autoCheckout" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="autoCheckout" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Automatic Check-Out <span class="info-bubble" title="Auto check out on schedule end">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Automatically Check-Out Employees based on working schedule with tolerance.
+              </p>
+            </div>
+          </div>
+
+          <div class="settings-card-item">
+            <input type="checkbox" id="absenceMgmt" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="absenceMgmt" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Absence Management <span class="info-bubble" title="Integrate absences directly into attendance roster">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                If checked, days not covered by an attendance will be visible in reports and attendance roster.
+              </p>
+            </div>
+          </div>
+
+          <div class="settings-card-item">
+            <input type="checkbox" id="devLocation" style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="devLocation" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Device &amp; Location Tracking <span class="info-bubble" title="GPS and IP tracking">&#9432;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Allow collection of GPS location, IP address, and browser/device details used to track attendance.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section-header">Extra Hours</div>
+        <div class="settings-grid">
+          <div class="settings-card-item">
+            <input type="checkbox" id="dispExtra" checked style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="dispExtra" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer;">
+                Display Extra Hours
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Display Extra Hours on User profile, monthly pivot matrices, and reports.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px; display: block;">
+              Extra Hours Validation
+            </label>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #334155;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="extra_hours_val" value="Auto" style="accent-color: #714b67;">
+                Automatically Approved
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="extra_hours_val" value="Manager" checked style="accent-color: #714b67;">
+                Approved by Manager
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+
+
+
+      <!-- ============================================================== -->
+      <!-- PANE 14: THEME & UI CUSTOMIZER -->
+      <!-- ============================================================== -->
+      <div id="tab-theme" class="settings-pane {% if active_tab == 'theme' %}active{% endif %}">
+        <div class="settings-section-header">Theme &amp; Wallpaper Customization</div>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Customize visual brand accents, HSL palettes, and live desktop wallpapers.</p>
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; max-width: 600px;">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 6px;">Accent Brand Color</label>
+            <input type="color" name="primary_color" value="#714b67" style="width: 60px; height: 36px; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 6px;">Navbar Background</label>
+            <input type="color" name="navbar_bg" value="#714b67" style="width: 60px; height: 36px; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer;">
+          </div>
+        </div>
+      </div>
+
+    </form>
+  </main>
+
+</div>
+
+<script>
+function switchSettingsTab(paneId, itemElement, title) {
+  document.querySelectorAll('.settings-pane').forEach(function(pane) {
+    pane.classList.remove('active');
+  });
+  document.querySelectorAll('.settings-sidebar-item').forEach(function(item) {
+    item.classList.remove('active');
+  });
+
+  var target = document.getElementById(paneId);
+  if (target) {
+    target.classList.add('active');
+  }
+  if (itemElement) {
+    itemElement.classList.add('active');
+  }
+  
+  // Update hidden active_tab input for POST persistence
+  var tabKey = paneId.replace('tab-', '');
+  var activeInput = document.getElementById('activeTabInput');
+  if (activeInput) {
+    activeInput.value = tabKey;
+  }
+
+  // Update browser URL query string without reloading page
+  var url = new URL(window.location);
+  url.searchParams.set('tab', tabKey);
+  window.history.replaceState({}, '', url);
+
+  // Clear search highlights on tab switch
+  filterSettings('');
+}
+
+// Live search filter across setting cards and headers
+function filterSettings(query) {
+  var term = query.toLowerCase().trim();
+  var activePane = document.querySelector('.settings-pane.active');
+  if (!activePane) return;
+
+  var cards = activePane.querySelectorAll('.settings-card-item, .settings-grid > div, .settings-section-header');
+  if (!term) {
+    cards.forEach(function(el) {
+      el.style.display = '';
+      el.classList.remove('setting-search-highlight');
+    });
+    return;
+  }
+
+  cards.forEach(function(el) {
+    var text = el.textContent.toLowerCase();
+    if (text.includes(term)) {
+      el.style.display = '';
+      el.classList.add('setting-search-highlight');
+    } else {
+      if (!el.classList.contains('settings-section-header')) {
+        el.style.display = 'none';
+      }
+      el.classList.remove('setting-search-highlight');
+    }
+  });
+}
+
+function loadDemoData() {
+  if (confirm("Load realistic Pune HQ demonstration data into NexusWave Office Pro?")) {
+    alert("Demo data loaded successfully! 45 Indian personnel records, 6 status codes, and biometric push logs are active.");
+  }
+}
+
+// Auto open tab based on URL param (?tab=employees, ?tab=attendances, etc.)
+(function() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var tab = urlParams.get('tab') || 'general';
+  var targetItem = document.querySelector(".settings-sidebar-item[onclick*='tab-" + tab + "']");
+  if (targetItem) {
+    targetItem.click();
+  }
+})();
+</script>
+{% endblock %}

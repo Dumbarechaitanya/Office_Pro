@@ -1,0 +1,190 @@
+{% extends "attendance/attendance_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #f8fafc; min-height: calc(100vh - 50px);">
+
+  <!-- Top Action & Search Bar (Matching Screenshot 2 & 3) -->
+  <div style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button type="submit" form="attSettingsForm" style="padding: 6px 16px; background: #714b67; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer;">
+        Save
+      </button>
+      <a href="{% url 'attendance_settings' %}" style="padding: 6px 14px; background: #ffffff; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; font-weight: 600; text-decoration: none;">
+        Discard
+      </a>
+      <span style="font-size: 14px; font-weight: 700; color: #1e293b; margin-left: 6px;">Settings</span>
+    </div>
+
+    <!-- Search Box -->
+    <div style="max-width: 440px; width: 100%;">
+      <div style="position: relative;">
+        <span style="position: absolute; left: 10px; top: 7px; color: #94a3b8; font-size: 13px;">&#128269;</span>
+        <input type="text" placeholder="Search..." style="width: 100%; padding: 6px 12px 6px 32px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; box-sizing: border-box;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Layout: Left Vertical Sidebar + Right Content -->
+  <div style="display: flex; min-height: calc(100vh - 105px);">
+    
+    <!-- Left Navigation Sidebar ("Ubha Panel") -->
+    <aside style="width: 220px; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 12px 0; flex-shrink: 0;">
+      <ul style="list-style: none; margin: 0; padding: 0; font-size: 13px;">
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=general'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #ea580c;">&#9881;</span> General Settings
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=crm'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #0d9488;">&#9650;</span> CRM
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=sales'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #f59e0b;">&#9632;</span> Sales
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=calendar'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #ef4444;">&#128197;</span> Calendar
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=website'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #06b6d4;">&#127760;</span> Website
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=purchase'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #0284c7;">&#128722;</span> Purchase
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=invoicing'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #3b82f6;">&#128179;</span> Invoicing
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=project'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #6366f1;">&#128203;</span> Project
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=timesheets'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #0ea5e9;">&#9201;</span> Timesheets
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=email-marketing'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #38bdf8;">&#9993;</span> Email Marketing
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=employees'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #d97706;">&#128101;</span> Employees
+        </li>
+        <!-- Attendances (Active Tab) -->
+        <li style="padding: 8px 20px; background: #ede9fe; color: #714b67; font-weight: 700; border-left: 3px solid #714b67; display: flex; align-items: center; gap: 10px;">
+          <span style="color: #714b67;">&#9200;</span> Attendances
+        </li>
+        <li onclick="window.location.href='{% url 'settings_general' %}?tab=expenses'" style="padding: 8px 20px; color: #475569; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #059669;">&#128178;</span> Expenses
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Right Settings Form Area -->
+    <main style="flex: 1; padding: 24px 36px; max-width: 1060px;">
+      <form id="attSettingsForm" method="POST">
+        {% csrf_token %}
+
+        <!-- SECTION: MODES -->
+        <div style="background: #f1f5f9; padding: 6px 14px; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 20px; border-radius: 4px;">
+          Modes
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px 40px; margin-bottom: 32px;">
+          
+          <!-- Attendances from Backend -->
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <input type="checkbox" name="attendances_from_backend" id="attBackend" {% if setting.attendances_from_backend %}checked{% endif %} style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="attBackend" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Attendances from Backend <span style="font-size: 12px; color: #94a3b8;">&#127970;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Allow Users to Check in/out from NexusWave Office Pro.
+              </p>
+            </div>
+          </div>
+
+          <!-- Automatic Check-Out -->
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <input type="checkbox" name="automatic_checkout" id="autoCheckout" {% if setting.automatic_checkout %}checked{% endif %} style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="autoCheckout" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Automatic Check-Out <span style="font-size: 12px; color: #94a3b8;">&#127970;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Automatically Check-Out Employees based on their working schedule with an additional tolerance. Does not apply to employees with a flexible working schedule.
+              </p>
+            </div>
+          </div>
+
+          <!-- Absence Management -->
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <input type="checkbox" name="absence_management" id="absMgmt" {% if setting.absence_management %}checked{% endif %} style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="absMgmt" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Absence Management <span style="font-size: 12px; color: #94a3b8;">&#127970;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                If checked, days not covered by an attendance will be visible in the Report and Attendance list. Does not apply to employees with a flexible working schedule.
+              </p>
+            </div>
+          </div>
+
+          <!-- Device & Location Tracking -->
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <input type="checkbox" name="device_location_tracking" id="devLoc" {% if setting.device_location_tracking %}checked{% endif %} style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="devLoc" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Device &amp; Location Tracking <span style="font-size: 12px; color: #94a3b8;">&#128241;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Allow the collection of GPS location, IP address, and browser/device details used to track employee access and attendance.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SECTION: EXTRA HOURS -->
+        <div style="background: #f1f5f9; padding: 6px 14px; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 20px; border-radius: 4px;">
+          Extra Hours
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px 40px; margin-bottom: 32px;">
+          
+          <!-- Display Extra Hours -->
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <input type="checkbox" name="display_extra_hours" id="dispExtra" {% if setting.display_extra_hours %}checked{% endif %} style="margin-top: 3px; accent-color: #714b67;">
+            <div>
+              <label for="dispExtra" style="font-size: 13.5px; font-weight: 700; color: #1e293b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                Display Extra Hours <span style="font-size: 12px; color: #94a3b8;">&#127970;</span>
+              </label>
+              <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0; line-height: 1.4;">
+                Display Extra Hours on User profile, monthly pivot matrices, and reports.
+              </p>
+            </div>
+          </div>
+
+          <!-- Extra Hours Validation -->
+          <div>
+            <label style="font-size: 13.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              Extra Hours Validation <span style="font-size: 12px; color: #94a3b8;">&#127970;</span>
+            </label>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 10px 0;">
+              Can be converted as Time Off (cfr Time Off configuration).
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #334155;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="extra_hours_validation" value="Automatically Approved" {% if setting.extra_hours_validation == 'Automatically Approved' %}checked{% endif %} style="accent-color: #714b67;">
+                Automatically Approved
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="extra_hours_validation" value="Approved by Manager" {% if setting.extra_hours_validation == 'Approved by Manager' %}checked{% endif %} style="accent-color: #714b67;">
+                Approved by Manager
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+      </form>
+    </main>
+  </div>
+
+</div>
+{% endblock %}

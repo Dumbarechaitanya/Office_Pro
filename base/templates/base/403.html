@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>403 Access Denied - Office Pro ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      --card-bg: rgba(30, 41, 59, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .op-err-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(16px);
+      padding: 40px;
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .op-err-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #8b5cf6);
+    }
+
+    .op-err-badge {
+      font-size: 56px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, #ef4444, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .op-err-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .op-err-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .op-err-path {
+      background: #0b0f19;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #f87171;
+      display: inline-block;
+      margin-bottom: 24px;
+      border: 1px solid rgba(255,255,255,0.08);
+      word-break: break-all;
+    }
+
+    .op-err-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .op-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .op-btn-primary { background: var(--primary); color: #fff; }
+    .op-btn-primary:hover { background: var(--primary-hover); }
+    .op-btn-secondary { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border-color: rgba(255, 255, 255, 0.12); }
+    .op-btn-secondary:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="op-err-card">
+    <div class="op-err-badge">403</div>
+    <h1 class="op-err-title">Access Denied &bull; Permission Required</h1>
+    <p class="op-err-desc">
+      Your user account does not have sufficient security privileges or group memberships to access this technical view or document record. Contact your system administrator to request access.
+    </p>
+    <div class="op-err-path">{{ request_path|default:request.path }}</div>
+    <div class="op-err-actions">
+      <button type="button" class="op-btn op-btn-secondary" onclick="window.history.back()">&#8592; Go Back</button>
+      <a href="/" class="op-btn op-btn-primary">&#8962; Return to Home Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>

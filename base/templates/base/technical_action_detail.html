@@ -1,0 +1,148 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-action-detail-form" method="post" action="{{ form_action }}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        {% if create_url %}
+          <a href="{{ create_url }}" class="op-view-btn-new">New</a>
+        {% endif %}
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_actions' %}">Actions</a> / {{ action.name }}
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_actions' %}" class="op-view-btn-discard">Discard</a>
+
+        <!-- Pager -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #4b5563; margin-left: 12px;">
+          <span>{{ current_index }} / {{ total_actions }}</span>
+          {% if prev_id %}
+            <a href="{% url 'technical_action_detail' prev_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&lt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&lt;</span>
+          {% endif %}
+          {% if next_id %}
+            <a href="{% url 'technical_action_detail' next_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&gt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_name">
+              Action Name
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Action Name</li>
+                      <li>Field: name</li>
+                      <li>Model: ir.actions.act_window</li>
+                      <li>Type: char</li>
+                      <li>Required: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_name" name="name" class="op-view-input" value="{{ action.name }}" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_action_type">
+              Action Type
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Action Type</li>
+                      <li>Field: type</li>
+                      <li>Model: ir.actions.act_window</li>
+                      <li>Type: selection</li>
+                      <li>Required: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_action_type" name="action_type" class="op-view-select">
+                {% for val, label in action_type_choices %}
+                  <option value="{{ val }}" {% if action.action_type == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_res_model">
+              Related Model
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Related Model</li>
+                      <li>Field: res_model</li>
+                      <li>Model: ir.actions.act_window</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_res_model" name="res_model" class="op-view-input" value="{{ action.res_model|default:'' }}" placeholder="e.g. hr.employee">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_view_mode">
+              View Mode
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: View Mode</li>
+                      <li>Field: view_mode</li>
+                      <li>Model: ir.actions.act_window</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_view_mode" name="view_mode" class="op-view-input" value="{{ action.view_mode|default:'list,form' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

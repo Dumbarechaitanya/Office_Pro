@@ -1,0 +1,211 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-section-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #4b5563;
+    margin-bottom: 14px;
+    padding-bottom: 4px;
+  }
+  .op-section-divider {
+    border-top: 1px solid #e5e7eb;
+    margin: 24px 0 16px 0;
+    padding-top: 16px;
+  }
+  .op-domain-editor {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    color: #0284c7;
+    background: #ffffff;
+    outline: none;
+    min-height: 50px;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .op-info-callout {
+    background: #f8fafc;
+    border-left: 4px solid #0284c7;
+    padding: 16px 20px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 24px;
+    font-size: 13.5px;
+    color: #334155;
+    line-height: 1.6;
+  }
+  .op-info-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #0f172a;
+    margin-bottom: 8px;
+  }
+  .op-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #0284c7;
+    color: #ffffff;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .op-perm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 24px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-rule-create-form" method="post" action="{{ form_action }}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_record_rules' %}">Record Rules</a> / New
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_record_rules' %}" class="op-view-btn-discard">Discard</a>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <!-- Section 1: General vs Access Rights -->
+      <div class="op-view-grid-2col">
+        <!-- Left: General -->
+        <div>
+          <div class="op-section-title">GENERAL</div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_rule_name">Name</label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_rule_name" name="rule_name" class="op-view-input" placeholder="e.g. Website menu: group_ids" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_model_display">Model</label>
+            <div class="op-view-input-wrap">
+              <div class="op-m2o-field" data-relation-model="ir.model" data-field-label="Model">
+                <input type="hidden" id="id_model" name="model" class="op-m2o-value" value="">
+                <div class="op-m2o-input-wrap">
+                  <input type="text" id="id_model_display" class="op-m2o-display-input" value="" placeholder="Search model..." autocomplete="off">
+                  <button type="button" class="op-m2o-caret-btn" title="Open dropdown">&#9662;</button>
+                  <a href="#" id="id_model_internal_link" class="op-m2o-internal-link" style="display: none;" title="Internal link">&#10142;</a>
+                </div>
+                <div class="op-m2o-dropdown"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_active">Active</label>
+            <div class="op-view-input-wrap">
+              <label class="op-switch">
+                <input type="checkbox" id="id_active" name="is_active" checked>
+                <span class="op-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Access Rights -->
+        <div>
+          <div class="op-section-title">ACCESS RIGHTS</div>
+
+          <div class="op-perm-grid">
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_perm_read" style="width: auto;">Read</label>
+              <div class="op-view-input-wrap">
+                <input type="checkbox" id="id_perm_read" name="perm_read" style="accent-color: #714b67; width: 16px; height: 16px;" checked>
+              </div>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_perm_write" style="width: auto;">Write</label>
+              <div class="op-view-input-wrap">
+                <input type="checkbox" id="id_perm_write" name="perm_write" style="accent-color: #714b67; width: 16px; height: 16px;" checked>
+              </div>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_perm_create" style="width: auto;">Create</label>
+              <div class="op-view-input-wrap">
+                <input type="checkbox" id="id_perm_create" name="perm_create" style="accent-color: #714b67; width: 16px; height: 16px;" checked>
+              </div>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_perm_unlink" style="width: auto;">Delete</label>
+              <div class="op-view-input-wrap">
+                <input type="checkbox" id="id_perm_unlink" name="perm_unlink" style="accent-color: #714b67; width: 16px; height: 16px;" checked>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Rule Definition -->
+      <div class="op-section-divider">
+        <div class="op-section-title">RULE DEFINITION (DOMAIN FILTER)</div>
+        <textarea id="id_domain_force" name="domain_force" class="op-domain-editor" rows="2">[(1, '=', 1)]</textarea>
+      </div>
+
+      <!-- Section 3: Groups -->
+      <div class="op-section-divider">
+        <div class="op-section-title">GROUPS (NO GROUP = GLOBAL)</div>
+
+        <div style="padding: 10px 0; display: flex; align-items: center; gap: 12px;">
+          <select name="group" class="op-view-select" style="max-width: 300px;">
+            <option value="">(Global - No Group)</option>
+            {% for g in all_groups %}
+              <option value="{{ g.id }}">{{ g.name }}</option>
+            {% endfor %}
+          </select>
+          <span style="font-size: 12px; color: #64748b;">Leave Global to apply rule to all users or select a specific group.</span>
+        </div>
+      </div>
+
+      <!-- Section 4: Interaction between rules -->
+      <div class="op-info-callout">
+        <div class="op-info-title">
+          <span class="op-info-icon">i</span>
+          Interaction between rules
+        </div>
+        <p style="margin: 0 0 10px 0;">
+          Global rules (non group-specific) are restrictions, and cannot be bypassed. Group-specific rules grant additional permissions, but are constrained within the bounds of global ones.
+        </p>
+      </div>
+
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'base/js/many2one_widget.js' %}"></script>
+{% endblock %}
+

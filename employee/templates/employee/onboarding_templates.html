@@ -1,0 +1,70 @@
+{% extends "employee/employee_base.html" %}
+
+{% block content %}
+<div class="emp-control-bar">
+  <div class="emp-actions-left">
+    {% if is_hr %}
+    <a href="{% url 'employee_onboarding_template_create' %}" class="emp-btn-primary" id="btnNewTemplate">
+      <span>&#43;</span> New Onboarding Template
+    </a>
+    {% endif %}
+    <a href="{% url 'employee_list' %}" class="emp-btn-secondary">
+      <span>&#128101;</span> Employees
+    </a>
+    <span style="font-size: 13px; color: #64748b; font-weight: 600; margin-left: 8px;">
+      {{ templates.count }} Templates
+    </span>
+  </div>
+</div>
+
+<div class="emp-kanban-container">
+  <div class="emp-kanban-grid">
+    {% for tmpl in templates %}
+    <a href="{% url 'employee_onboarding_template_detail' tmpl.id %}" class="emp-kanban-card">
+      <div class="emp-card-header">
+        <div style="width: 44px; height: 44px; border-radius: 8px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+          &#128221;
+        </div>
+        <div class="emp-title-area">
+          <h4 class="emp-name">{{ tmpl.name }}</h4>
+          <p class="emp-job">{{ tmpl.job_title|default:"Standard Role" }} &bull; {{ tmpl.branch }}</p>
+        </div>
+      </div>
+
+      <div class="emp-card-body">
+        <div class="emp-meta-row">
+          <span class="emp-meta-icon">&#127970;</span>
+          <span>Dept: <strong>{{ tmpl.department.name|default:"General" }}</strong></span>
+        </div>
+        <div class="emp-meta-row">
+          <span class="emp-meta-icon">&#9200;</span>
+          <span>Timesheet Approver: {{ tmpl.timesheet_approver.name|default:"Auto / Direct Mgr" }}</span>
+        </div>
+        <div class="emp-meta-row">
+          <span class="emp-meta-icon">&#127807;</span>
+          <span>Leave Chain: {{ tmpl.leave_approver_l1.name|default:"L1 Mgr" }} &rarr; {{ tmpl.leave_approver_l2.name|default:"L2 Exec" }}</span>
+        </div>
+        <div class="emp-meta-row">
+          <span class="emp-meta-icon">&#128178;</span>
+          <span>Expense Chain: {{ tmpl.expense_approver_l1.name|default:"L1 Mgr" }} &rarr; {{ tmpl.expense_approver_l2.name|default:"L2 Finance" }}</span>
+        </div>
+      </div>
+
+      <div class="emp-card-footer">
+        <span class="emp-dept-badge" style="background: #f1f5f9; color: #475569;">
+          {{ tmpl.employment_type }}
+        </span>
+        <span style="font-size: 12px; color: #0284c7; font-weight: 600;">Edit &rarr;</span>
+      </div>
+    </a>
+    {% empty %}
+    <div style="grid-column: 1 / -1; text-align: center; padding: 60px; background: #fff; border-radius: 8px; border: 1px dashed #cbd5e1;">
+      <p style="font-size: 16px; color: #64748b; margin-bottom: 12px;">No onboarding templates configured.</p>
+      {% if is_hr %}
+      <a href="{% url 'employee_onboarding_template_create' %}" class="emp-btn-primary">&#43; Create First Template</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

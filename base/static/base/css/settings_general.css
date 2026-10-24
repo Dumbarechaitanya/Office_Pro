@@ -1,0 +1,481 @@
+/* settings_general.css -- Odoo-style General Settings with Left Vertical Tabs */
+
+.op-settings-layout {
+  display: flex;
+  min-height: calc(100vh - 56px);
+  background: #ffffff;
+}
+
+/* Left Vertical Tabs Sidebar */
+.op-settings-sidebar {
+  width: 240px;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  padding: 16px 0;
+  flex-shrink: 0;
+}
+
+.op-sidebar-heading {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 20px 4px;
+}
+
+.op-vertical-tabs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.op-vtab-item {
+  margin: 2px 8px;
+}
+
+.op-vtab-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.op-vtab-link:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.op-vtab-link.active {
+  background: #ffffff;
+  color: var(--op-primary-color, #714b67);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-left: 3px solid var(--op-primary-color, #714b67);
+}
+
+.op-vtab-icon {
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+}
+
+/* Right Content Area */
+.op-settings-main {
+  flex: 1;
+  padding: 24px 36px 60px;
+  max-width: 1000px;
+}
+
+.op-settings-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 28px;
+}
+
+.op-settings-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.op-settings-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.op-settings-pane {
+  display: none;
+}
+
+.op-settings-pane.active {
+  display: block;
+}
+
+/* Section Box */
+.op-settings-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.op-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.op-section-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+/* Theme Preset Cards Grid */
+.op-theme-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.op-theme-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.op-theme-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.op-theme-card.active {
+  border-color: var(--op-primary-color, #714b67);
+  background: #faf5f9;
+  box-shadow: 0 0 0 1px var(--op-primary-color, #714b67);
+}
+
+.op-theme-swatches {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.op-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.op-theme-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Color Picker Inputs */
+.op-color-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 640px) {
+  .op-color-group {
+    grid-template-columns: 1fr;
+  }
+}
+
+.op-color-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.op-color-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.op-color-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.op-color-box {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 2px;
+  cursor: pointer;
+  background: none;
+}
+
+.op-color-text {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  width: 120px;
+  color: #1e293b;
+}
+
+.op-custom-wallpaper-wrap {
+  margin-top: 12px;
+  max-width: 520px;
+  display: none;
+}
+
+.op-custom-wallpaper-wrap.show {
+  display: block;
+}
+
+/* File Upload Dropzone */
+.op-upload-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-top: 8px;
+}
+
+.op-upload-dropzone:hover {
+  border-color: var(--op-primary-color, #714b67);
+  background: #f1f5f9;
+}
+
+.op-upload-file-status {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: #059669;
+  font-weight: 600;
+}
+
+/* Windows-style Wallpaper Preview Cards Grid */
+.op-wallpaper-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.op-wallpaper-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  outline: none;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: center;
+}
+
+.op-wallpaper-thumb {
+  width: 100%;
+  height: 78px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.op-wallpaper-card:hover .op-wallpaper-thumb {
+  border-color: #94a3b8;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.op-wallpaper-card.active .op-wallpaper-thumb {
+  border-color: var(--op-primary-color, #714b67);
+  box-shadow: 0 0 0 2px var(--op-primary-color, #714b67), 0 6px 16px rgba(0, 0, 0, 0.14);
+}
+
+/* Active Checkmark Pill */
+.op-wallpaper-check {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--op-primary-color, #714b67);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  z-index: 5;
+}
+
+.op-wallpaper-card.active .op-wallpaper-check {
+  display: flex;
+}
+
+/* Miniature UI Mockup inside thumbnail */
+.op-thumb-mini-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 4px;
+  gap: 3px;
+  z-index: 2;
+}
+
+.op-thumb-mini-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+}
+
+.op-thumb-mini-apps {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+  z-index: 2;
+}
+
+.op-thumb-mini-tile {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--op-primary-color, #714b67);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Thumbnail Background Styles */
+.op-thumb-live-mesh {
+  background: radial-gradient(circle at 50% 50%, #2a1a28 0%, #120911 100%);
+}
+
+.op-thumb-live-waves {
+  background: linear-gradient(135deg, #361f33 0%, #180d17 100%);
+}
+
+.op-thumb-purple {
+  background: linear-gradient(135deg, #71556e 0%, #8c6e88 35%, #593e55 100%);
+}
+
+.op-thumb-dark {
+  background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+}
+
+.op-thumb-teal {
+  background: linear-gradient(135deg, #0d9488 0%, #115e59 50%, #042f2e 100%);
+}
+
+.op-thumb-minimal {
+  background: #f1f5f9;
+}
+
+.op-thumb-custom {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 20px;
+}
+
+.op-wallpaper-label {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.op-wallpaper-card.active .op-wallpaper-label {
+  font-weight: 700;
+  color: var(--op-primary-color, #714b67);
+}
+
+/* Live UI Preview Box */
+.op-preview-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  background: #f8fafc;
+  margin-top: 16px;
+}
+
+.op-preview-heading {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.op-preview-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+#previewBtn {
+  background: var(--op-primary-color, #714b67);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: default;
+}
+
+#previewTab {
+  border: none;
+  background: none;
+  border-bottom: 2px solid var(--op-primary-color, #714b67);
+  color: var(--op-primary-color, #714b67);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 16px;
+  cursor: default;
+}
+
+#previewNavbar {
+  background: var(--op-navbar-bg, #1e1e2f);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}

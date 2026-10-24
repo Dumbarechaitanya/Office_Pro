@@ -1,0 +1,87 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-field-create-form" method="post" action="{% url 'technical_field_create' %}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_fields' %}">Fields</a> / New
+        </span>
+      </div>
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_fields' %}" class="op-view-btn-discard">Discard</a>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_model">Model</label>
+            <div class="op-view-input-wrap">
+              <select id="id_model" name="model" class="op-view-select" required>
+                <option value="" disabled selected>-- Select Model --</option>
+                {% for m in all_models %}
+                  <option value="{{ m.id }}">{{ m.description|default:m.model_name }} ({{ m.model_name }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_field_name">Field Name</label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_field_name" name="field_name" class="op-view-input" placeholder="x_custom_field" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_field_type">Field Type</label>
+            <div class="op-view-input-wrap">
+              <select id="id_field_type" name="field_type" class="op-view-select">
+                {% for val, label in field_type_choices %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_relation_model">Relation (if FK)</label>
+            <div class="op-view-input-wrap">
+              <select id="id_relation_model" name="relation_model" class="op-view-select">
+                <option value="">-- none --</option>
+                {% for val, label in relation_model_choices %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_is_required">Required</label>
+            <div class="op-view-input-wrap">
+              <input type="checkbox" id="id_is_required" name="is_required">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+<style>
+  .op-check-cell {
+    width: 38px;
+    text-align: center;
+  }
+  .op-badge-sys {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #475569;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="list-toolbar">
+  <div class="list-toolbar-left">
+    <a href="{% url 'technical_parameter_create' %}" class="btn-new">New</a>
+    <span class="toolbar-title">Parameters</span>
+    <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+  </div>
+
+  <div class="list-toolbar-center">
+    {% include 'base/_search_panel.html' %}
+  </div>
+
+  <div class="list-toolbar-right">
+    <div class="toolbar-pagination">
+      {% if total_count %}{{ page_start }}-{{ page_end }} / {{ total_count }} records{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="op-list-view">
+  <table>
+    <thead>
+      <tr>
+        <th class="op-check-cell"><input type="checkbox" id="select-all-params"></th>
+        <th style="width: 260px;">Key</th>
+        <th>Value</th>
+        <th>Description</th>
+        <th style="text-align: center; width: 90px;">Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in parameters %}
+        <tr data-href="{% url 'technical_parameter_detail' p.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
+          <td class="op-check-cell" onclick="event.stopPropagation();">
+            <input type="checkbox" class="op-row-check">
+          </td>
+          <td>
+            <a href="{% url 'technical_parameter_detail' p.id %}" style="text-decoration: none; color: inherit; font-weight: 700; font-family: monospace; display: block;">{{ p.key }}</a>
+          </td>
+          <td style="color: #334155; font-family: monospace; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ p.value }}</td>
+          <td style="color: #64748b; font-size: 13px;">{{ p.description|default:'—' }}</td>
+          <td style="text-align: center;">
+            {% if p.is_system %}
+              <span class="op-badge-sys">System</span>
+            {% else %}
+              <span class="op-badge-sys" style="background: #e0f2fe; color: #0369a1;">User</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5" style="text-align: center; color: #94a3b8; padding: 32px;">
+            No system parameters registered. Click <strong>New</strong> to define a parameter.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

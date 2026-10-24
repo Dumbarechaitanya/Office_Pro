@@ -1,0 +1,1063 @@
+/* Odoo-style View Form & Tabs Styling with Underline / Bottom-Border Textfields */
+
+.op-view-form-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 10px 0 40px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif;
+  color: #2b2b2b;
+}
+
+.op-view-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 16px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.op-view-control-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.op-view-btn-new {
+  background: var(--op-primary-color, #714b67);
+  color: #fff;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.op-view-btn-new:hover {
+  background: var(--op-primary-hover, #5a3c53);
+  color: #fff;
+}
+
+.op-view-breadcrumb {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.op-view-breadcrumb a {
+  color: var(--op-primary-color, #714b67);
+  text-decoration: none;
+}
+
+.op-view-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.op-view-control-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.op-view-btn-save {
+  background: var(--op-primary-color, #714b67);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.op-view-btn-save:hover {
+  background: var(--op-primary-hover, #5a3c53);
+  color: #ffffff;
+}
+
+.op-view-btn-discard {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.op-view-btn-discard:hover {
+  background: #e5e7eb;
+}
+
+/* Pager on Form Header */
+.op-view-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+  margin-left: 8px;
+}
+
+.op-view-pager-btns {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.op-view-pager-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.op-view-pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.op-view-pager-btn:not(:disabled):hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* 2-Column Form Card */
+.op-view-sheet {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.op-view-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 40px;
+  row-gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .op-view-grid-2col {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+  }
+}
+
+.op-view-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+}
+
+.op-view-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 240px;
+  flex-shrink: 0;
+}
+
+/* Question Mark and Debug Tooltip */
+.op-view-hint,
+.op-field-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: help;
+  position: relative;
+  margin-left: 3px;
+  user-select: none;
+}
+
+/* Hide question marks completely when not in debug mode */
+body:not(.op-debug-mode) .op-view-hint,
+body:not(.op-debug-mode) .op-field-hint {
+  display: none !important;
+}
+
+/* Tooltip Popup container */
+.op-debug-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1000;
+  width: max-content;
+  max-width: 440px;
+  min-width: 290px;
+  background: #000000;
+  color: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  text-align: left;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Top triangle arrow */
+.op-debug-tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent #000000 transparent;
+}
+
+.op-debug-tooltip.has-help::before {
+  border-color: transparent transparent #17a2b8 transparent;
+}
+
+.op-view-hint:hover .op-debug-tooltip,
+.op-field-hint:hover .op-debug-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Top Cyan / Teal Help Box */
+.op-debug-tooltip-help {
+  background-color: #17a2b8;
+  color: #ffffff;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.45;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif;
+  white-space: normal;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Bottom Metadata Box (Black) */
+.op-debug-tooltip-meta {
+  background-color: #000000;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #ffffff;
+}
+
+.op-debug-tooltip-meta ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.op-debug-tooltip-meta li {
+  position: relative;
+  padding-left: 14px;
+  margin: 1px 0;
+}
+
+.op-debug-tooltip-meta li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #ffffff;
+}
+
+.op-debug-tooltip-meta .sub-list {
+  padding-left: 14px;
+  margin-top: 2px;
+}
+
+.op-view-input-wrap {
+  flex: 1;
+}
+
+/* ONLY BOTTOM BORDER FOR TEXTFIELDS / INPUTS */
+.op-view-input,
+.op-view-select {
+  width: 100%;
+  padding: 4px 2px;
+  font-size: 13.5px;
+  border: none;
+  border-bottom: 1px solid #cbd5e1;
+  border-radius: 0;
+  background: transparent;
+  color: #1f2937;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.op-view-input:focus,
+.op-view-select:focus {
+  border-bottom: 2px solid var(--op-primary-color, #714b67);
+  outline: none;
+  box-shadow: none;
+  background: #fdfdfd;
+}
+
+.op-view-input:hover,
+.op-view-select:hover {
+  border-bottom-color: #94a3b8;
+}
+
+/* Odoo Toggle Switch */
+.op-switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 20px;
+}
+
+.op-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.op-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .2s;
+  border-radius: 20px;
+}
+
+.op-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .2s;
+  border-radius: 50%;
+}
+
+input:checked + .op-slider {
+  background-color: var(--op-primary-color, #714b67);
+}
+
+input:checked + .op-slider:before {
+  transform: translateX(18px);
+}
+
+/* Warning Info Box */
+.op-view-alert {
+  background-color: #e0f2fe;
+  border: 1px solid #bae6fd;
+  border-left: 4px solid #0284c7;
+  color: #0369a1;
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* Tabs */
+.op-view-tabs {
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.op-view-tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.op-view-tab-btn:hover {
+  color: #1f2937;
+}
+
+.op-view-tab-btn.active {
+  color: var(--op-primary-color, #714b67);
+  font-weight: 600;
+  border-bottom-color: var(--op-primary-color, #714b67);
+}
+
+.op-view-tab-pane {
+  display: none;
+}
+
+.op-view-tab-pane.active {
+  display: block;
+}
+
+/* Architecture Code Editor */
+.op-arch-editor-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.op-arch-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.op-arch-textarea {
+  width: 100%;
+  min-height: 280px;
+  padding: 12px 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  border: none;
+  border-bottom: 2px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  resize: vertical;
+  outline: none;
+}
+
+.op-arch-textarea:focus {
+  border-bottom-color: var(--op-primary-color, #714b67);
+}
+
+/* Odoo Sub-tables */
+.op-sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.op-sub-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: #f9fafb;
+  color: #4b5563;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.op-sub-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+}
+
+.op-sub-table tr:hover td {
+  background: #f8fafc;
+}
+
+.op-sub-link {
+  color: var(--op-primary-color, #714b67);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.op-sub-link:hover {
+  text-decoration: underline;
+}
+
+.op-add-line-btn {
+  display: inline-block;
+  margin-top: 10px;
+  background: none;
+  border: none;
+  color: var(--op-primary-color, #714b67);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: none;
+}
+
+.op-add-line-btn:hover {
+  text-decoration: underline;
+}
+
+.op-badge-active {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+/* Odoo Many2One Search & Select Table Modal */
+.op-m2o-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(1px);
+}
+
+.op-m2o-modal {
+  background: #ffffff;
+  width: 840px;
+  max-width: 95vw;
+  height: 580px;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: opModalFadeIn 0.15s ease-out;
+}
+
+@keyframes opModalFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.op-m2o-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.op-m2o-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.op-m2o-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.op-m2o-modal-close:hover {
+  color: #111827;
+  background: #f3f4f6;
+}
+
+.op-m2o-modal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafafa;
+}
+
+.op-m2o-modal-search-box {
+  position: relative;
+  width: 320px;
+  display: flex;
+  align-items: center;
+}
+
+.op-m2o-search-icon {
+  position: absolute;
+  left: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.op-m2o-search-caret {
+  position: absolute;
+  right: 8px;
+  font-size: 10px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.op-m2o-modal-search-input {
+  width: 100%;
+  padding: 6px 26px 6px 26px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  background: #ffffff;
+}
+
+.op-m2o-modal-search-input:focus {
+  border-color: var(--op-primary-color, #714b67);
+}
+
+.op-m2o-modal-pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.op-m2o-pager-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.op-m2o-pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.op-m2o-pager-btn:not(:disabled):hover {
+  background: #f3f4f6;
+}
+
+.op-m2o-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.op-m2o-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.op-m2o-table th {
+  padding: 10px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.op-m2o-table td {
+  padding: 9px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+}
+
+.op-m2o-row {
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.op-m2o-row:hover {
+  background: #f8fafc;
+}
+
+.op-m2o-cell-name code {
+  color: #4b5563;
+  font-size: 12.5px;
+}
+
+.op-m2o-cell-desc {
+  font-weight: 500;
+  color: #111827;
+}
+
+.op-m2o-loading,
+.op-m2o-empty-row {
+  text-align: center;
+  padding: 30px 16px;
+  color: #9ca3af;
+  font-size: 13.5px;
+}
+
+.op-m2o-modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.op-m2o-btn-new {
+  background: var(--op-primary-color, #714b67);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.op-m2o-btn-new:hover {
+  background: var(--op-primary-hover, #5a3c53);
+}
+
+.op-m2o-btn-close {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.op-m2o-btn-close:hover {
+  background: #e5e7eb;
+}
+
+/* Odoo Many2One Field Input & Dropdown */
+.op-m2o-field {
+  position: relative;
+  width: 100%;
+}
+
+.op-m2o-input-wrap {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.op-m2o-display-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  color: #111827;
+  padding: 4px 0;
+  cursor: text;
+}
+
+.op-m2o-display-input:focus {
+  border-bottom: 2px solid var(--op-primary-color, #714b67);
+  margin-bottom: -1px;
+}
+
+.op-m2o-caret-btn {
+  background: none;
+  border: none;
+  color: var(--op-primary-color, #714b67);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.op-m2o-internal-link {
+  color: var(--op-primary-color, #714b67);
+  text-decoration: none;
+  padding: 2px 6px;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: background 0.15s ease;
+}
+
+.op-m2o-internal-link:hover {
+  background: #f1f5f9;
+}
+
+.op-m2o-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  min-width: 220px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 100;
+  overflow: hidden;
+  padding: 4px 0;
+  display: none;
+}
+
+.op-m2o-dropdown-item {
+  padding: 6px 14px;
+  font-size: 13.5px;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.op-m2o-dropdown-item:hover {
+  background: #f1f5f9;
+}
+
+.op-m2o-dropdown-search-more {
+  padding: 8px 14px;
+  font-size: 13.5px;
+  color: var(--op-primary-color, #714b67);
+  cursor: pointer;
+  border-top: 1px solid #f1f5f9;
+  transition: background 0.1s ease;
+}
+
+.op-m2o-dropdown-search-more:hover {
+  background: #f8fafc;
+  text-decoration: underline;
+}
+
+/* Container Aliases */
+.op-view-container,
+.op-view-form-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 10px 16px 40px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif;
+  color: #2b2b2b;
+}
+
+/* Tabs and Tab Buttons */
+.op-tab-btn,
+.op-view-tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.op-tab-btn:hover,
+.op-view-tab-btn:hover {
+  color: #1f2937;
+}
+
+.op-tab-btn.active,
+.op-view-tab-btn.active {
+  color: var(--op-primary-color, #714b67);
+  font-weight: 600;
+  border-bottom-color: var(--op-primary-color, #714b67);
+}
+
+.op-tab-pane,
+.op-view-tab-pane {
+  display: none;
+}
+
+.op-tab-pane.active,
+.op-view-tab-pane.active {
+  display: block;
+}
+
+/* Heading input (large title) */
+.op-heading-input {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  border: none;
+  border-bottom: 1px solid transparent;
+  outline: none;
+  width: 100%;
+  margin-bottom: 16px;
+  background: transparent;
+  padding: 2px 0;
+}
+
+.op-heading-input:focus {
+  border-bottom-color: var(--op-primary-color, #714b67);
+}
+
+/* Stat Button on Form Header */
+.op-stat-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #1e293b;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.op-stat-button:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.op-stat-icon {
+  color: var(--op-primary-color, #714b67);
+  font-size: 18px;
+}
+
+.op-stat-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.op-stat-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.op-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* User Avatars & Badges */
+.op-avatar-initial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.op-role-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.op-btn-remove-line {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+}
+
+.op-btn-remove-line:hover {
+  color: #ef4444;
+}
+
+.op-add-user-bar {
+  display: none;
+  padding: 10px 0;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Compute Guide */
+.op-compute-guide {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.op-compute-guide h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 10px 0;
+}
+
+.op-compute-codebox {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 14px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12.5px;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.op-code-var {
+  color: #d946ef;
+  background: #fdf4ff;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.op-var-list {
+  list-style: none;
+  padding-left: 12px;
+  margin: 8px 0;
+}
+
+.op-var-list li {
+  position: relative;
+  padding-left: 14px;
+  margin: 4px 0;
+}
+
+.op-var-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #374151;
+}
+
+
+

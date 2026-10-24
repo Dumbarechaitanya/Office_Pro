@@ -1,0 +1,64 @@
+{% extends "leave/leave_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #fafbfc; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <a href="{% url 'leave_config_mandatory_days' %}" style="text-decoration: none; color: #64748b; font-size: 13px; font-weight: 600;">
+      &larr; Back to Holidays
+    </a>
+    <h1 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0;">Add Public Holiday / Mandatory Day</h1>
+  </div>
+</div>
+
+<div style="max-width: 680px; margin: 30px auto; padding: 0 20px;">
+  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <form method="POST">
+      {% csrf_token %}
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Holiday / Day Name *</label>
+        <input type="text" name="name" placeholder="e.g. New Year's Day, Diwali, Annual Hackathon..." style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Start Date *</label>
+          <input type="date" name="start_date" value="2026-10-29" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+        </div>
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">End Date *</label>
+          <input type="date" name="end_date" value="2026-10-31" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Color Badge</label>
+          <input type="color" name="color" value="#8b5cf6" style="width: 100%; height: 40px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">
+        </div>
+        <div style="display: flex; align-items: center; padding-top: 20px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;">
+            <input type="checkbox" name="is_mandatory" checked style="accent-color: var(--op-primary-color, #2563eb); width: 16px; height: 16px;">
+            <span>Office Closed / Mandatory Holiday</span>
+          </label>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Notes / Description</label>
+        <textarea name="notes" rows="2" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" placeholder="Optional holiday notes..."></textarea>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; border-top: 1px solid #f1f5f9; padding-top: 18px;">
+        <a href="{% url 'leave_config_mandatory_days' %}" style="padding: 8px 18px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; color: #475569;">
+          Cancel
+        </a>
+        <button type="submit" style="padding: 8px 24px; background: var(--op-primary-color, #2563eb); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;">
+          Save Holiday
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

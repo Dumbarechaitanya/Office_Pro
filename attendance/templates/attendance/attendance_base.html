@@ -1,0 +1,53 @@
+{% extends "base/layout.html" %}
+{% load static %}
+
+{% block title %}Attendances - Office Pro{% endblock %}
+{% block navbar_title %}Attendances{% endblock %}
+
+{% block app_icon %}
+<!-- Attendance Clock / Punch Badge Icon (morphs to `<` on hover) -->
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="10"></circle>
+  <polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'attendance/css/attendance.css' %}?v={{ static_version }}">
+{% endblock %}
+
+{% block app_menus %}
+<!-- Attendances Link (Main attendance list - personal records for users, full for officers) -->
+<a href="{% url 'attendance_list' %}" class="menu-link {% if request.resolver_match.url_name in 'attendance_list,attendance_home,attendance_detail,attendance_create' %}active{% endif %}">Attendances</a>
+
+{% if is_officer %}
+<!-- Overview Link (Dashboard overview) -->
+<a href="{% url 'attendance_overview' %}" class="menu-link {% if request.resolver_match.url_name == 'attendance_overview' %}active{% endif %}">Overview</a>
+
+<!-- Reporting Dropdown -->
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle">Reporting</button>
+  <div class="menu-dropdown">
+    <a href="{% url 'attendance_reporting_pivot' %}">Attendances</a>
+    <a href="{% url 'time_off_ledger' %}">Time Off Ledger</a>
+  </div>
+</div>
+
+<!-- Biometric Device Link -->
+<a href="{% url 'biometric_devices' %}" class="menu-link {% if request.resolver_match.url_name in 'biometric_devices,biometric_device_detail,biometric_device_create' %}active{% endif %}">Biometric Device</a>
+
+<!-- Pending Reviews Link -->
+<a href="{% url 'attendance_pending_reviews' %}" class="menu-link {% if request.resolver_match.url_name == 'attendance_pending_reviews' %}active{% endif %}">Pending Reviews</a>
+
+<!-- Configuration Dropdown (Matching Screenshot 1) -->
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle">Configuration</button>
+  <div class="menu-dropdown">
+    <a href="{% url 'attendance_settings' %}">Settings</a>
+    <a href="{% url 'attendance_onboarding' %}">Onboarding</a>
+    <a href="{% url 'overtime_rulesets' %}">Overtime Rulesets</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

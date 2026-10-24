@@ -1,0 +1,559 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block title %}{{ group_obj.name }} - Groups - Office Pro{% endblock %}
+{% block navbar_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/form_dirty.css' %}">
+<style>
+  .op-tab-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 18px 0 8px 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .op-tab-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .op-tab-table th {
+    text-align: left;
+    padding: 8px 12px;
+    background: #ffffff;
+    color: #374151;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+  }
+  .op-tab-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+    vertical-align: middle;
+  }
+  .op-tab-table tr:hover td {
+    background: #f8fafc;
+  }
+  .op-cell-check {
+    width: 60px;
+    text-align: center;
+  }
+  .op-cell-action {
+    width: 36px;
+    text-align: center;
+  }
+  .op-domain-code-cell {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    color: #0284c7;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="op-view-container">
+  <form method="post" action="{% url 'settings_group_detail' group_obj.id %}">
+    {% csrf_token %}
+
+    <!-- Top Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        <a href="{% url 'settings_group_create' %}" class="op-view-btn-new">New</a>
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'settings_groups' %}">Groups</a> /
+          {% if group_obj.privilege %}{{ group_obj.privilege }} / {% endif %}
+          {{ group_obj.name }}
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <!-- Stat Button (Users) -->
+        <a href="#tab-users" class="op-stat-button" onclick="switchTab('tab-users')">
+          <span class="op-stat-icon">&#128101;</span>
+          <div class="op-stat-meta">
+            <span class="op-stat-label">Users</span>
+            <span class="op-stat-value">{{ users_count }}</span>
+          </div>
+        </a>
+
+        <!-- Save / Discard -->
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'settings_groups' %}" class="op-view-btn-discard">Discard</a>
+
+        <!-- Pager -->
+        <div class="op-view-pager">
+          <span>{{ current_index }} / {{ total_count }}</span>
+          <div class="op-view-pager-btns">
+            {% if prev_id %}
+              <a href="{% url 'settings_group_detail' prev_id %}" class="op-view-pager-btn">&lt;</a>
+            {% else %}
+              <button type="button" class="op-view-pager-btn" disabled>&lt;</button>
+            {% endif %}
+
+            {% if next_id %}
+              <a href="{% url 'settings_group_detail' next_id %}" class="op-view-pager-btn">&gt;</a>
+            {% else %}
+              <button type="button" class="op-view-pager-btn" disabled>&gt;</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Form Sheet -->
+    <div class="op-view-sheet">
+      <!-- Title Heading -->
+      <input type="text" name="name" class="op-heading-input" value="{{ group_obj.name }}" placeholder="Role Name (Administrator or User)" list="role_list" required>
+      <datalist id="role_list">
+        <option value="Administrator">
+        <option value="User">
+      </datalist>
+
+      <!-- Fields Grid -->
+      <div style="max-width: 700px; margin-bottom: 24px;">
+        <div class="op-view-row">
+          <label class="op-view-label" for="id_privilege">
+            Privilege
+            <span class="op-view-hint">?
+              <div class="op-debug-tooltip">
+                <div class="op-debug-tooltip-meta">
+                  <ul>
+                    <li>Label: Privilege</li>
+                    <li>Field: privilege</li>
+                    <li>Model: res.groups</li>
+                    <li>Type: char</li>
+                  </ul>
+                </div>
+              </div>
+            </span>
+          </label>
+          <div class="op-view-input-wrap">
+            <input type="text" id="id_privilege" name="privilege" class="op-view-input" value="{{ group_obj.privilege }}" list="privilege_list" placeholder="e.g. Project">
+            <datalist id="privilege_list">
+              {% for p in all_privileges %}
+                <option value="{{ p }}">
+              {% endfor %}
+            </datalist>
+          </div>
+        </div>
+
+        <div class="op-view-row">
+          <label class="op-view-label" for="id_share">
+            Share Group
+            <span class="op-view-hint">?
+              <div class="op-debug-tooltip">
+                <div class="op-debug-tooltip-meta">
+                  <ul>
+                    <li>Label: Share Group</li>
+                    <li>Field: is_share</li>
+                    <li>Model: res.groups</li>
+                    <li>Type: boolean</li>
+                  </ul>
+                </div>
+              </div>
+            </span>
+          </label>
+          <div class="op-view-input-wrap">
+            <input type="checkbox" id="id_share" name="is_share" style="accent-color: #714b67; width: 16px; height: 16px;" {% if group_obj.is_share %}checked{% endif %}>
+          </div>
+        </div>
+
+        <div class="op-view-row">
+          <label class="op-view-label" for="id_api_keys">
+            API Keys maximum duration days
+            <span class="op-view-hint">?
+              <div class="op-debug-tooltip">
+                <div class="op-debug-tooltip-meta">
+                  <ul>
+                    <li>Label: API Keys maximum duration days</li>
+                    <li>Field: api_keys_max_days</li>
+                    <li>Model: res.groups</li>
+                    <li>Type: decimal</li>
+                  </ul>
+                </div>
+              </div>
+            </span>
+          </label>
+          <div class="op-view-input-wrap">
+            <input type="text" id="id_api_keys" name="api_keys_max_days" class="op-view-input" value="{{ group_obj.api_keys_max_days|floatformat:2 }}" style="max-width: 120px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-view-tabs">
+        <button type="button" class="op-tab-btn active" onclick="switchTab('tab-users', this)">Users</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-inherited', this)">Inherited</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-menus', this)">Menus</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-views', this)">Views</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-access-rights', this)">Access Rights</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-record-rules', this)">Record Rules</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-notes', this)">Notes</button>
+      </div>
+
+      <!-- Tab 1: Users (Matching Screenshot) -->
+      <div id="tab-users" class="op-tab-pane active" style="padding-top: 8px;">
+        <table class="op-tab-table">
+          <thead>
+            <tr>
+              <th style="width: 32%;">Name</th>
+              <th style="width: 38%;">Login</th>
+              <th style="width: 25%;">Role</th>
+              <th style="width: 5%; text-align: right;">
+                <button type="button" class="op-col-toggle-btn" title="Toggle columns">&#8644;</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ug in users_rel %}
+              <tr>
+                <td style="display: flex; align-items: center;">
+                  <span class="op-avatar-initial">
+                    {{ ug.user.username|slice:":1"|upper }}
+                  </span>
+                  <span style="font-weight: 500; color: #1e293b;">{{ ug.user.username }}</span>
+                </td>
+                <td style="color: #64748b;">{{ ug.user.email }}</td>
+                <td>
+                  <span class="op-role-badge">
+                    {% if "Admin" in group_obj.name %}Administrator{% else %}User{% endif %}
+                  </span>
+                </td>
+                <td style="text-align: right;">
+                  <button type="button" class="op-btn-remove-line" data-user-id="{{ ug.user.id }}" onclick="removeUser(this.getAttribute('data-user-id'))" title="Remove user">&#10005;</button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="4" style="padding: 20px 12px; color: #94a3b8; font-style: italic;">
+                  No users assigned to this group. Click <strong>Add a line</strong> below to assign users.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <!-- Add User Inline Bar -->
+        <div id="addUserBar" class="op-add-user-bar">
+          <select id="selectUserId" class="op-view-select" style="max-width: 300px; font-size: 13px;">
+            <option value="">— Select User to Add —</option>
+            {% for u in available_users %}
+              <option value="{{ u.id }}">{{ u.username }} ({{ u.email }})</option>
+            {% endfor %}
+          </select>
+          <button type="button" class="op-view-btn-save" style="padding: 4px 12px; font-size: 12.5px;" onclick="submitAddUser()">Add</button>
+          <button type="button" class="op-view-btn-discard" style="padding: 4px 12px; font-size: 12.5px;" onclick="toggleAddUserBar(false)">Cancel</button>
+        </div>
+
+        <button type="button" class="op-add-line-btn" id="addAlineBtn" onclick="toggleAddUserBar(true)">
+          Add a line
+        </button>
+      </div>
+
+      <!-- Tab 2: Inherited (Matching Screenshot 2) -->
+      <div id="tab-inherited" class="op-tab-pane" style="display: none; padding-top: 8px;">
+        <!-- Implied Groups Section -->
+        <div class="op-tab-section-header">
+          <span>
+            Implied Groups
+            <span class="op-view-hint">?
+              <div class="op-debug-tooltip">
+                <div class="op-debug-tooltip-meta">Users in this group automatically inherit all permissions from implied groups.</div>
+              </div>
+            </span>
+          </span>
+        </div>
+        <table class="op-tab-table">
+          <thead>
+            <tr>
+              <th style="width: 30%;">Privilege</th>
+              <th style="width: 65%;">
+                <span class="op-col-sort"><span class="op-sort-caret">&#9650;</span> Name</span>
+              </th>
+              <th style="width: 5%; text-align: right;">
+                <button type="button" class="op-col-toggle-btn" title="Toggle columns">&#8644;</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ig in implied_groups %}
+              <tr>
+                <td style="color: #64748b; font-weight: 500;">{{ ig.privilege|default:"General" }}</td>
+                <td style="color: #1e293b; font-weight: 500;">{{ ig.name }}</td>
+                <td style="text-align: right;">
+                  <button type="button" class="op-btn-remove-line" title="Remove">&#10005;</button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" style="padding: 16px 12px; color: #94a3b8; font-style: italic;">No implied groups configured.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="op-add-line-btn">Add a line</button>
+
+        <!-- Implying Groups Section -->
+        <div class="op-tab-section-header" style="margin-top: 24px;">
+          <span>
+            Implying Groups
+            <span class="op-view-hint">?
+              <div class="op-debug-tooltip">
+                <div class="op-debug-tooltip-meta">Groups that automatically inherit permissions from this group.</div>
+              </div>
+            </span>
+          </span>
+        </div>
+        <table class="op-tab-table">
+          <thead>
+            <tr>
+              <th style="width: 30%;">Privilege</th>
+              <th style="width: 65%;">
+                <span class="op-col-sort"><span class="op-sort-caret">&#9650;</span> Name</span>
+              </th>
+              <th style="width: 5%; text-align: right;">
+                <button type="button" class="op-col-toggle-btn" title="Toggle columns">&#8644;</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="3" style="padding: 16px 12px; color: #94a3b8; font-style: italic;">No higher-level groups currently imply this group.</td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="op-add-line-btn">Add a line</button>
+      </div>
+
+      <!-- Tab 3: Menus (Matching User Specification) -->
+      <div id="tab-menus" class="op-tab-pane" style="display: none; padding-top: 8px;">
+        <table class="op-tab-table">
+          <thead>
+            <tr>
+              <th style="width: 60%;">Menu</th>
+              <th style="width: 35%;">Action / Path</th>
+              <th style="width: 5%; text-align: right;">
+                <button type="button" class="op-col-toggle-btn" title="Toggle columns">&#8644;</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in menus %}
+              <tr>
+                <td style="color: #1e293b; font-weight: 500;">
+                  {% if m.parent %}{{ m.parent.name }} / {% endif %}{{ m.name }}
+                </td>
+                <td style="color: #64748b;"><code>{{ m.url_path|default:"—" }}</code></td>
+                <td style="text-align: right;">
+                  <button type="button" class="op-btn-remove-line" title="Remove">&#10005;</button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" style="padding: 16px 12px; color: #94a3b8; font-style: italic;">No menus assigned to this group.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="op-add-line-btn">Add a line</button>
+      </div>
+
+      <!-- Tab 4: Views -->
+      <div id="tab-views" class="op-tab-pane" style="display: none; padding-top: 8px;">
+        <table class="op-tab-table">
+          <thead>
+            <tr>
+              <th style="width: 45%;">View Name</th>
+              <th style="width: 25%;">View Type</th>
+              <th style="width: 25%;">Model</th>
+              <th style="width: 5%; text-align: right;">
+                <button type="button" class="op-col-toggle-btn" title="Toggle columns">&#8644;</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in views_list %}
+              <tr>
+                <td style="font-weight: 500; color: #1e293b;">{{ v.name }}</td>
+                <td style="color: #64748b;"><code>{{ v.view_type }}</code></td>
+                <td>{% if v.model %}{{ v.model.description|default:v.model.model_name }}{% else %}—{% endif %}</td>
+                <td style="text-align: right;">
+                  <button type="button" class="op-btn-remove-line" title="Remove">&#10005;</button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="4" style="padding: 16px 12px; color: #94a3b8; font-style: italic;">No view restrictions set for this group.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="op-add-line-btn">Add a line</button>
+      </div>
+
+      <!-- Tab 5: Access Rights (Matching User Specification) -->
+      <div id="tab-access-rights" class="op-tab-pane" style="display: none; padding-top: 8px;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 6px; font-size: 12.5px; color: #64748b;">
+          <span>1-{{ access_rights|length }} / {{ access_rights|length }}</span>
+        </div>
+        <table class="op-tab-table">
+          <thead>
+            <tr>
+              <th style="width: 45%;">Name</th>
+              <th style="width: 25%;">Model</th>
+              <th class="op-cell-check">Read</th>
+              <th class="op-cell-check">Write</th>
+              <th class="op-cell-check">Create</th>
+              <th class="op-cell-check">Delete</th>
+              <th class="op-cell-action">
+                <button type="button" class="op-col-toggle-btn" title="Toggle columns">&#8644;</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ar in access_rights %}
+              <tr>
+                <td style="font-weight: 500; color: #1e293b;">{% if ar.model %}access.{{ ar.model.model_name }}{% else %}access.rule_{{ ar.id }}{% endif %}</td>
+                <td>{% if ar.model %}{{ ar.model.description|default:ar.model.model_name }}{% else %}—{% endif %}</td>
+                <td class="op-cell-check"><input type="checkbox" {% if ar.can_read %}checked{% endif %} disabled style="accent-color: #714b67; width: 15px; height: 15px;"></td>
+                <td class="op-cell-check"><input type="checkbox" {% if ar.can_write %}checked{% endif %} disabled style="accent-color: #714b67; width: 15px; height: 15px;"></td>
+                <td class="op-cell-check"><input type="checkbox" {% if ar.can_create %}checked{% endif %} disabled style="accent-color: #714b67; width: 15px; height: 15px;"></td>
+                <td class="op-cell-check"><input type="checkbox" {% if ar.can_delete %}checked{% endif %} disabled style="accent-color: #714b67; width: 15px; height: 15px;"></td>
+                <td class="op-cell-action">
+                  <button type="button" class="op-btn-remove-line" title="Remove">&#10005;</button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" style="padding: 16px 12px; color: #94a3b8; font-style: italic;">No model access rules defined for this group.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="op-add-line-btn">Add a line</button>
+      </div>
+
+      <!-- Tab 6: Record Rules (Matching Screenshot 1) -->
+      <div id="tab-record-rules" class="op-tab-pane" style="display: none; padding-top: 8px;">
+        <table class="op-tab-table">
+          <thead>
+            <tr>
+              <th style="width: 35%;">Name</th>
+              <th style="width: 20%;">Model</th>
+              <th style="width: 20%;">Domain</th>
+              <th class="op-cell-check">Read</th>
+              <th class="op-cell-check">Write</th>
+              <th class="op-cell-check">Create</th>
+              <th class="op-cell-check">Delete</th>
+              <th class="op-cell-action">
+                <button type="button" class="op-col-toggle-btn" title="Toggle columns">&#8644;</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rr in record_rules %}
+              <tr>
+                <td style="font-weight: 500;">
+                  <a href="{% url 'technical_record_rule_detail' rr.id %}" style="color: #1e293b; text-decoration: none;">
+                    {{ rr.rule_name }}
+                  </a>
+                </td>
+                <td style="color: #475569;">{% if rr.model %}{{ rr.model.description|default:rr.model.model_name }}{% else %}—{% endif %}</td>
+                <td>
+                  <span class="op-domain-code-cell">{{ rr.domain_force|default:"[(1, '=', 1)]" }}</span>
+                </td>
+                <td class="op-cell-check">
+                  <input type="checkbox" {% if rr.perm_read %}checked{% endif %} disabled style="accent-color: #714b67; width: 15px; height: 15px;">
+                </td>
+                <td class="op-cell-check">
+                  <input type="checkbox" {% if rr.perm_write %}checked{% endif %} disabled style="accent-color: #714b67; width: 15px; height: 15px;">
+                </td>
+                <td class="op-cell-check">
+                  <input type="checkbox" {% if rr.perm_create %}checked{% endif %} disabled style="accent-color: #714b67; width: 15px; height: 15px;">
+                </td>
+                <td class="op-cell-check">
+                  <input type="checkbox" {% if rr.perm_unlink %}checked{% endif %} disabled style="accent-color: #714b67; width: 15px; height: 15px;">
+                </td>
+                <td class="op-cell-action">
+                  <button type="button" class="op-btn-remove-line" title="Remove">&#10005;</button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="8" style="padding: 16px 12px; color: #94a3b8; font-style: italic;">No record rules applied to this group.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="button" class="op-add-line-btn">Add a line</button>
+      </div>
+
+      <!-- Tab 7: Notes -->
+      <div id="tab-notes" class="op-tab-pane" style="display: none; padding-top: 8px;">
+        <textarea name="notes" class="op-domain-editor" rows="6" placeholder="Add internal notes or documentation regarding this group...">{{ group_obj.notes|default:"" }}</textarea>
+      </div>
+
+    </div>
+  </form>
+
+  <!-- Hidden form for adding user -->
+  <form id="addUserForm" method="post" action="{% url 'settings_group_add_user' group_obj.id %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="user_id" id="hiddenAddUserId">
+  </form>
+
+  <!-- Hidden form for removing user -->
+  <form id="removeUserForm" method="post" action="" style="display: none;">
+    {% csrf_token %}
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function switchTab(tabId, btnElement) {
+    document.querySelectorAll('.op-tab-pane').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.op-tab-btn').forEach(b => b.classList.remove('active'));
+
+    const activePane = document.getElementById(tabId);
+    if (activePane) activePane.style.display = 'block';
+
+    if (btnElement) {
+      btnElement.classList.add('active');
+    } else {
+      const matchBtn = document.querySelector(`.op-tab-btn[onclick*="${tabId}"]`);
+      if (matchBtn) matchBtn.classList.add('active');
+    }
+  }
+
+  function toggleAddUserBar(show) {
+    document.getElementById('addUserBar').style.display = show ? 'flex' : 'none';
+    document.getElementById('addAlineBtn').style.display = show ? 'none' : 'inline-block';
+  }
+
+  function submitAddUser() {
+    const select = document.getElementById('selectUserId');
+    if (!select.value) return;
+    document.getElementById('hiddenAddUserId').value = select.value;
+    document.getElementById('addUserForm').submit();
+  }
+
+  function removeUser(userId) {
+    if (!confirm('Remove this user from the group?')) return;
+    const form = document.getElementById('removeUserForm');
+    form.action = `/settings/groups/{{ group_obj.id }}/remove-user/${userId}/`;
+    form.submit();
+  }
+</script>
+{% endblock %}

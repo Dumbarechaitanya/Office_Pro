@@ -1,0 +1,402 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-section-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #4b5563;
+    margin-bottom: 14px;
+    padding-bottom: 4px;
+  }
+  .op-section-divider {
+    border-top: 1px solid #e5e7eb;
+    margin: 24px 0 16px 0;
+    padding-top: 16px;
+  }
+  .op-domain-editor {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    color: #0284c7;
+    background: #ffffff;
+    outline: none;
+    min-height: 50px;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .op-domain-editor:focus {
+    border-color: #714b67;
+  }
+  .op-info-callout {
+    background: #f8fafc;
+    border-left: 4px solid #0284c7;
+    padding: 16px 20px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 24px;
+    font-size: 13.5px;
+    color: #334155;
+    line-height: 1.6;
+  }
+  .op-info-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #0f172a;
+    margin-bottom: 8px;
+  }
+  .op-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #0284c7;
+    color: #ffffff;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .op-perm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 24px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-rule-detail-form" method="post" action="{{ form_action }}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        {% if create_url %}
+          <a href="{{ create_url }}" class="op-view-btn-new">New</a>
+        {% endif %}
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_record_rules' %}">Record Rules</a> / {{ rule_obj.rule_name|truncatechars:45 }}
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_record_rules' %}" class="op-view-btn-discard">Discard</a>
+
+        <!-- Pager -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #4b5563; margin-left: 12px;">
+          <span>{{ current_index }} / {{ total_rules }}</span>
+          {% if prev_id %}
+            <a href="{% url 'technical_record_rule_detail' prev_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&lt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&lt;</span>
+          {% endif %}
+          {% if next_id %}
+            <a href="{% url 'technical_record_rule_detail' next_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&gt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <!-- Section 1: General (Left) vs Access Rights (Right) -->
+      <div class="op-view-grid-2col">
+        <!-- Left: General -->
+        <div>
+          <div class="op-section-title">GENERAL</div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_rule_name">
+              Name
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Name</li>
+                      <li>Field: name</li>
+                      <li>Model: ir.rule</li>
+                      <li>Type: char</li>
+                      <li>Required: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_rule_name" name="rule_name" class="op-view-input" value="{{ rule_obj.rule_name }}" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_model_display">
+              Model
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Model</li>
+                      <li>Field: model_id</li>
+                      <li>Model: ir.rule</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: ir.model</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <div class="op-m2o-field" data-relation-model="ir.model" data-field-label="Model">
+                <input type="hidden" id="id_model" name="model" class="op-m2o-value" value="{{ rule_obj.model_id|default:'' }}">
+                <div class="op-m2o-input-wrap">
+                  <input type="text" id="id_model_display" class="op-m2o-display-input" value="{{ rule_obj.model.description|default:rule_obj.model.model_name|default:'' }}" placeholder="Search model..." autocomplete="off">
+                  <button type="button" class="op-m2o-caret-btn" title="Open dropdown">&#9662;</button>
+                  {% if rule_obj.model %}
+                    <a href="{% url 'technical_model_detail' rule_obj.model.id %}" id="id_model_internal_link" class="op-m2o-internal-link" title="Internal link">&#10142;</a>
+                  {% else %}
+                    <a href="#" id="id_model_internal_link" class="op-m2o-internal-link" style="display: none;" title="Internal link">&#10142;</a>
+                  {% endif %}
+                </div>
+                <div class="op-m2o-dropdown"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_active">
+              Active
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Active</li>
+                      <li>Field: active</li>
+                      <li>Model: ir.rule</li>
+                      <li>Type: boolean</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <label class="op-switch">
+                <input type="checkbox" id="id_active" name="is_active" {% if rule_obj.is_active %}checked{% endif %}>
+                <span class="op-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Access Rights -->
+        <div>
+          <div class="op-section-title">ACCESS RIGHTS</div>
+
+          <div class="op-perm-grid">
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_perm_read" style="width: auto;">
+                Read
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Read</li>
+                        <li>Field: perm_read</li>
+                        <li>Model: ir.rule</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <div class="op-view-input-wrap">
+                <input type="checkbox" id="id_perm_read" name="perm_read" style="accent-color: #714b67; width: 16px; height: 16px;" {% if rule_obj.perm_read %}checked{% endif %}>
+              </div>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_perm_write" style="width: auto;">
+                Write
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Write</li>
+                        <li>Field: perm_write</li>
+                        <li>Model: ir.rule</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <div class="op-view-input-wrap">
+                <input type="checkbox" id="id_perm_write" name="perm_write" style="accent-color: #714b67; width: 16px; height: 16px;" {% if rule_obj.perm_write %}checked{% endif %}>
+              </div>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_perm_create" style="width: auto;">
+                Create
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Create</li>
+                        <li>Field: perm_create</li>
+                        <li>Model: ir.rule</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <div class="op-view-input-wrap">
+                <input type="checkbox" id="id_perm_create" name="perm_create" style="accent-color: #714b67; width: 16px; height: 16px;" {% if rule_obj.perm_create %}checked{% endif %}>
+              </div>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_perm_unlink" style="width: auto;">
+                Delete
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Delete</li>
+                        <li>Field: perm_unlink</li>
+                        <li>Model: ir.rule</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <div class="op-view-input-wrap">
+                <input type="checkbox" id="id_perm_unlink" name="perm_unlink" style="accent-color: #714b67; width: 16px; height: 16px;" {% if rule_obj.perm_unlink %}checked{% endif %}>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Rule Definition (Domain Filter) -->
+      <div class="op-section-divider">
+        <div class="op-section-title" style="display: flex; align-items: center; gap: 6px;">
+          RULE DEFINITION (DOMAIN FILTER)
+          <span class="op-view-hint">?
+            <div class="op-debug-tooltip">
+              <div class="op-debug-tooltip-meta">
+                <ul>
+                  <li>Label: Domain</li>
+                  <li>Field: domain_force</li>
+                  <li>Type: text</li>
+                  <li>Context: {}</li>
+                </ul>
+              </div>
+            </div>
+          </span>
+        </div>
+        <textarea id="id_domain_force" name="domain_force" class="op-domain-editor" rows="2">{{ rule_obj.domain_display }}</textarea>
+      </div>
+
+      <!-- Section 3: Groups (No Group = Global) -->
+      <div class="op-section-divider">
+        <div class="op-section-title">GROUPS (NO GROUP = GLOBAL)</div>
+
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+          <label class="op-view-label" style="width: auto; margin-bottom: 0;">
+            Global
+            <span class="op-view-hint">?
+              <div class="op-debug-tooltip">
+                <div class="op-debug-tooltip-meta">
+                  <ul>
+                    <li>Label: Global</li>
+                    <li>Field: global</li>
+                    <li>Model: ir.rule</li>
+                    <li>Type: boolean</li>
+                  </ul>
+                </div>
+              </div>
+            </span>
+          </label>
+          <input type="checkbox" id="id_is_global" style="accent-color: #714b67; width: 16px; height: 16px;" {% if not rule_obj.group %}checked{% endif %} disabled>
+        </div>
+
+        <div class="op-sub-table-wrap">
+          <table class="op-sub-table">
+            <thead>
+              <tr>
+                <th style="width: 180px;">Privilege</th>
+                <th>Name &#9650;</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if rule_obj.group %}
+                <tr>
+                  <td>Role / User</td>
+                  <td>{{ rule_obj.group.name }}</td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="2" style="color: #94a3b8; font-style: italic; padding: 12px 14px;">
+                    No group specified (Global Rule applied to all users).
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+          <div style="padding: 10px 14px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px;">
+            <select name="group" class="op-view-select" style="max-width: 250px; font-size: 12.5px; height: 30px;">
+              <option value="">(Global - No Group)</option>
+              {% for g in all_groups %}
+                <option value="{{ g.id }}" {% if rule_obj.group_id == g.id %}selected{% endif %}>{{ g.name }}</option>
+              {% endfor %}
+            </select>
+            <span style="font-size: 12px; color: #64748b;">Select a group to restrict rule or leave Global.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Interaction between rules -->
+      <div class="op-info-callout">
+        <div class="op-info-title">
+          <span class="op-info-icon">i</span>
+          Interaction between rules
+        </div>
+        <p style="margin: 0 0 10px 0;">
+          Global rules (non group-specific) are restrictions, and cannot be bypassed. Group-specific rules grant additional permissions, but are constrained within the bounds of global ones. The first group rules restrict further the global rules, but can be relaxed by additional group rules.
+        </p>
+        <p style="margin: 0 0 6px 0; font-weight: 600;">Detailed algorithm:</p>
+        <ol style="margin: 0 0 12px 0; padding-left: 20px;">
+          <li>Global rules are combined together with a logical <strong>AND</strong> operator, and with the result of the following steps</li>
+          <li>Group-specific rules are combined together with a logical <strong>OR</strong> operator</li>
+          <li>If user belongs to several groups, the results from step 2 are combined with logical <strong>OR</strong> operator</li>
+        </ol>
+        <p style="margin: 0; font-family: ui-monospace, monospace; font-size: 12.5px; background: #e2e8f0; padding: 6px 10px; border-radius: 4px;">
+          Example: GLOBAL_RULE_1 AND GLOBAL_RULE_2 AND ( (GROUP_A_RULE_1 OR GROUP_A_RULE_2) OR (GROUP_B_RULE_1 OR GROUP_B_RULE_2) )
+        </p>
+      </div>
+
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'base/js/many2one_widget.js' %}"></script>
+{% endblock %}
+

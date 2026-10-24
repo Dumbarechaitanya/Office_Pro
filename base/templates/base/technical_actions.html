@@ -1,0 +1,60 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="list-toolbar">
+  <div class="list-toolbar-left">
+    {% if create_url %}
+      <a href="{{ create_url }}" class="btn-new">New</a>
+    {% endif %}
+    <span class="toolbar-title">Actions</span>
+    <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+  </div>
+
+  <div class="list-toolbar-center">
+    {% include 'base/_search_panel.html' %}
+  </div>
+
+  <div class="list-toolbar-right">
+    <div class="toolbar-pagination">
+      {% if total_count %}{{ total_count }} record{{ total_count|pluralize }}{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="op-list-view">
+  <table>
+    <thead>
+      <tr>
+        <th>Action Name</th>
+        <th>Action Type</th>
+        <th>Related Model</th>
+        <th>View Mode</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in actions_list %}
+        <tr>
+          <td>
+            <a href="{% url 'technical_action_detail' a.id %}" style="text-decoration: none; color: inherit; font-weight: 500; display: block;">{{ a.name }}</a>
+          </td>
+          <td style="color: #4b5563;">
+            <a href="{% url 'technical_action_detail' a.id %}" style="text-decoration: none; color: inherit; display: block;">{{ a.action_type }}</a>
+          </td>
+          <td>{{ a.res_model|default:'—' }}</td>
+          <td><code>{{ a.view_mode|default:'list,form' }}</code></td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="4" style="color: #9ca3af; padding: 24px; text-align: center;">No actions found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

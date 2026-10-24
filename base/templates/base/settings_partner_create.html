@@ -1,0 +1,155 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/user_form.css' %}">
+<style>
+  .op-partner-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    margin: 16px auto 40px auto;
+    max-width: 1200px;
+  }
+  .op-partner-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+    border-radius: 8px 8px 0 0;
+  }
+  .op-two-col-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    padding: 0 28px 24px 28px;
+  }
+  .op-grid-field-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .op-grid-field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .op-field-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="partnerCreateForm">
+  {% csrf_token %}
+
+  <div class="op-partner-container">
+    
+    <!-- Top Control Bar -->
+    <div class="op-partner-topbar">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button type="submit" class="op-btn-save" style="padding: 6px 16px; background: #2e7d32; color: #fff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">
+          Save
+        </button>
+        <a href="{% url 'settings_partners' %}" style="padding: 6px 12px; color: #64748b; text-decoration: none; font-size: 13px; font-weight: 500;">
+          Discard
+        </a>
+      </div>
+      <div>
+        <span style="font-size: 13px; color: #64748b;">Contacts / New</span>
+      </div>
+    </div>
+
+    <!-- Header Section -->
+    <div style="display: flex; gap: 24px; padding: 24px 28px 20px 28px; align-items: flex-start;">
+      <div style="width: 96px; height: 96px; border-radius: 8px; background: #f1f5f9; border: 1px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 36px;">
+        &#128100;
+      </div>
+
+      <div style="flex: 1;">
+        <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; cursor: pointer;">
+            <input type="radio" name="is_company" value="person" checked> Person
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; cursor: pointer;">
+            <input type="radio" name="is_company" value="company"> Company
+          </label>
+        </div>
+
+        <input type="text" name="name" class="op-partner-name-input" placeholder="e.g. Alex Morgan" style="font-size: 26px; font-weight: 700; border: none; border-bottom: 1px solid #cbd5e1; width: 100%; max-width: 550px; outline: none; margin-bottom: 12px;" required autofocus>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div class="op-contact-row">
+            <span class="op-contact-row-icon" style="color: #6366f1;">&#9993;</span>
+            <input type="email" name="email" class="op-field-input" style="max-width: 340px;" placeholder="Email (e.g. alex.morgan@officepro.internal)">
+          </div>
+
+          <div class="op-contact-row">
+            <span class="op-contact-row-icon" style="color: #6366f1;">&#128222;</span>
+            <input type="text" name="phone" class="op-field-input" style="max-width: 260px;" placeholder="Phone / Mobile">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two-Column Fields Grid -->
+    <div class="op-two-col-grid">
+      <div>
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">Company</label>
+          <select name="company_name" class="op-field-input">
+            {% for c in companies %}
+              <option value="{{ c.name }}">{{ c.name }}</option>
+            {% empty %}
+              <option value="Office Pro Solutions Ltd">Office Pro Solutions Ltd</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="op-grid-field-row" style="align-items: flex-start;">
+          <label class="op-grid-field-label" style="margin-top: 6px;">Company Address</label>
+          <textarea name="address" class="op-field-input" rows="4" placeholder="Office No. 3052, P Wing, Akshar Business Park, Janata Market Road, Sector 25, Navi Mumbai 400024 Maharashtra (India)"></textarea>
+        </div>
+      </div>
+
+      <div>
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">Job Position</label>
+          <input type="text" name="job_position" class="op-field-input" placeholder="e.g. Sales Director">
+        </div>
+
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">GST Treatment</label>
+          <select name="gst_treatment" class="op-field-input">
+            <option value="Registered Business - Regular" selected>Registered Business - Regular</option>
+            <option value="Registered Business - Composition">Registered Business - Composition</option>
+            <option value="Unregistered Business">Unregistered Business</option>
+            <option value="Consumer">Consumer</option>
+          </select>
+        </div>
+
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">GSTIN</label>
+          <input type="text" name="gstin" class="op-field-input" placeholder="27AHKPN6854C2Z3">
+        </div>
+
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">Website</label>
+          <input type="text" name="website" class="op-field-input" placeholder="https://www.nexuswave.in">
+        </div>
+      </div>
+    </div>
+
+  </div>
+</form>
+{% endblock %}

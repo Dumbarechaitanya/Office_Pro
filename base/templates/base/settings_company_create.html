@@ -1,0 +1,231 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block title %}New Company - Office Pro{% endblock %}
+{% block navbar_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-logo-uploader {
+    width: 90px;
+    height: 90px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #f8fafc;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.15s ease;
+  }
+  .op-logo-uploader:hover {
+    border-color: var(--op-primary-color, #714b67);
+  }
+  .op-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container" style="max-width: 1000px; margin: 0 auto;">
+  
+  <!-- Control Bar -->
+  <div class="op-view-control-bar">
+    <div class="op-view-control-left">
+      <div class="op-view-breadcrumb" style="display: flex; align-items: center; gap: 6px;">
+        <a href="{% url 'settings_companies' %}">Companies</a>
+        <span>/</span>
+        <span>New</span>
+      </div>
+
+      <button type="submit" form="companyCreateForm" class="op-view-btn-save" style="margin-left: 12px;">Save</button>
+      <a href="{% url 'settings_companies' %}" class="op-view-btn-discard">Discard</a>
+    </div>
+  </div>
+
+  <!-- Form Sheet -->
+  <div class="op-view-sheet" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <form id="companyCreateForm" method="post" action="{% url 'settings_company_create' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Top Header: Logo + Big Title -->
+      <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 24px;">
+        <div class="op-logo-uploader" onclick="document.getElementById('companyLogoInput').click()">
+          <span style="font-size: 20px; color: #94a3b8;">&#128247;</span>
+          <span style="font-size: 11px; color: #64748b; margin-top: 4px;">Your logo</span>
+          <input type="file" id="companyLogoInput" name="logo" accept="image/*" style="display: none;" onchange="previewLogo(this)">
+        </div>
+
+        <div style="flex: 1;">
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+            Company Name <span class="op-view-hint" title="The legal or trading name of this company">?</span>
+          </label>
+          <input type="text" name="name" required class="op-view-input-title" placeholder="e.g. My Company" style="font-size: 24px; font-weight: 600; width: 100%; border: none; border-bottom: 2px solid #e2e8f0; padding: 4px 0; outline: none;">
+        </div>
+      </div>
+
+      <!-- Main Fields Grid -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; margin-top: 20px;">
+        
+        <!-- Left Column -->
+        <div>
+          <!-- Address Section -->
+          <div class="op-view-field-row" style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">
+              Address <span class="op-view-hint" title="Physical / Billing Address">?</span>
+            </label>
+            <input type="text" name="street" placeholder="Street..." style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; margin-bottom: 6px; outline: none; font-size: 13px;">
+            <input type="text" name="street2" placeholder="Street 2..." style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; margin-bottom: 6px; outline: none; font-size: 13px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 6px;">
+              <input type="text" name="city" placeholder="City" style="border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; outline: none; font-size: 13px;">
+              <input type="text" name="state" placeholder="State" style="border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; outline: none; font-size: 13px;">
+              <input type="text" name="zip_code" placeholder="ZIP" style="border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; outline: none; font-size: 13px;">
+            </div>
+            <input type="text" name="country" placeholder="Country" style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- GSTIN -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+              GSTIN <span class="op-view-hint" title="Tax Registration / GSTIN">?</span>
+            </label>
+            <input type="text" name="gstin" placeholder="/ if not applicable" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Company ID -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+              Company ID <span class="op-view-hint" title="Registration ID">?</span>
+            </label>
+            <input type="text" name="company_registry" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Currency -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 24px;">
+            <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+              Currency <span class="op-view-hint" title="Base accounting currency">?</span>
+            </label>
+            <input type="text" name="currency" value="INR" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Social Media Header -->
+          <div style="font-size: 11.5px; font-weight: 700; color: #64748b; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
+            Social Media
+          </div>
+
+          <!-- X Account -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 10px;">
+            <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">X Account</label>
+            <input type="text" name="x_account" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Facebook -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 10px;">
+            <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">Facebook</label>
+            <input type="text" name="facebook_account" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- GitHub -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 10px;">
+            <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">GitHub</label>
+            <input type="text" name="github_account" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- LinkedIn -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 10px;">
+            <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">LinkedIn</label>
+            <input type="text" name="linkedin_account" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <!-- Phone -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">Phone</label>
+            <input type="text" name="phone" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Email -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">Email</label>
+            <input type="email" name="email" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Website -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">Website</label>
+            <input type="text" name="website" placeholder="e.g. https://www.example.com" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Parent Company -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">Parent Company</label>
+            <select name="parent_company" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; background: transparent; font-size: 13px;">
+              <option value="">-- None (HQ / Independent) --</option>
+              {% for pcomp in parent_companies %}
+                <option value="{{ pcomp.id }}">{{ pcomp.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Email Domain -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">Email Domain</label>
+            <input type="text" name="email_domain" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Bounce -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">Bounce</label>
+            <input type="text" name="bounce_email" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Catchall -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">Catchall</label>
+            <input type="text" name="catchall_email" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Default From -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">Default From</label>
+            <input type="text" name="default_from_email" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+          </div>
+
+          <!-- Color -->
+          <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+            <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">Color</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="color" name="color" value="#714b67" style="width: 32px; height: 32px; border: none; border-radius: 50%; cursor: pointer;">
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  function previewLogo(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const uploader = document.querySelector('.op-logo-uploader');
+        uploader.innerHTML = `<img src="${e.target.result}" alt="Logo" class="op-logo-img">`;
+      }
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,293 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/user_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<form method="post" id="userCreateForm">
+    {% csrf_token %}
+
+    <!-- Top Control Bar (Matching Image Reference Outside Sheet) -->
+    <div class="op-user-topbar" style="max-width: 1200px; margin: 12px auto 0 auto;">
+        <!-- Left: Solid Purple New Button + Breadcrumb (Users / New ⚙ ☁ ✖) -->
+        <div class="op-user-topbar-left">
+            <button type="submit" class="op-btn-new-solid" style="border: none; cursor: pointer;">
+                New
+            </button>
+            <div class="op-user-breadcrumb-group">
+                <a href="{% url 'settings_users' %}" class="op-user-breadcrumb-link">Users</a>
+                <span class="op-user-breadcrumb-name">
+                    New
+                    <span style="font-size: 12px; color: #64748b; cursor: pointer;" title="Technical Settings">&#9881;</span>
+                    <button type="submit" style="background: none; border: none; cursor: pointer; color: #64748b; font-size: 13px; padding: 0 2px;" title="Save Record">&#9729;</button>
+                    <a href="{% url 'settings_users' %}" style="text-decoration: none; color: #64748b; font-size: 12px; font-weight: bold;" title="Discard">&#10005;</a>
+                </span>
+            </div>
+        </div>
+
+        <!-- Right: Segmented Smart Buttons Ribbon (5 Buttons Matching Image) -->
+        <div class="op-user-topbar-right">
+            <div class="op-smart-buttons-ribbon">
+                <!-- Groups -->
+                <div class="op-smart-stat-btn" title="Groups">
+                    <span class="op-smart-stat-icon">&#128101;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Groups</span>
+                        <span class="op-smart-stat-val">21</span>
+                    </div>
+                </div>
+
+                <!-- Access Rights -->
+                <div class="op-smart-stat-btn" title="Access Rights">
+                    <span class="op-smart-stat-icon">&#128274;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Access Rights</span>
+                        <span class="op-smart-stat-val">276</span>
+                    </div>
+                </div>
+
+                <!-- Record Rules -->
+                <div class="op-smart-stat-btn" title="Record Rules">
+                    <span class="op-smart-stat-icon">&#128272;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Record Rules</span>
+                        <span class="op-smart-stat-val">74</span>
+                    </div>
+                </div>
+
+                <!-- Contact -->
+                <div class="op-smart-stat-btn" title="Contact">
+                    <span class="op-smart-stat-icon">&#128176;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Contact</span>
+                    </div>
+                </div>
+
+                <!-- Karma -->
+                <div class="op-smart-stat-btn" title="Karma">
+                    <span class="op-smart-stat-icon" style="color: #f59e0b;">&#9728;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Karma</span>
+                        <span class="op-smart-stat-val">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- White Form Sheet Card -->
+    <div class="op-user-form-container" style="margin-top: 6px;">
+        
+        <!-- Sheet Header: Send Invitation Email (Left) & Invited | Confirmed Pipeline (Right) -->
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 24px 0 24px;">
+            <div>
+                <button type="submit" name="send_invite" value="1" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+                    Send an Invitation Email
+                </button>
+            </div>
+
+            <div class="op-status-pipeline-chevron">
+                <span class="op-status-step active">Invited</span>
+                <span class="op-status-step">Confirmed</span>
+            </div>
+        </div>
+
+        <!-- Identity Header Section (Matching Create User Image) -->
+        <div class="op-user-header-section">
+            <div class="op-user-avatar-placeholder" style="border: 2px solid #e2e8f0; background: #fdfdfd; border-radius: 8px; width: 88px; height: 88px;">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+
+            <div class="op-user-identity-content">
+                <input type="text" name="name" class="op-user-name-input" placeholder="e.g. John Doe" required autofocus style="border-bottom: 1px solid #cbd5e1; font-size: 24px; font-weight: 500;">
+
+                <div class="op-user-contact-fields">
+                    <div class="op-contact-row">
+                        <span class="op-contact-row-icon" style="color: #6366f1;">&#9993;</span>
+                        <input type="email" name="email" class="op-contact-input" style="width: 280px;" placeholder="Login" required>
+                    </div>
+
+                    <div class="op-contact-row">
+                        <span class="op-contact-row-icon" style="color: #64748b;">&#128222;</span>
+                        <input type="text" name="work_phone" class="op-contact-input" style="width: 200px;" placeholder="Phone">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs (5 Tabs) -->
+        <div class="op-tabs-nav">
+            <button type="button" class="op-tab-button active" onclick="switchUserTab('access_rights', this)">Access Rights</button>
+            <button type="button" class="op-tab-button" onclick="switchUserTab('preferences', this)">Preferences</button>
+            <button type="button" class="op-tab-button" onclick="switchUserTab('approval_stamp', this)">Approval Stamp</button>
+            <button type="button" class="op-tab-button" onclick="switchUserTab('calendar', this)">Calendar</button>
+            <button type="button" class="op-tab-button" onclick="switchUserTab('security', this)">Security</button>
+        </div>
+
+        <!-- TAB 1: ACCESS RIGHTS (Matching Image 4 & Image 2) -->
+        <div id="tab_access_rights" class="op-tab-pane active">
+            
+            <!-- ROLES SECTION -->
+            <div class="op-roles-header">
+                <div class="op-section-heading">Roles</div>
+
+                <div class="op-field-grid-row">
+                    <div class="op-field-label">
+                        Role
+                        <span class="op-help-icon">?</span>
+                    </div>
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #1e293b;">
+                            <input type="radio" name="role_level" value="user" checked style="accent-color: var(--op-primary-purple, #714b67);"> User
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #1e293b;">
+                            <input type="radio" name="role_level" value="admin" style="accent-color: var(--op-primary-purple, #714b67);"> Administrator
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {% if privileges_list %}
+            <!-- DYNAMIC ACCESS RIGHTS MATRIX (Active Subsystems Only) -->
+            <div class="op-categories-matrix" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px;">
+                {% for priv in privileges_list %}
+                <div class="op-category-block">
+                    <div class="op-section-heading">{{ priv.name }}</div>
+                    <div class="op-category-rows">
+                        <div class="op-category-row" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
+                            <span class="op-field-label" style="font-weight: 500; font-size: 13.5px; color: #334155;">
+                                {{ priv.name }} <span class="op-help-icon">?</span>
+                            </span>
+                            <select name="groups" class="op-category-select" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; min-width: 180px;">
+                                <option value="">No Access</option>
+                                {% for g in priv.groups.all %}
+                                    <option value="{{ g.id }}">{{ g.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- TAB 2: PREFERENCES (Matching Image 1) -->
+        <div id="tab_preferences" class="op-tab-pane">
+            <div class="op-preferences-grid">
+                <div>
+                    <div class="op-field-grid-row">
+                        <div class="op-field-label">Language <span class="op-help-icon">?</span></div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>English (US)</span>
+                            <span style="color: #6366f1; font-size: 15px;">&#127760;</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 18px;">
+                        <div class="op-field-label" style="margin-bottom: 8px;">Email Signature</div>
+                        <textarea class="op-signature-box" placeholder="Your email signature..."></textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="op-field-grid-row">
+                        <div class="op-field-label">Notification <span class="op-help-icon">?</span></div>
+                        <div style="display: flex; gap: 16px; align-items: center;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #1e293b;">
+                                <input type="radio" name="notification_type" value="email" checked style="accent-color: var(--op-primary-color, #2563eb);"> By Emails
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #1e293b;">
+                                <input type="radio" name="notification_type" value="inbox" style="accent-color: var(--op-primary-color, #2563eb);"> In Office Pro
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="op-field-grid-row" style="margin-top: 14px;">
+                        <div class="op-field-label">System Bot Status</div>
+                        <div style="font-size: 13.5px; color: #64748b;">
+                            Disabled
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: APPROVAL STAMP -->
+        <div id="tab_approval_stamp" class="op-tab-pane">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 36px;">
+                <div>
+                    <div class="op-section-heading">Digital Signature &amp; Official Seal</div>
+                    <div style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; padding: 24px; text-align: center; color: #64748b;">
+                        <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">New User Signature</div>
+                        <div style="font-size: 12px; color: #94a3b8;">Will be initialized upon first user login and profile setup.</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="op-section-heading">Authorization &amp; Signing Limits</div>
+                    <div class="op-field-grid-row">
+                        <div class="op-field-label">Approval Role <span class="op-help-icon">?</span></div>
+                        <select class="op-category-select-bordered" style="width: 100%;">
+                            <option selected>Standard Approver</option>
+                            <option>Department Manager</option>
+                            <option>Financial Controller</option>
+                            <option>Executive / Director</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: CALENDAR -->
+        <div id="tab_calendar" class="op-tab-pane">
+            <div class="op-section-heading">Working Hours &amp; Availability</div>
+            <div class="op-field-grid-row" style="max-width: 500px;">
+                <div class="op-field-label">Work Schedule</div>
+                <select class="op-category-select-bordered">
+                    <option selected>Standard 40 Hours/Week (Mon-Fri 09:00 - 18:00)</option>
+                    <option>Flexible 45 Hours/Week</option>
+                    <option>Part Time (20 Hours/Week)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- TAB 5: SECURITY -->
+        <div id="tab_security" class="op-tab-pane">
+            <div class="op-security-item">
+                <div class="op-security-item-left">
+                    <div class="op-security-title">Password Creation</div>
+                    <div class="op-security-subtitle">A default temporary password (123) is assigned, and invitation email will allow password reset.</div>
+                </div>
+                <div class="op-security-item-right">
+                    <span class="op-badge-disabled">Auto Generated</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<script>
+function switchUserTab(tabKey, btnElement) {
+    document.querySelectorAll('.op-tab-pane').forEach(function(pane) {
+        pane.classList.remove('active');
+    });
+    document.querySelectorAll('.op-tab-button').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+
+    const targetPane = document.getElementById('tab_' + tabKey);
+    if (targetPane) {
+        targetPane.classList.add('active');
+    }
+    if (btnElement) {
+        btnElement.classList.add('active');
+    }
+}
+</script>
+{% endblock %}

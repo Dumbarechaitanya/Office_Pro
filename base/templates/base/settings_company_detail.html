@@ -1,0 +1,673 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block title %}{{ comp.name }} - Companies - Office Pro{% endblock %}
+{% block navbar_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-company-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 10px 0 40px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  @media (max-width: 1100px) {
+    .op-company-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* Form Sheet Column */
+  .op-company-sheet {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  /* Chatter Panel Styles */
+  .op-chatter-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    height: fit-content;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .op-chatter-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .op-chatter-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .op-chatter-btn {
+    padding: 5px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #475569;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .op-chatter-btn.active, .op-chatter-btn-primary {
+    background: var(--op-primary-color, #714b67);
+    color: #ffffff;
+    border-color: var(--op-primary-color, #714b67);
+  }
+  .op-chatter-btn:hover {
+    background: #e2e8f0;
+  }
+  .op-chatter-btn-primary:hover {
+    background: var(--op-primary-hover, #5a3c53);
+  }
+  .op-chatter-icons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .op-chatter-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .op-chatter-icon-btn:hover {
+    background: #f1f5f9;
+    color: #334155;
+  }
+  .op-chatter-composer {
+    margin-bottom: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  .op-chatter-textarea {
+    width: 100%;
+    min-height: 70px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    background: #fff;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .op-chatter-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  .op-chatter-date-divider {
+    text-align: center;
+    position: relative;
+    margin: 8px 0;
+  }
+  .op-chatter-date-divider::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: 1px;
+    background: #e2e8f0;
+    z-index: 1;
+  }
+  .op-chatter-date-label {
+    position: relative;
+    z-index: 2;
+    background: #fff;
+    padding: 0 10px;
+    font-size: 11.5px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .op-chatter-item {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    align-items: flex-start;
+    min-width: 0;
+  }
+  .op-chatter-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #0d9488;
+    color: #fff;
+    font-weight: bold;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .op-avatar-note {
+    background: #f59e0b !important;
+  }
+  .op-avatar-comment {
+    background: #0d9488 !important;
+  }
+  .op-chatter-content {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .op-chatter-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+  }
+  .op-chatter-author {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 13px;
+  }
+  .op-chatter-time {
+    color: #94a3b8;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+  .op-chatter-body {
+    color: #334155;
+    line-height: 1.45;
+    font-size: 13px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Logo Upload Tile */
+  .op-logo-uploader {
+    width: 90px;
+    height: 90px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #f8fafc;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.15s ease;
+  }
+  .op-logo-uploader:hover {
+    border-color: var(--op-primary-color, #714b67);
+  }
+  .op-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto; padding: 0 16px;">
+  
+  <!-- Top Control Bar -->
+  <div class="op-view-control-bar" style="border-bottom: 1px solid #e2e8f0; margin-bottom: 16px; padding: 8px 0;">
+    <div class="op-view-control-left">
+      <a href="{% url 'settings_company_create' %}" class="op-view-btn-new">New</a>
+      
+      <div class="op-view-breadcrumb" style="display: flex; align-items: center; gap: 6px;">
+        <a href="{% url 'settings_companies' %}">Companies</a>
+        <span>/</span>
+        <span>{{ comp.name }}</span>
+      </div>
+
+      <button type="submit" form="companyForm" class="op-view-btn-save" style="margin-left: 12px;">Save</button>
+      <a href="{% url 'settings_companies' %}" class="op-view-btn-discard">Discard</a>
+    </div>
+
+    <div class="op-view-control-right">
+      <!-- Pager -->
+      <div class="op-view-pager" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b;">
+        <span>{{ current_index }} / {{ total_count }}</span>
+        {% if prev_id %}
+          <a href="{% url 'settings_company_detail' prev_id %}" style="padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 4px; text-decoration: none; color: inherit;">&lt;</a>
+        {% else %}
+          <span style="padding: 2px 6px; border: 1px solid #e2e8f0; border-radius: 4px; color: #cbd5e1;">&lt;</span>
+        {% endif %}
+        {% if next_id %}
+          <a href="{% url 'settings_company_detail' next_id %}" style="padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 4px; text-decoration: none; color: inherit;">&gt;</a>
+        {% else %}
+          <span style="padding: 2px 6px; border: 1px solid #e2e8f0; border-radius: 4px; color: #cbd5e1;">&gt;</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- 2-Column Split Layout: Form Sheet + Chatter -->
+  <div class="op-company-layout">
+    
+    <!-- Left Column: Form Sheet -->
+    <div class="op-company-sheet op-view-sheet">
+      <form id="companyForm" method="post" action="{% url 'settings_company_detail' comp.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Top Header: Logo + Big Title -->
+        <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 24px;">
+          <div class="op-logo-uploader" onclick="document.getElementById('companyLogoInput').click()">
+            {% if comp.logo_url %}
+              <img src="{{ comp.logo_url }}" alt="Logo" class="op-logo-img">
+            {% else %}
+              <span style="font-size: 20px; color: #94a3b8;">&#128247;</span>
+              <span style="font-size: 11px; color: #64748b; margin-top: 4px;">Your logo</span>
+            {% endif %}
+            <input type="file" id="companyLogoInput" name="logo" accept="image/*" style="display: none;" onchange="previewLogo(this)">
+          </div>
+
+          <div style="flex: 1;">
+            <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+              Company Name <span class="op-view-hint" title="The legal or trading name of this company">?</span>
+            </label>
+            <input type="text" name="name" value="{{ comp.name }}" required class="op-view-input-title" placeholder="e.g. My Company" style="font-size: 24px; font-weight: 600; width: 100%; border: none; border-bottom: 2px solid #e2e8f0; padding: 4px 0; outline: none;">
+          </div>
+        </div>
+
+        <!-- Notebook Tabs -->
+        <div class="op-view-tabs" style="border-bottom: 1px solid #e2e8f0; margin-bottom: 20px; display: flex; gap: 20px;">
+          <button type="button" class="op-view-tab-btn active" onclick="switchCompanyTab('tab-general', this)" style="padding: 8px 4px; font-size: 14px; font-weight: 600; background: none; border: none; border-bottom: 2px solid var(--op-primary-color, #714b67); color: var(--op-primary-color, #714b67); cursor: pointer;">
+            General Information
+          </button>
+          <button type="button" class="op-view-tab-btn" onclick="switchCompanyTab('tab-branches', this)" style="padding: 8px 4px; font-size: 14px; font-weight: 600; background: none; border: none; border-bottom: 2px solid transparent; color: #64748b; cursor: pointer;">
+            Branches ({{ branches_count }})
+          </button>
+        </div>
+
+        <!-- Tab 1: General Information -->
+        <div id="tab-general" class="op-view-tab-content active" style="display: block;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px;">
+            
+            <!-- Left Sub-column -->
+            <div>
+              <!-- Address Section -->
+              <div class="op-view-field-row" style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">
+                  Address <span class="op-view-hint" title="Physical / Billing Address">?</span>
+                </label>
+                <input type="text" name="street" value="{{ comp.street|default:'' }}" placeholder="Street..." style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; margin-bottom: 6px; outline: none; font-size: 13px;">
+                <input type="text" name="street2" value="{{ comp.street2|default:'' }}" placeholder="Street 2..." style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; margin-bottom: 6px; outline: none; font-size: 13px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 6px;">
+                  <input type="text" name="city" value="{{ comp.city|default:'' }}" placeholder="City" style="border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; outline: none; font-size: 13px;">
+                  <input type="text" name="state" value="{{ comp.state|default:'' }}" placeholder="State" style="border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; outline: none; font-size: 13px;">
+                  <input type="text" name="zip_code" value="{{ comp.zip_code|default:'' }}" placeholder="ZIP" style="border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; outline: none; font-size: 13px;">
+                </div>
+                <input type="text" name="country" value="{{ comp.country|default:'' }}" placeholder="Country" style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 0; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- GSTIN -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+                  GSTIN <span class="op-view-hint" title="Tax Registration / GSTIN">?</span>
+                </label>
+                <input type="text" name="gstin" value="{{ comp.gstin|default:'' }}" placeholder="/ if not applicable" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Company ID -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Company ID <span class="op-view-hint" title="Registration or Incorporation ID">?</span>
+                </label>
+                <input type="text" name="company_registry" value="{{ comp.company_registry|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Currency -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 24px;">
+                <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Currency <span class="op-view-hint" title="Base accounting currency">?</span>
+                </label>
+                <input type="text" name="currency" value="{{ comp.currency|default:'INR' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Social Media Header -->
+              <div style="font-size: 11.5px; font-weight: 700; color: #64748b; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
+                Social Media
+              </div>
+
+              <!-- X Account -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 10px;">
+                <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+                  X Account <span class="op-view-hint" title="Twitter / X profile URL or handle">?</span>
+                </label>
+                <input type="text" name="x_account" value="{{ comp.x_account|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Facebook -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 10px;">
+                <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Facebook <span class="op-view-hint" title="Facebook Page">?</span>
+                </label>
+                <input type="text" name="facebook_account" value="{{ comp.facebook_account|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- GitHub -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 10px;">
+                <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+                  GitHub <span class="op-view-hint" title="GitHub Organization">?</span>
+                </label>
+                <input type="text" name="github_account" value="{{ comp.github_account|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- LinkedIn -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 10px;">
+                <label style="width: 120px; font-size: 13px; font-weight: 600; color: #475569;">
+                  LinkedIn <span class="op-view-hint" title="LinkedIn Company Page">?</span>
+                </label>
+                <input type="text" name="linkedin_account" value="{{ comp.linkedin_account|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+            </div>
+
+            <!-- Right Sub-column -->
+            <div>
+              <!-- Phone -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Phone <span class="op-view-hint" title="Primary business phone">?</span>
+                </label>
+                <input type="text" name="phone" value="{{ comp.phone|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Email -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Email <span class="op-view-hint" title="Company general email">?</span>
+                </label>
+                <input type="email" name="email" value="{{ comp.email|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Website -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Website <span class="op-view-hint" title="Website URL">?</span>
+                </label>
+                <input type="text" name="website" value="{{ comp.website|default:'' }}" placeholder="e.g. https://www.example.com" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Parent Company -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Parent Company <span class="op-view-hint" title="Headquarters / Parent organization">?</span>
+                </label>
+                <select name="parent_company" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; background: transparent; font-size: 13px;">
+                  <option value="">-- None (HQ / Independent) --</option>
+                  {% for pcomp in parent_companies %}
+                    <option value="{{ pcomp.id }}" {% if comp.parent_company_id == pcomp.id %}selected{% endif %}>{{ pcomp.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Email Domain -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Email Domain <span class="op-view-hint" title="Allowed email domain for staff">?</span>
+                </label>
+                <input type="text" name="email_domain" value="{{ comp.email_domain|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Bounce -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Bounce <span class="op-view-hint" title="Email bounce catch address">?</span>
+                </label>
+                <input type="text" name="bounce_email" value="{{ comp.bounce_email|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Catchall -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Catchall <span class="op-view-hint" title="Catchall email address">?</span>
+                </label>
+                <input type="text" name="catchall_email" value="{{ comp.catchall_email|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Default From -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Default From <span class="op-view-hint" title="Default From address for outbound mail">?</span>
+                </label>
+                <input type="text" name="default_from_email" value="{{ comp.default_from_email|default:'' }}" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; font-size: 13px;">
+              </div>
+
+              <!-- Color -->
+              <div class="op-view-field-row" style="display: flex; align-items: center; margin-bottom: 14px;">
+                <label style="width: 130px; font-size: 13px; font-weight: 600; color: #475569;">
+                  Color <span class="op-view-hint" title="Company theme branding color">?</span>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="color" name="color" value="{{ comp.color|default:'#714b67' }}" style="width: 32px; height: 32px; border: none; border-radius: 50%; cursor: pointer;">
+                  <span style="font-size: 12.5px; color: #64748b;">{{ comp.color|default:'#714b67' }}</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 2: Branches -->
+        <div id="tab-branches" class="op-view-tab-content" style="display: none;">
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; color: #475569;">
+                <th style="padding: 8px 12px;">Branch Name</th>
+                <th style="padding: 8px 12px;">City</th>
+                <th style="padding: 8px 12px;">Phone</th>
+                <th style="padding: 8px 12px;">Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for branch in branches %}
+                <tr style="border-bottom: 1px solid #f1f5f9; font-size: 13.5px;">
+                  <td style="padding: 8px 12px; font-weight: 500;">
+                    <a href="{% url 'settings_company_detail' branch.id %}" style="color: #1e293b; text-decoration: none;">{{ branch.name }}</a>
+                  </td>
+                  <td style="padding: 8px 12px; color: #64748b;">{{ branch.city|default:'-' }}</td>
+                  <td style="padding: 8px 12px; color: #64748b;">{{ branch.phone|default:'-' }}</td>
+                  <td style="padding: 8px 12px; color: #64748b;">{{ branch.email|default:'-' }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" style="text-align: center; color: #94a3b8; padding: 24px;">
+                    No child branches attached to this company.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Right Column: Chatter Panel -->
+    <div class="op-chatter-panel">
+      <!-- Chatter Top Actions -->
+      <div class="op-chatter-topbar">
+        <div class="op-chatter-actions">
+          <button type="button" class="op-chatter-btn" onclick="toggleComposer('comment')">Send message</button>
+          <button type="button" class="op-chatter-btn" onclick="toggleComposer('note')">Log note</button>
+        </div>
+        <div class="op-chatter-icons">
+          <span class="op-chatter-icon-btn" title="Search messages">&#128269;</span>
+          <span class="op-chatter-icon-btn" title="Attachments">&#128206;</span>
+          <span class="op-chatter-icon-btn" title="Schedule Activity" onclick="openScheduleActivityModal('res.company', '{{ comp.id }}', '{{ comp.name|escapejs }}')">&#9200;</span>
+        </div>
+      </div>
+
+      <!-- Message Composer Box -->
+      <div id="opChatterComposer" class="op-chatter-composer" style="display: none;">
+        <input type="hidden" id="composerMessageType" value="comment">
+        <textarea id="composerBody" class="op-chatter-textarea" placeholder="Write a message or log note..."></textarea>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+          <button type="button" onclick="toggleComposer(null)" class="op-chatter-btn">Cancel</button>
+          <button type="button" id="postChatterBtn" data-model="res.company" data-record-id="{{ comp.id }}" onclick="submitChatterMessage(this.dataset.model, this.dataset.recordId)" class="op-chatter-btn op-chatter-btn-primary">Post</button>
+        </div>
+      </div>
+
+      <!-- Messages Timeline Feed -->
+      <div class="op-chatter-feed" id="chatterFeed">
+        <div class="op-chatter-date-divider">
+          <span class="op-chatter-date-label">Activity Timeline</span>
+        </div>
+
+        {% for msg in messages_list %}
+          <div class="op-chatter-item">
+            <div class="op-chatter-avatar {% if msg.message_type == 'note' %}op-avatar-note{% else %}op-avatar-comment{% endif %}">
+              {{ msg.author.username|slice:":1"|upper|default:"U" }}
+            </div>
+            <div class="op-chatter-content">
+              <div class="op-chatter-meta">
+                <span class="op-chatter-author">{{ msg.author.username|default:"System" }}</span>
+                <span class="op-chatter-time">{{ msg.created_at|date:"M d, g:i A" }}</span>
+              </div>
+              <div class="op-chatter-body">
+                {{ msg.body }}
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div style="text-align: center; color: #94a3b8; font-size: 12.5px; padding: 16px 0;">
+            No messages or log notes yet.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function switchCompanyTab(tabId, btn) {
+    document.querySelectorAll('.op-view-tab-btn').forEach(b => {
+      b.style.borderBottomColor = 'transparent';
+      b.style.color = '#64748b';
+    });
+    document.querySelectorAll('.op-view-tab-content').forEach(c => c.style.display = 'none');
+    btn.style.borderBottomColor = 'var(--op-primary-color, #714b67)';
+    btn.style.color = 'var(--op-primary-color, #714b67)';
+    const target = document.getElementById(tabId);
+    if (target) target.style.display = 'block';
+  }
+
+  function previewLogo(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const uploader = document.querySelector('.op-logo-uploader');
+        uploader.innerHTML = `<img src="${e.target.result}" alt="Logo" class="op-logo-img">`;
+      }
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function toggleComposer(type) {
+    const composer = document.getElementById('opChatterComposer');
+    const typeInput = document.getElementById('composerMessageType');
+    const textarea = document.getElementById('composerBody');
+    if (!type || (composer.style.display === 'block' && typeInput.value === type)) {
+      composer.style.display = 'none';
+      textarea.value = '';
+    } else {
+      composer.style.display = 'block';
+      typeInput.value = type;
+      textarea.placeholder = type === 'note' ? 'Log an internal note...' : 'Send message to staff / followers...';
+      textarea.focus();
+    }
+  }
+
+  function submitChatterMessage(modelName, recordId) {
+    const body = document.getElementById('composerBody').value.trim();
+    const messageType = document.getElementById('composerMessageType').value;
+    if (!body) return;
+
+    const formData = new FormData();
+    formData.append('model_name', modelName);
+    formData.append('record_id', recordId);
+    formData.append('message_type', messageType);
+    formData.append('body', body);
+
+    fetch("{% url 'mail_post_message' %}", {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        const feed = document.getElementById('chatterFeed');
+        const item = document.createElement('div');
+        item.className = 'op-chatter-item';
+        const avatarBg = messageType === 'note' ? '#f59e0b' : '#0d9488';
+        item.innerHTML = `
+          <div class="op-chatter-avatar" style="background: ${avatarBg};">
+            ${data.message.author_avatar}
+          </div>
+          <div class="op-chatter-content">
+            <div class="op-chatter-meta">
+              <span class="op-chatter-author">${data.message.author_name}</span>
+              <span class="op-chatter-time">${data.message.created_at}</span>
+            </div>
+            <div class="op-chatter-body">${data.message.body}</div>
+          </div>
+        `;
+        // Insert after divider
+        const divider = feed.querySelector('.op-chatter-date-divider');
+        if (divider && divider.nextSibling) {
+          feed.insertBefore(item, divider.nextSibling);
+        } else {
+          feed.appendChild(item);
+        }
+        toggleComposer(null);
+      } else {
+        alert('Failed to post: ' + data.message);
+      }
+    })
+    .catch(err => alert('Post request failed.'));
+  }
+</script>
+{% endblock %}

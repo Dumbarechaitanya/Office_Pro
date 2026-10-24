@@ -1,0 +1,149 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-internal-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #714b67;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 2px 6px;
+    margin-left: 8px;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+    cursor: pointer;
+  }
+  .op-internal-link-btn:hover {
+    background: #f3f4f6;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-m2m-detail-form" method="post" action="{{ form_action }}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        {% if create_url %}
+          <a href="{{ create_url }}" class="op-view-btn-new">New</a>
+        {% endif %}
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_m2m' %}">ManyToMany Relations</a> / {{ m2m.name }}
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_m2m' %}" class="op-view-btn-discard">Discard</a>
+
+        <!-- Pager -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #4b5563; margin-left: 12px;">
+          <span>{{ current_index }} / {{ total_m2m }}</span>
+          {% if prev_id %}
+            <a href="{% url 'technical_m2m_detail' prev_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&lt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&lt;</span>
+          {% endif %}
+          {% if next_id %}
+            <a href="{% url 'technical_m2m_detail' next_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&gt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <div style="max-width: 600px;">
+        <div class="op-view-row" style="margin-bottom: 12px;">
+          <label class="op-view-label" for="id_name">
+            Relation Name
+            <span class="op-view-hint">?
+              <div class="op-debug-tooltip">
+                <div class="op-debug-tooltip-meta">
+                  <ul>
+                    <li>Label: Relation Name</li>
+                    <li>Field: name</li>
+                    <li>Model: ir.model.relation</li>
+                    <li>Type: char</li>
+                    <li>Required: True</li>
+                  </ul>
+                </div>
+              </div>
+            </span>
+          </label>
+          <div class="op-view-input-wrap">
+            <input type="text" id="id_name" name="name" class="op-view-input" value="{{ m2m.name }}" required>
+          </div>
+        </div>
+
+        <div class="op-view-row" style="margin-bottom: 12px;">
+          <label class="op-view-label" for="id_module">
+            Module
+            <span class="op-view-hint">?
+              <div class="op-debug-tooltip">
+                <div class="op-debug-tooltip-meta">
+                  <ul>
+                    <li>Label: Module</li>
+                    <li>Field: module</li>
+                    <li>Model: ir.model.relation</li>
+                    <li>Type: many2one</li>
+                    <li>Relation: ir.module</li>
+                  </ul>
+                </div>
+              </div>
+            </span>
+          </label>
+          <div class="op-view-input-wrap">
+            <select id="id_module" name="module" class="op-view-select">
+              <option value="">—</option>
+              {% for mod in all_modules %}
+                <option value="{{ mod.id }}" {% if m2m.module_id == mod.id %}selected{% endif %}>{{ mod.name|title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="op-view-row" style="margin-bottom: 12px;">
+          <label class="op-view-label" for="id_model">
+            Model
+            <span class="op-view-hint">?
+              <div class="op-debug-tooltip">
+                <div class="op-debug-tooltip-meta">
+                  <ul>
+                    <li>Label: Model</li>
+                    <li>Field: model</li>
+                    <li>Model: ir.model.relation</li>
+                    <li>Type: many2one</li>
+                    <li>Relation: ir.model</li>
+                  </ul>
+                </div>
+              </div>
+            </span>
+          </label>
+          <div class="op-view-input-wrap" style="display: flex; align-items: center;">
+            <select id="id_model" name="model" class="op-view-select" style="flex: 1;">
+              <option value="">—</option>
+              {% for mdl in all_models %}
+                <option value="{{ mdl.id }}" {% if m2m.model_id == mdl.id %}selected{% endif %}>{{ mdl.description|default:mdl.model_name }}</option>
+              {% endfor %}
+            </select>
+            {% if m2m.model %}
+              <a href="{% url 'technical_model_detail' m2m.model.id %}" class="op-internal-link-btn" title="Internal link">&#10142;</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

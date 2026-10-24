@@ -1,0 +1,86 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+<style>
+  .op-partner-avatar-cell {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #a83c2e;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="list-toolbar">
+  <div class="list-toolbar-left">
+    <a href="{% url 'settings_partner_create' %}" class="btn-new">New</a>
+    <span class="toolbar-title">Contacts</span>
+  </div>
+
+  <div class="list-toolbar-center">
+    {% include 'base/_search_panel.html' %}
+  </div>
+
+  <div class="list-toolbar-right">
+    <div class="toolbar-pagination">
+      {% if total_count %}{{ page_start }}-{{ page_end }} / {{ total_count }} records{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="op-list-view">
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 48px;"></th>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Company</th>
+        <th>Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for partner in partners %}
+        <tr data-href="{% url 'settings_partner_detail' partner.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
+          <td>
+            <div class="op-partner-avatar-cell" style="background: {% if partner.is_company %}#0284c7{% else %}#a83c2e{% endif %};">
+              {{ partner.name|slice:":1"|upper }}
+            </div>
+          </td>
+          <td>
+            <a href="{% url 'settings_partner_detail' partner.id %}" style="text-decoration: none; color: inherit; font-weight: 600;">
+              {{ partner.name }}
+            </a>
+          </td>
+          <td>{{ partner.phone|default:"—" }}</td>
+          <td>{{ partner.email|default:"—" }}</td>
+          <td>{{ partner.display_company_name }}</td>
+          <td>
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background: #f1f5f9; color: #475569;">
+              {% if partner.is_company %}Company{% else %}Person{% endif %}
+            </span>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 32px; color: #64748b;">
+            No contacts found. Click <strong>New</strong> to create a partner record.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

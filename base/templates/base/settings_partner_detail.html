@@ -1,0 +1,576 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/user_form.css' %}">
+<style>
+  .op-partner-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    margin: 16px auto 40px auto;
+    max-width: 1200px;
+  }
+
+  .op-partner-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+    border-radius: 8px 8px 0 0;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .op-partner-breadcrumb {
+    font-size: 13px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .op-partner-breadcrumb a {
+    color: #714b67;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  /* Smart Buttons Bar matching Image 2 */
+  .op-partner-smart-bar {
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-end;
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+    overflow-x: auto;
+    gap: 1px;
+    padding: 0 16px;
+  }
+
+  .op-pstat-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-right: 1px solid #e2e8f0;
+    text-decoration: none;
+    color: #334155;
+    background: #fff;
+    transition: background 0.15s ease;
+    cursor: pointer;
+  }
+  .op-pstat-btn:first-child {
+    border-left: 1px solid #e2e8f0;
+  }
+  .op-pstat-btn:hover {
+    background: #f8fafc;
+  }
+  .op-pstat-icon {
+    font-size: 17px;
+  }
+  .op-pstat-meta {
+    display: flex;
+    flex-direction: column;
+  }
+  .op-pstat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+  }
+  .op-pstat-val {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  /* Form Sheet Layout */
+  .op-partner-header-section {
+    display: flex;
+    gap: 24px;
+    padding: 24px 28px 20px 28px;
+    align-items: flex-start;
+  }
+
+  .op-partner-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 8px;
+    background: #a83c2e; /* Terracotta red/brown matching Image 2 */
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(168, 60, 46, 0.25);
+    flex-shrink: 0;
+    user-select: none;
+  }
+
+  .op-partner-identity {
+    flex: 1;
+    min-width: 280px;
+  }
+
+  .op-type-toggle-group {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .op-type-radio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+  }
+  .op-type-radio input {
+    accent-color: #714b67;
+  }
+
+  .op-partner-name-input {
+    font-size: 26px;
+    font-weight: 700;
+    color: #111827;
+    border: none;
+    border-bottom: 1px solid #cbd5e1;
+    border-radius: 0;
+    padding: 2px 4px 6px 0;
+    width: 100%;
+    max-width: 550px;
+    background: transparent;
+    outline: none;
+    transition: border-color 0.15s ease;
+    margin-bottom: 12px;
+  }
+  .op-partner-name-input:focus {
+    border-bottom-color: #714b67;
+  }
+
+  .op-two-col-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    padding: 0 28px 24px 28px;
+  }
+  @media (max-width: 768px) {
+    .op-two-col-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .op-grid-field-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .op-grid-field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .op-field-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #1e293b;
+    background: #ffffff;
+    transition: border-color 0.15s ease;
+  }
+  .op-field-input:focus {
+    border-color: #714b67;
+    outline: none;
+  }
+
+  .op-tag-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    margin-right: 4px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="partnerForm">
+  {% csrf_token %}
+
+  <!-- Top Control Bar (Matching Image 2 / Image 3 Outside Sheet) -->
+  <div class="op-user-topbar" style="max-width: 1200px; margin: 12px auto 0 auto;">
+    <!-- Left: New Button + Two-Tier Breadcrumbs -->
+    <div class="op-user-topbar-left">
+      <a href="{% url 'settings_partner_create' %}" class="op-btn-new-outline">
+        New
+      </a>
+      <div class="op-user-breadcrumb-group">
+        {% if linked_user %}
+          <a href="{% url 'settings_user_detail' linked_user.id %}" class="op-user-breadcrumb-link">Users / {{ linked_user.name|default:linked_user.username }}</a>
+        {% else %}
+          <a href="{% url 'settings_partners' %}" class="op-user-breadcrumb-link">Users / {{ partner_obj.name }}</a>
+        {% endif %}
+        <span class="op-user-breadcrumb-name">
+          {{ partner_obj.display_company_name|default:'Office Pro Solutions Ltd' }}, {{ partner_obj.name }}
+          <span style="font-size: 12px; color: #64748b; cursor: pointer;" title="Technical Settings">&#9881;</span>
+        </span>
+      </div>
+      <!-- Action buttons -->
+      <button type="submit" class="op-btn-save" style="margin-left: 8px; padding: 4px 14px; background: #2e7d32; color: #fff; border: none; border-radius: 4px; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+        Save
+      </button>
+      {% if linked_user %}
+      <a href="{% url 'settings_user_detail' linked_user.id %}" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; font-weight: 600; text-decoration: none;" title="Go to linked User Account">
+        &#128100; User
+      </a>
+      {% endif %}
+      <a href="{% url 'settings_partners' %}" style="padding: 4px 8px; color: #64748b; text-decoration: none; font-size: 12.5px; font-weight: 500;">
+        Discard
+      </a>
+    </div>
+
+    <!-- Right: 7 Smart Buttons Ribbon + Pager -->
+    <div class="op-user-topbar-right">
+      <!-- Segmented Smart Buttons Ribbon (7 Buttons Matching Image 3) -->
+      <div class="op-smart-buttons-ribbon">
+        <!-- Opportunities -->
+        <div class="op-smart-stat-btn" title="CRM Opportunities">
+          <span class="op-smart-stat-icon" style="color: #6366f1;">&#9733;</span>
+          <div class="op-smart-stat-meta">
+            <span class="op-smart-stat-label">Opportunities</span>
+            <span class="op-smart-stat-val">0</span>
+          </div>
+        </div>
+
+        <!-- Sales -->
+        <div class="op-smart-stat-btn" title="Sales Orders">
+          <span class="op-smart-stat-icon" style="color: #6366f1;">&#36;</span>
+          <div class="op-smart-stat-meta">
+            <span class="op-smart-stat-label">Sales</span>
+            <span class="op-smart-stat-val">0</span>
+          </div>
+        </div>
+
+        <!-- Invoiced -->
+        <div class="op-smart-stat-btn" title="Total Invoiced Amount">
+          <span class="op-smart-stat-icon" style="color: #6366f1;">&#9998;</span>
+          <div class="op-smart-stat-meta">
+            <span class="op-smart-stat-label">Invoiced</span>
+            <span class="op-smart-stat-val">&#8377; 0.00</span>
+          </div>
+        </div>
+
+        <!-- Meetings -->
+        <div class="op-smart-stat-btn" title="Scheduled Calendar Meetings">
+          <span class="op-smart-stat-icon" style="color: #6366f1;">&#128197;</span>
+          <div class="op-smart-stat-meta">
+            <span class="op-smart-stat-label">Meetings</span>
+            <span class="op-smart-stat-val">2</span>
+          </div>
+        </div>
+
+        <!-- Tasks -->
+        <div class="op-smart-stat-btn" title="Project Tasks">
+          <span class="op-smart-stat-icon" style="color: #6366f1;">&#9776;</span>
+          <div class="op-smart-stat-meta">
+            <span class="op-smart-stat-label">Tasks</span>
+            <span class="op-smart-stat-val">0</span>
+          </div>
+        </div>
+
+        <!-- Purchases -->
+        <div class="op-smart-stat-btn" title="Vendor Purchases">
+          <span class="op-smart-stat-icon" style="color: #6366f1;">&#128179;</span>
+          <div class="op-smart-stat-meta">
+            <span class="op-smart-stat-label">Purchases</span>
+            <span class="op-smart-stat-val">0</span>
+          </div>
+        </div>
+
+        <!-- Employee -->
+        <div class="op-smart-stat-btn" title="Employee Record">
+          <span class="op-smart-stat-icon" style="color: #6366f1;">&#129690;</span>
+          <div class="op-smart-stat-meta">
+            <span class="op-smart-stat-label">Employee</span>
+            <span class="op-smart-stat-val">1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pager -->
+      <div class="op-pager">
+        <span>{{ pager_current|default:1 }} / {{ pager_total|default:1 }}</span>
+        {% if prev_id %}<a href="{% url 'settings_partner_detail' prev_id %}" class="op-pager-btn" title="Previous">&lt;</a>{% else %}<span class="op-pager-btn" style="opacity:0.4; cursor:not-allowed;">&lt;</span>{% endif %}
+        {% if next_id %}<a href="{% url 'settings_partner_detail' next_id %}" class="op-pager-btn" title="Next">&gt;</a>{% else %}<span class="op-pager-btn" style="opacity:0.4; cursor:not-allowed;">&gt;</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- White Form Sheet Card (Matching Image 2) -->
+  <div class="op-user-form-container" style="margin-top: 6px;">
+
+    <!-- Person / Company Toggle Inside Sheet -->
+    <div style="padding: 20px 28px 0 28px;">
+      <div class="op-type-toggle-group">
+        <label class="op-type-radio">
+          <input type="radio" name="is_company" value="person" {% if not partner_obj.is_company %}checked{% endif %}>
+          <span>Person</span>
+        </label>
+        <label class="op-type-radio">
+          <input type="radio" name="is_company" value="company" {% if partner_obj.is_company %}checked{% endif %}>
+          <span>Company</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Identity Header Section (Image 2) -->
+    <div class="op-user-header-section" style="padding-top: 4px;">
+      <!-- Avatar tile (Terracotta #a83c2e matching Image 2) -->
+      <div class="op-user-avatar-tile">
+        {{ partner_obj.name|slice:":1"|upper }}
+      </div>
+
+      <div class="op-user-identity-content">
+        <!-- Contact Name -->
+        <h1 class="op-user-name-title" style="margin-bottom: 8px;">{{ partner_obj.name }}</h1>
+
+        <!-- Email & Phone rows -->
+        <div class="op-user-contact-fields">
+          <div class="op-contact-row">
+            <span class="op-contact-row-icon" style="color: #6366f1;">&#9993;</span>
+            <input type="email" name="email" class="op-contact-input" style="width: 280px;" value="{{ partner_obj.email|default:'' }}" placeholder="Email (e.g. alex.morgan@officepro.internal)">
+          </div>
+
+          <div class="op-contact-row">
+            <span class="op-contact-row-icon" style="color: #64748b;">&#128222;</span>
+            <input type="text" name="phone" class="op-contact-input" style="width: 200px;" value="{{ partner_obj.phone|default:'' }}" placeholder="Phone">
+          </div>
+        </div>
+    </div>
+
+    <!-- Two-Column Fields Grid matching Image 2 -->
+    <div class="op-two-col-grid">
+      
+      <!-- LEFT COLUMN -->
+      <div>
+        <!-- Company -->
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">
+            Company
+            <span class="op-help-icon">?</span>
+          </label>
+          <select name="company_name" class="op-field-input">
+            {% for c in companies %}
+              <option value="{{ c.name }}" {% if partner_obj.display_company_name == c.name %}selected{% endif %}>{{ c.name }}</option>
+            {% empty %}
+              <option value="Office Pro Solutions Ltd" selected>Office Pro Solutions Ltd</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Company Address -->
+        <div class="op-grid-field-row" style="align-items: flex-start;">
+          <label class="op-grid-field-label" style="margin-top: 6px;">
+            Company Address
+            <span class="op-help-icon">?</span>
+          </label>
+          <textarea name="address" class="op-field-input" rows="4" style="resize: vertical;" placeholder="Street, City, State, ZIP, Country">{{ partner_obj.display_address }}</textarea>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div>
+        <!-- Job Position -->
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">
+            Job Position
+            <span class="op-help-icon">?</span>
+          </label>
+          <input type="text" name="job_position" class="op-field-input" value="{{ partner_obj.job_position }}" placeholder="e.g. Sales Director">
+        </div>
+
+        <!-- GST Treatment -->
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">
+            GST Treatment
+            <span class="op-help-icon">?</span>
+          </label>
+          <select name="gst_treatment" class="op-field-input">
+            <option value="Registered Business - Regular" selected>Registered Business - Regular</option>
+            <option value="Registered Business - Composition">Registered Business - Composition</option>
+            <option value="Unregistered Business">Unregistered Business</option>
+            <option value="Consumer">Consumer</option>
+            <option value="Overseas / Export">Overseas / Export</option>
+          </select>
+        </div>
+
+        <!-- GSTIN -->
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">
+            GSTIN
+            <span class="op-help-icon">?</span>
+          </label>
+          <input type="text" name="gstin" class="op-field-input" value="{{ partner_obj.gstin }}" placeholder="27AHKPN6854C2Z3">
+        </div>
+
+        <!-- PAN -->
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">
+            PAN
+            <span class="op-help-icon">?</span>
+          </label>
+          <input type="text" name="pan" class="op-field-input" value="{{ partner_obj.pan }}" placeholder="AHKPN6854C">
+        </div>
+
+        <!-- Website -->
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">
+            Website
+            <span class="op-help-icon">?</span>
+          </label>
+          <input type="text" name="website" class="op-field-input" value="{{ partner_obj.website }}" placeholder="e.g. https://www.nexuswave.in">
+        </div>
+
+        <!-- Language -->
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">
+            Language
+            <span class="op-help-icon">?</span>
+          </label>
+          <select name="language" class="op-field-input">
+            <option value="English (US)" selected>English (US)</option>
+            <option value="English (UK)">English (UK)</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Marathi">Marathi</option>
+          </select>
+        </div>
+
+        <!-- Tags -->
+        <div class="op-grid-field-row">
+          <label class="op-grid-field-label">
+            Tags
+            <span class="op-help-icon">?</span>
+          </label>
+          <div>
+            <span class="op-tag-badge">B2B</span>
+            <span class="op-tag-badge">VIP</span>
+            <span class="op-tag-badge">Consulting</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs (Image 2) -->
+    <div class="op-tabs-nav">
+      <button type="button" class="op-tab-button active" onclick="switchPartnerTab('contacts', this)">Contacts</button>
+      <button type="button" class="op-tab-button" onclick="switchPartnerTab('sales_purchase', this)">Sales &amp; Purchase</button>
+      <button type="button" class="op-tab-button" onclick="switchPartnerTab('invoicing', this)">Invoicing</button>
+      <button type="button" class="op-tab-button" onclick="switchPartnerTab('partner_assignment', this)">Partner Assignment</button>
+      <button type="button" class="op-tab-button" onclick="switchPartnerTab('notes', this)">Notes</button>
+    </div>
+
+    <!-- TAB 1: Contacts & Sub-addresses -->
+    <div id="ptab_contacts" class="op-tab-pane active" style="padding: 24px 28px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <span style="font-size: 14px; font-weight: 700; color: #1e293b;">Associated Contact Persons &amp; Delivery Locations</span>
+        <button type="button" class="op-btn-secondary" style="padding: 4px 12px; font-size: 12px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer;">+ Add a line</button>
+      </div>
+
+      <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 24px; text-align: center; color: #64748b; font-size: 13px;">
+        No additional subsidiary branches or secondary delivery addresses recorded for this contact.
+      </div>
+    </div>
+
+    <!-- TAB 2: Sales & Purchase -->
+    <div id="ptab_sales_purchase" class="op-tab-pane" style="display: none; padding: 24px 28px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+        <div>
+          <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Sales Settings</h4>
+          <div class="op-grid-field-row">
+            <span class="op-grid-field-label">Salesperson</span>
+            <input type="text" class="op-field-input" value="Administrator" readonly>
+          </div>
+          <div class="op-grid-field-row">
+            <span class="op-grid-field-label">Payment Terms</span>
+            <select class="op-field-input">
+              <option selected>Immediate Payment</option>
+              <option>15 Days</option>
+              <option>30 Days</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Purchase Settings</h4>
+          <div class="op-grid-field-row">
+            <span class="op-grid-field-label">Payment Terms</span>
+            <select class="op-field-input">
+              <option selected>Immediate Payment</option>
+              <option>30 Days</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Invoicing -->
+    <div id="ptab_invoicing" class="op-tab-pane" style="display: none; padding: 24px 28px;">
+      <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Bank Accounts</h4>
+      <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; color: #64748b; font-size: 13px;">
+        No bank accounts registered. Click <strong>+ Add Bank Account</strong> to configure direct bank wire settlement.
+      </div>
+    </div>
+
+    <!-- TAB 4: Partner Assignment -->
+    <div id="ptab_partner_assignment" class="op-tab-pane" style="display: none; padding: 24px 28px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+        <div>
+          <div class="op-grid-field-row">
+            <span class="op-grid-field-label">Partner Level</span>
+            <select class="op-field-input">
+              <option selected>Silver Partner</option>
+              <option>Gold Partner</option>
+              <option>Platinum Partner</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: Notes -->
+    <div id="ptab_notes" class="op-tab-pane" style="display: none; padding: 24px 28px;">
+      <label style="display: block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 8px;">Internal Memo / Notes</label>
+      <textarea name="notes" class="op-field-input" rows="5" placeholder="Write internal notes about this contact or user...">Verified contact profile synced from Office Pro User Directory.</textarea>
+    </div>
+
+  </div>
+</form>
+
+<script>
+  function switchPartnerTab(tabName, btn) {
+    document.querySelectorAll('.op-tab-pane').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.op-tab-button').forEach(b => b.classList.remove('active'));
+
+    const pane = document.getElementById('ptab_' + tabName);
+    if (pane) pane.style.display = 'block';
+    if (btn) btn.classList.add('active');
+  }
+</script>
+{% endblock %}

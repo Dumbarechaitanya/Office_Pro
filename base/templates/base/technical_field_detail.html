@@ -1,0 +1,501 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-field-detail-form" method="post" action="{{ form_action }}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        {% if create_url %}
+          <a href="{{ create_url }}" class="op-view-btn-new">New</a>
+        {% endif %}
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_fields' %}">Fields</a> / {{ field.field_name|title }} ({{ field.model.description|default:field.model.model_name }})
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_fields' %}" class="op-view-btn-discard">Discard</a>
+
+        <!-- Pager -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #4b5563; margin-left: 12px;">
+          <span>{{ current_index }} / {{ total_fields }}</span>
+          {% if prev_id %}
+            <a href="{% url 'technical_field_detail' prev_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&lt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&lt;</span>
+          {% endif %}
+          {% if next_id %}
+            <a href="{% url 'technical_field_detail' next_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&gt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <!-- 2-Column Grid Header -->
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_field_name">
+              Field Name
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Field Name</li>
+                      <li>Field: field_name</li>
+                      <li>Model: ir.model.fields</li>
+                      <li>Type: char</li>
+                      <li>Required: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_field_name" name="field_name" class="op-view-input" value="{{ field.field_name }}" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_field_label">
+              Field Label
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Field Label</li>
+                      <li>Field: field_description</li>
+                      <li>Model: ir.model.fields</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_field_label" class="op-view-input" value="{{ field.field_name|title }}">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label">
+              Model
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Model</li>
+                      <li>Field: model_id</li>
+                      <li>Model: ir.model.fields</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: ir.model</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <a href="{% url 'technical_model_detail' field.model.id %}" style="text-decoration: none; color: #714b67; font-weight: 500;">
+                {{ field.model.description|default:field.model.model_name }}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_field_type">
+              Field Type
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Field Type</li>
+                      <li>Field: ttype</li>
+                      <li>Model: ir.model.fields</li>
+                      <li>Type: selection</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_field_type" name="field_type" class="op-view-select">
+                {% for val, label in field_type_choices %}
+                  <option value="{{ val }}" {% if field.field_type|lower == val|lower %}selected{% endif %}>{{ label|lower }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_field_help">
+              Field Help
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Field Help</li>
+                      <li>Field: help</li>
+                      <li>Model: ir.model.fields</li>
+                      <li>Type: text</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_field_help" class="op-view-input" value="" placeholder="">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-view-tabs">
+        <button type="button" class="op-view-tab-btn active" data-tab="tab-properties">Properties</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-compute">Compute</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-access-rights">Access Rights</button>
+      </div>
+
+      <!-- Tab 1: Properties -->
+      <div id="tab-properties" class="op-view-tab-pane active">
+        <div class="op-view-grid-2col">
+          <!-- Left Column -->
+          <div>
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_required">
+                Required
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Required</li>
+                        <li>Field: required</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_required" name="is_required" {% if field.is_required %}checked{% endif %}>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_readonly">
+                Readonly
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Readonly</li>
+                        <li>Field: readonly</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_readonly" {% if field.field_name == 'id' or field.field_name == 'created_at' or field.field_name == 'updated_at' %}checked{% endif %}>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_stored">
+                Stored
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Stored</li>
+                        <li>Field: store</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_stored" checked>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_indexed">
+                Indexed
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Indexed</li>
+                        <li>Field: index</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_indexed" {% if field.field_name == 'id' or field.field_name == 'code' or field.field_name == 'email' or field.field_name == 'username' or field.field_name == 'employee_code' %}checked{% endif %}>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_copied">
+                Copied
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Copied</li>
+                        <li>Field: copied</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_copied">
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label">
+                Enable Ordered Tracking
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Enable Ordered Tracking</li>
+                        <li>Field: tracking</li>
+                        <li>Type: integer</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <div style="color: #4b5563; font-weight: 500;">0</div>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label">
+                Type
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Type</li>
+                        <li>Field: state</li>
+                        <li>Type: selection</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <div style="color: #4b5563; font-weight: 500;">
+                {% if field.model.state == 'base' %}Base Field{% else %}Custom Field{% endif %}
+              </div>
+            </div>
+
+            <div class="op-view-row">
+              <label class="op-view-label">
+                In Apps
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: In Apps</li>
+                        <li>Field: modules</li>
+                        <li>Type: char</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <div style="color: #4b5563; font-weight: 500;">
+                {{ field.model.module.name|default:'base' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div>
+            <div class="op-view-row">
+              <label class="op-view-label" for="id_blacklisted">
+                Blacklisted in web forms
+                <span class="op-view-hint">?
+                  <div class="op-debug-tooltip">
+                    <div class="op-debug-tooltip-meta">
+                      <ul>
+                        <li>Label: Blacklisted in web forms</li>
+                        <li>Field: sanitize</li>
+                        <li>Type: boolean</li>
+                      </ul>
+                    </div>
+                  </div>
+                </span>
+              </label>
+              <input type="checkbox" id="id_blacklisted" {% if field.field_name == 'id' or field.field_name == 'child_count' %}checked{% endif %}>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Compute -->
+      <div id="tab-compute" class="op-view-tab-pane">
+        <div>
+          <div class="op-view-row" style="margin-bottom: 12px;">
+            <label class="op-view-label" for="id_related_field">
+              Related Field Definition
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Related Field Definition</li>
+                      <li>Field: related</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_related_field" class="op-view-input" placeholder="e.g. plan_id.color">
+            </div>
+          </div>
+
+          <div class="op-view-row" style="margin-bottom: 12px;">
+            <label class="op-view-label" for="id_dependencies">
+              Dependencies
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Dependencies</li>
+                      <li>Field: depends</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_dependencies" class="op-view-input" placeholder="e.g. partner_id.company_id.name">
+            </div>
+          </div>
+
+          <div class="op-view-row" style="align-items: flex-start; margin-bottom: 16px;">
+            <label class="op-view-label" for="id_compute" style="margin-top: 4px;">
+              Compute
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Compute</li>
+                      <li>Field: compute</li>
+                      <li>Type: text</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <textarea id="id_compute" class="op-arch-textarea" style="min-height: 80px; font-family: monospace; font-size: 13px;" placeholder="# Compute logic..."></textarea>
+            </div>
+          </div>
+
+          <!-- Documentation Guide -->
+          <div class="op-compute-guide">
+            <h4>How to define a computed field</h4>
+            <p>Computed fields are defined with the fields <strong>Dependencies</strong> and <strong>Compute</strong>.</p>
+            <p>
+              The field <strong>Dependencies</strong> lists the fields that the current field depends on. It is a comma-separated list of field names, like <code class="op-code-var">name</code>, <code class="op-code-var">size</code>. You can also refer to fields accessible through other relational fields, for instance <code class="op-code-var">partner_id.company_id.name</code>.
+            </p>
+            <p>
+              The field <strong>Compute</strong> is the Python code to compute the value of the field on a set of records. The value of the field must be assigned to each record with a dictionary-like assignment.
+            </p>
+
+            <div class="op-compute-codebox">
+              for record in self:<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;record['size'] = len(record.name)
+            </div>
+
+            <p>The only predefined variables are</p>
+            <ul class="op-var-list">
+              <li><code class="op-code-var">self</code> (the set of records to compute)</li>
+              <li><code class="op-code-var">datetime</code> (Python module)</li>
+              <li><code class="op-code-var">dateutil</code> (Python module)</li>
+              <li><code class="op-code-var">time</code> (Python module)</li>
+            </ul>
+
+            <p style="margin-top: 10px;">
+              Other features are accessible through <code class="op-code-var">self</code>, like <code class="op-code-var">self.env</code>, etc.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Access Rights -->
+      <div id="tab-access-rights" class="op-view-tab-pane">
+        <table class="op-sub-table">
+          <thead>
+            <tr>
+              <th>Group</th>
+              <th>Read Access</th>
+              <th>Write Access</th>
+              <th>Create Access</th>
+              <th>Delete Access</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ar in access_rights %}
+              <tr>
+                <td>{{ ar.group.name }}</td>
+                <td>{% if ar.can_read %}&#10003;{% endif %}</td>
+                <td>{% if ar.can_write %}&#10003;{% endif %}</td>
+                <td>{% if ar.can_create %}&#10003;{% endif %}</td>
+                <td>{% if ar.can_delete %}&#10003;{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" style="color: #9ca3af; padding: 16px; text-align: center;">No access rights specified for this model.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const tabBtns = document.querySelectorAll('.op-view-tab-btn');
+  const tabPanes = document.querySelectorAll('.op-view-tab-pane');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabPanes.forEach(p => p.classList.remove('active'));
+
+      this.classList.add('active');
+      const target = document.getElementById(this.dataset.tab);
+      if (target) {
+        target.classList.add('active');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

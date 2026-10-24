@@ -1,0 +1,110 @@
+{% extends "employee/employee_base.html" %}
+
+{% block content %}
+<div class="emp-control-bar">
+  <div class="emp-actions-left">
+    <div style="font-size: 14px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px;">
+      <a href="{% url 'employee_list' %}" style="color: #64748b; text-decoration: none;">Employees</a>
+      <span>/</span>
+      <span style="color: #0f172a;">Organization Hierarchy Chart</span>
+    </div>
+    <span style="font-size: 13px; color: #64748b; font-weight: 600; margin-left: 8px;">
+      {{ total_employees }} Total Staff Members
+    </span>
+  </div>
+
+  <div class="emp-actions-right">
+    <a href="{% url 'employee_list' %}" class="emp-btn-secondary">
+      <span>&#9638;</span> Grid View
+    </a>
+  </div>
+</div>
+
+<div class="org-chart-wrapper">
+  <div style="margin-bottom: 24px; text-align: center;">
+    <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0 6px 0;">Reporting Hierarchy Chart</h2>
+    <p style="font-size: 13px; color: #64748b; margin: 0;">Interactive visual mapping of reporting managers and direct teams across departments.</p>
+  </div>
+
+  <div class="org-tree">
+    <div class="org-level">
+      {% for root in roots %}
+      <div class="org-branch">
+        <a href="{% url 'employee_detail' root.id %}" class="org-card" style="border-top: 4px solid var(--op-primary-color, #714b67);">
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="emp-avatar" style="width: 44px; height: 44px; font-size: 16px;">
+              {{ root.name|slice:":1"|upper }}
+            </div>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: #0f172a;">{{ root.name }}</div>
+              <div style="font-size: 12px; color: #64748b;">{{ root.job_title|default:"Executive" }}</div>
+            </div>
+          </div>
+          <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 6px;">
+            <span class="emp-dept-badge">{{ root.display_department }}</span>
+            {% if root.subordinate_nodes %}
+            <span style="font-size: 11px; font-weight: 700; color: #059669; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">
+              {{ root.subordinate_nodes|length }} Directs
+            </span>
+            {% endif %}
+          </div>
+        </a>
+
+        {% if root.subordinate_nodes %}
+        <div class="org-subordinates">
+          {% for sub in root.subordinate_nodes %}
+          <div class="org-branch">
+            <a href="{% url 'employee_detail' sub.id %}" class="org-card" style="border-top: 4px solid #0284c7;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div class="emp-avatar" style="width: 40px; height: 40px; font-size: 15px; background: #0284c7;">
+                  {{ sub.name|slice:":1"|upper }}
+                </div>
+                <div>
+                  <div style="font-size: 13.5px; font-weight: 700; color: #0f172a;">{{ sub.name }}</div>
+                  <div style="font-size: 11.5px; color: #64748b;">{{ sub.job_title|default:"Specialist" }}</div>
+                </div>
+              </div>
+              <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 6px;">
+                <span class="emp-dept-badge">{{ sub.display_department }}</span>
+                {% if sub.subordinate_nodes %}
+                <span style="font-size: 11px; font-weight: 700; color: #059669; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">
+                  {{ sub.subordinate_nodes|length }} Directs
+                </span>
+                {% endif %}
+              </div>
+            </a>
+
+            {% if sub.subordinate_nodes %}
+            <div class="org-subordinates">
+              {% for sub2 in sub.subordinate_nodes %}
+              <div class="org-branch">
+                <a href="{% url 'employee_detail' sub2.id %}" class="org-card" style="border-top: 4px solid #10b981; min-width: 190px;">
+                  <div style="display: flex; gap: 10px; align-items: center;">
+                    <div class="emp-avatar" style="width: 34px; height: 34px; font-size: 13px; background: #10b981;">
+                      {{ sub2.name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                      <div style="font-size: 13px; font-weight: 700; color: #0f172a;">{{ sub2.name }}</div>
+                      <div style="font-size: 11px; color: #64748b;">{{ sub2.job_title|default:"Staff" }}</div>
+                    </div>
+                  </div>
+                  <div style="margin-top: 6px; border-top: 1px solid #f1f5f9; padding-top: 4px;">
+                    <span class="emp-dept-badge" style="font-size: 10px;">{{ sub2.display_department }}</span>
+                  </div>
+                </a>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div style="padding: 40px; color: #64748b;">No employees available to build hierarchy tree.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

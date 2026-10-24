@@ -1,0 +1,56 @@
+/* Control bar: New | Title ............. Discard | Save */
+.op-form-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  min-height: 42px;
+  gap: 12px;
+}
+.op-form-control-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.op-form-control-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.op-form-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #222;
+}
+.op-btn-new {
+  background: #714b67;
+  color: #fff;
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.op-btn-new:hover { background: #5c3a54; }
+
+.op-discard-changes-btn {
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.op-discard-changes-btn:hover { background: #f5f5f5; }
+
+.op-form-save-btn {
+  background: #714b67;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.op-form-save-btn:hover { background: #5c3a54; }

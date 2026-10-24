@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>500 Internal Server Error - Office Pro ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      --card-bg: rgba(30, 41, 59, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --danger-border: rgba(239, 68, 68, 0.3);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --warning-border: rgba(245, 158, 11, 0.3);
+      --accent: #38bdf8;
+      --code-bg: #0b0f19;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
+
+    .op-err-container {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Header Brand */
+    .op-err-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    .op-err-brand {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    .op-err-brand-badge {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #c4b5fd;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+    }
+
+    /* Main Error Card */
+    .op-err-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .op-err-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #8b5cf6);
+    }
+
+    .op-err-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .op-err-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .op-err-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: var(--danger);
+      flex-shrink: 0;
+    }
+
+    .op-err-code-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fca5a5;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .op-err-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 2px;
+      letter-spacing: -0.5px;
+    }
+
+    .op-err-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .op-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .op-btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .op-btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .op-btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .op-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    /* Diagnostics Callout Box */
+    .op-diag-box {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .op-diag-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .op-diag-meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .op-diag-meta-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+    .op-diag-meta-val {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #f1f5f9;
+      font-family: 'JetBrains Mono', monospace;
+      word-break: break-all;
+    }
+
+    .op-point-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .op-msg-box {
+      background: var(--danger-bg);
+      border-left: 4px solid var(--danger);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #fecaca;
+      font-family: 'JetBrains Mono', monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .op-hint-box {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      color: #fde68a;
+      margin-bottom: 16px;
+    }
+    .op-hint-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* Traceback Accordion */
+    .op-trace-toggle {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: background 0.15s ease;
+    }
+    .op-trace-toggle:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .op-trace-content {
+      background: var(--code-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: #94a3b8;
+      overflow-x: auto;
+      max-height: 400px;
+      white-space: pre-wrap;
+    }
+
+    /* Toast Notification */
+    .op-copy-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #10b981;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 9999;
+      animation: slideUp 0.2s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="op-err-container">
+    <!-- Navbar Brand Header -->
+    <div class="op-err-nav">
+      <a href="/" class="op-err-brand">
+        <span>Office Pro ERP</span>
+        <span class="op-err-brand-badge">Diagnostics</span>
+      </a>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        {% if is_debug %}<span style="color: #f59e0b; font-weight: 700;">&#128030; Developer Mode Active</span>{% endif %}
+      </div>
+    </div>
+
+    <!-- Main Diagnostic Card -->
+    <div class="op-err-card">
+      <div class="op-err-header">
+        <div class="op-err-title-wrap">
+          <div class="op-err-icon">&#9888;</div>
+          <div>
+            <div class="op-err-code-badge">HTTP 500 &bull; Exception Caught</div>
+            <h1 class="op-err-title">Internal Server Error</h1>
+          </div>
+        </div>
+        <div class="op-err-actions">
+          <button type="button" class="op-btn op-btn-secondary" onclick="window.history.back()">&#8592; Go Back</button>
+          <button type="button" class="op-btn op-btn-secondary" onclick="window.location.reload()">&#8635; Reload</button>
+          <a href="/" class="op-btn op-btn-primary">&#8962; Dashboard</a>
+        </div>
+      </div>
+
+      {% if diag %}
+      <!-- High Resolution Diagnostic Box -->
+      <div class="op-diag-box">
+        <div class="op-diag-meta-grid">
+          <div class="op-diag-meta-item">
+            <span class="op-diag-meta-label">Offending Module / File</span>
+            <span class="op-diag-meta-val" style="color: #67e8f9;">{{ diag.file }}</span>
+          </div>
+          <div class="op-diag-meta-item">
+            <span class="op-diag-meta-label">Execution Line Number</span>
+            <span class="op-diag-meta-val">
+              <span class="op-point-pill">Line {{ diag.line }}</span>
+            </span>
+          </div>
+          <div class="op-diag-meta-item">
+            <span class="op-diag-meta-label">Function / Method</span>
+            <span class="op-diag-meta-val" style="color: #a78bfa;">{{ diag.function }}()</span>
+          </div>
+          <div class="op-diag-meta-item">
+            <span class="op-diag-meta-label">Exception Type</span>
+            <span class="op-diag-meta-val" style="color: #fca5a5;">{{ diag.error_type }}</span>
+          </div>
+        </div>
+
+        <!-- Offending Error Message -->
+        <div class="op-msg-box"><strong>{{ diag.error_type }}:</strong> {{ diag.message }}</div>
+
+        {% if diag.code_context %}
+        <!-- Code Context Line -->
+        <div style="margin-bottom: 16px;">
+          <div class="op-diag-meta-label" style="margin-bottom: 6px;">Offending Code Statement:</div>
+          <div style="background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f87171;">
+            <span style="color: #64748b; margin-right: 8px;">{{ diag.line }} |</span> {{ diag.code_context }}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if diag.hint %}
+        <!-- Smart Troubleshooting Tip -->
+        <div class="op-hint-box">
+          <span class="op-hint-icon">&#128161;</span>
+          <div>
+            <strong>Diagnostic Recommendation:</strong><br>
+            {{ diag.hint }}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Interactive Stack Trace Inspector -->
+        <div>
+          <button type="button" class="op-trace-toggle" onclick="toggleTrace()">
+            <span>&#9776; Stack Trace &amp; Execution Frames</span>
+            <span id="traceToggleIcon">&#9660; Click to Expand</span>
+          </button>
+          <div id="traceContent" class="op-trace-content" style="display: none;">{{ diag.traceback }}</div>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+          <button type="button" class="op-btn op-btn-secondary" onclick="copyDiagnosticReport()">
+            <span>&#128203; Copy Full Diagnostic Report</span>
+          </button>
+        </div>
+      </div>
+      {% else %}
+      <div class="op-msg-box">
+        An unexpected internal server error occurred while processing this request. Technical diagnostics have been logged to the system audit trail.
+      </div>
+      {% endif %}
+
+      <div style="font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px;">
+        <span>Request URL: <code>{{ request_url|default:request.path }}</code> [{{ request_method|default:request.method }}]</span>
+        <span>Office Pro ERP Platform Diagnostics</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="copyToast" class="op-copy-toast">
+    <span>&#10004;</span> Diagnostic Report Copied to Clipboard!
+  </div>
+
+  <script>
+    function toggleTrace() {
+      const el = document.getElementById('traceContent');
+      const icon = document.getElementById('traceToggleIcon');
+      if (el.style.display === 'none') {
+        el.style.display = 'block';
+        icon.innerHTML = '&#9650; Collapse';
+      } else {
+        el.style.display = 'none';
+        icon.innerHTML = '&#9660; Click to Expand';
+      }
+    }
+
+    function copyDiagnosticReport() {
+      const report = `[Office Pro ERP Diagnostic Error Report]
+Exception: {{ diag.error_type|escapejs }}: {{ diag.message|escapejs }}
+File: {{ diag.file|escapejs }} (Line {{ diag.line|default:'N/A' }})
+Function: {{ diag.function|escapejs }}()
+URL: {{ request_url|escapejs }} [{{ request_method|escapejs }}]
+Hint: {{ diag.hint|escapejs }}
+
+Traceback:
+{{ diag.traceback|escapejs }}`;
+
+      navigator.clipboard.writeText(report).then(() => {
+        const toast = document.getElementById('copyToast');
+        toast.style.display = 'flex';
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
+      });
+    }
+  </script>
+</body>
+</html>

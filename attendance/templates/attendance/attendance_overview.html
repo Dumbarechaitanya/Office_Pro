@@ -1,0 +1,119 @@
+{% extends "attendance/attendance_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="padding: 24px 32px; background: #f8fafc; min-height: calc(100vh - 50px);">
+
+  <!-- Overview Header -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+      <h1 style="font-size: 22px; font-weight: 800; color: #1e293b; margin: 0 0 4px 0;">Attendance Operations Overview</h1>
+      <p style="font-size: 13px; color: #64748b; margin: 0;">Real-time workforce presence, shift metrics, and terminal status &bull; NexusWave Technologies</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <a href="{% url 'attendance_create' %}" class="btn-att-new" style="background: #714b67; color: #fff; padding: 7px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; text-decoration: none;">
+        + Record Punch
+      </a>
+      <a href="{% url 'attendance_list' %}" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: #ffffff; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
+        View Punch Registry &rarr;
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px;">
+    
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+      <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Present Today</div>
+      <div style="font-size: 30px; font-weight: 800; color: #059669; font-variant-numeric: tabular-nums;">{{ present_count }}</div>
+      <div style="font-size: 12px; color: #059669; margin-top: 4px;">Punched in today</div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+      <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Currently Clocked In</div>
+      <div style="font-size: 30px; font-weight: 800; color: #0284c7; font-variant-numeric: tabular-nums;">{{ active_punches }}</div>
+      <div style="font-size: 12px; color: #0284c7; margin-top: 4px;">On duty right now</div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+      <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Absent Today</div>
+      <div style="font-size: 30px; font-weight: 800; color: #dc2626; font-variant-numeric: tabular-nums;">{{ absent_count }}</div>
+      <div style="font-size: 12px; color: #dc2626; margin-top: 4px;">No punch in recorded</div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+      <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">ADMS Biometric Devices</div>
+      <div style="font-size: 30px; font-weight: 800; color: #714b67; font-variant-numeric: tabular-nums;">{{ active_terminals }}</div>
+      <div style="font-size: 12px; color: #059669; margin-top: 4px;">Push Active &bull; Live Heartbeat</div>
+    </div>
+
+  </div>
+
+  <!-- Quick Access Panels -->
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+    
+    <!-- Today's Clock In Stream -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 15px; font-weight: 700; color: #1e293b; margin: 0;">Today's Punch Stream</h3>
+        <a href="{% url 'attendance_list' %}" style="font-size: 12.5px; color: #714b67; font-weight: 600; text-decoration: none;">View All &rarr;</a>
+      </div>
+      <table class="att-table" style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Check In</th>
+            <th>Status</th>
+            <th>Mode</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for att in recent_attendances %}
+          <tr>
+            <td style="font-weight: 600; color: #1e293b;">{{ att.employee.name }}</td>
+            <td style="color: #059669; font-weight: 600;">{{ att.check_in|date:"h:i A"|default:"--" }}</td>
+            <td>
+              <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; {% if att.check_out %}background: #f1f5f9; color: #64748b;{% else %}background: #ecfdf5; color: #059669;{% endif %}">
+                {% if att.check_out %}Completed{% else %}Clocked In{% endif %}
+              </span>
+            </td>
+            <td style="color: #64748b; font-size: 12px;">{{ att.input_mode_in }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right Sidebar Quick Actions -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0 0 12px 0;">Terminal &amp; Cloud Gateway</h4>
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+          <div style="font-size: 12px; font-weight: 700; color: #065f46;">ADMS Terminal NW-PUN-725201</div>
+          <div style="font-size: 11.5px; color: #047857; margin-top: 2px;">Last Heartbeat: Oct 23, 8:58 PM</div>
+          <div style="font-size: 11px; color: #059669; margin-top: 4px;">Status: <strong>Push Active</strong></div>
+        </div>
+        <a href="{% url 'biometric_devices' %}" style="display: block; text-align: center; padding: 7px; background: #714b67; color: #fff; border-radius: 6px; font-size: 12.5px; font-weight: 600; text-decoration: none;">
+          Configure Biometric Devices &rarr;
+        </a>
+      </div>
+
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0 0 12px 0;">Rules &amp; Policies</h4>
+        <ul style="padding-left: 18px; margin: 0 0 14px 0; font-size: 13px; color: #475569; line-height: 1.6;">
+          <li>Shift Duration: <strong>08:20</strong></li>
+          <li>Overtime Rate: <strong>Maximum Rate (100%)</strong></li>
+          <li>Extra Hours: <strong>Manager Approval</strong></li>
+        </ul>
+        <a href="{% url 'overtime_rulesets' %}" style="font-size: 12.5px; color: #714b67; font-weight: 600; text-decoration: none;">
+          Manage Overtime Rulesets &rarr;
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

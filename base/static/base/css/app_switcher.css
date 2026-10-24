@@ -1,0 +1,327 @@
+/* app_switcher.css -- Odoo-style App Launcher / Dashboard */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body.op-app-switcher-body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif;
+  background: #090d16;
+  background: 
+    radial-gradient(circle at 18% 22%, rgba(37, 99, 235, 0.28) 0%, transparent 45%),
+    radial-gradient(circle at 82% 20%, rgba(59, 130, 246, 0.22) 0%, transparent 40%),
+    radial-gradient(circle at 50% 85%, rgba(30, 58, 138, 0.35) 0%, transparent 60%),
+    linear-gradient(180deg, #090d16 0%, #0f172a 45%, #020617 100%);
+  background-attachment: fixed;
+  background-size: cover;
+  color: #ffffff;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Minimal Navigation Bar */
+.op-switcher-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px 24px;
+  min-height: 52px;
+  position: relative;
+  z-index: 50;
+}
+
+.op-switcher-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.op-switcher-icon-btn {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  text-decoration: none;
+}
+
+.op-switcher-icon-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.op-switcher-badge {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  background: #00a09d;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+}
+
+/* User Avatar & Dropdown */
+.op-switcher-user-menu {
+  position: relative;
+}
+
+.op-switcher-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 4px 12px 4px 4px;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.op-switcher-user-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.op-switcher-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #00a09d;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.op-switcher-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  padding: 6px 0;
+  z-index: 100;
+}
+
+.op-switcher-dropdown.show {
+  display: block;
+}
+
+.op-switcher-dropdown-header {
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #64748b;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.op-switcher-dropdown a {
+  display: block;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  color: #1e293b;
+  text-decoration: none;
+  transition: background 0.1s ease;
+}
+
+.op-switcher-dropdown a:hover {
+  background: #f8fafc;
+  color: #714b67;
+}
+
+.op-switcher-dropdown a.danger-link {
+  color: #ef4444;
+  border-top: 1px solid #f1f5f9;
+}
+
+.op-switcher-dropdown a.danger-link:hover {
+  background: #fef2f2;
+}
+
+/* App Switcher Main Container */
+.op-app-switcher-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 24px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Optional Subscription / Info banner */
+.op-switcher-banner {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 13px;
+  margin-bottom: 40px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  max-width: 720px;
+  width: 100%;
+}
+
+.op-switcher-banner a {
+  color: #b45309;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* App Launcher Grid */
+.op-apps-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 36px 42px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* App Card Item */
+.op-app-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  width: 84px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  outline: none;
+}
+
+.op-app-item:hover,
+.op-app-item:focus {
+  transform: translateY(-6px) scale(1.05);
+}
+
+/* App Icon Square Tile */
+.op-app-icon-tile {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: var(--op-primary-color, #1e293b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.op-app-item:hover .op-app-icon-tile {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 16px 36px var(--app-tile-glow, rgba(59, 130, 246, 0.45)), 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Glass glare highlight on icon */
+.op-app-icon-tile::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 40%, transparent 60%);
+  pointer-events: none;
+}
+
+.op-app-svg-icon {
+  width: 44px;
+  height: 44px;
+  display: block;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+}
+
+.op-app-img-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+}
+
+/* App Label */
+.op-app-name {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  text-align: center;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.op-app-item:hover .op-app-name {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+/* Wallpaper Theme Modifiers */
+body.op-app-switcher-body.wp-corporate_mesh,
+body.op-app-switcher-body.wp-corporate_clean,
+body.op-app-switcher-body.wp-purple,
+body.op-app-switcher-body.wp-purple_lowpoly {
+  background: 
+    radial-gradient(circle at 18% 22%, rgba(37, 99, 235, 0.28) 0%, transparent 45%),
+    radial-gradient(circle at 82% 20%, rgba(59, 130, 246, 0.22) 0%, transparent 40%),
+    radial-gradient(circle at 50% 85%, rgba(30, 58, 138, 0.35) 0%, transparent 60%),
+    linear-gradient(180deg, #090d16 0%, #0f172a 45%, #020617 100%) !important;
+}
+
+body.op-app-switcher-body.wp-dark_mesh {
+  background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%) !important;
+}
+
+body.op-app-switcher-body.wp-teal_lowpoly {
+  background: linear-gradient(135deg, #0d9488 0%, #115e59 50%, #042f2e 100%) !important;
+}
+
+body.op-app-switcher-body.wp-minimal_clean {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+body.op-app-switcher-body.wp-live_mesh {
+  background: radial-gradient(circle at 50% 50%, #1e293b 0%, #090d16 100%) !important;
+}
+
+body.op-app-switcher-body.wp-live_waves {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+}

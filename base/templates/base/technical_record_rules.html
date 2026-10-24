@@ -1,0 +1,138 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+<style>
+  .op-check-cell {
+    width: 38px;
+    text-align: center;
+  }
+  .op-group-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e2e8f0;
+    color: #475569;
+    border-radius: 12px;
+    font-size: 12px;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .op-badge-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: #714b67;
+    color: #ffffff;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+  .op-badge-uncheck {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+  }
+  .op-domain-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    color: #0284c7;
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="list-toolbar">
+  <div class="list-toolbar-left">
+    {% if create_url %}
+      <a href="{{ create_url }}" class="btn-new">New</a>
+    {% endif %}
+    <span class="toolbar-title">Record Rules</span>
+    <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+  </div>
+
+  <div class="list-toolbar-center">
+    {% include 'base/_search_panel.html' %}
+  </div>
+
+  <div class="list-toolbar-right">
+    <div class="toolbar-pagination">
+      {% if total_count %}1-{{ total_count }} / {{ total_count }} records{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="op-list-view">
+  <table>
+    <thead>
+      <tr>
+        <th class="op-check-cell"><input type="checkbox" id="select-all-rules"></th>
+        <th>Name</th>
+        <th>Model</th>
+        <th>Groups</th>
+        <th>Domain</th>
+        <th style="text-align: center; width: 60px;">Read</th>
+        <th style="text-align: center; width: 60px;">Write</th>
+        <th style="text-align: center; width: 60px;">Create</th>
+        <th style="text-align: center; width: 60px;">Delete</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rules_list %}
+        <tr>
+          <td class="op-check-cell" onclick="event.stopPropagation();">
+            <input type="checkbox" class="op-row-check">
+          </td>
+          <td>
+            <a href="{% url 'technical_record_rule_detail' r.id %}" style="text-decoration: none; color: inherit; font-weight: 500; display: block;">{{ r.rule_name }}</a>
+          </td>
+          <td>
+            {% if r.model %}
+              <a href="{% url 'technical_model_detail' r.model.id %}" style="text-decoration: none; color: #714b67;">{{ r.model.description|default:r.model.model_name }}</a>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            {% if r.group %}
+              <span class="op-group-badge" title="{{ r.group.name }}">{{ r.group.name }}</span>
+            {% else %}
+              <span style="color: #94a3b8; font-size: 12px;">Global</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="op-domain-code" title="{{ r.domain_display }}">{{ r.domain_display }}</span>
+          </td>
+          <td style="text-align: center;">
+            {% if r.perm_read %}<span class="op-badge-check">&#10003;</span>{% else %}<span class="op-badge-uncheck"></span>{% endif %}
+          </td>
+          <td style="text-align: center;">
+            {% if r.perm_write %}<span class="op-badge-check">&#10003;</span>{% else %}<span class="op-badge-uncheck"></span>{% endif %}
+          </td>
+          <td style="text-align: center;">
+            {% if r.perm_create %}<span class="op-badge-check">&#10003;</span>{% else %}<span class="op-badge-uncheck"></span>{% endif %}
+          </td>
+          <td style="text-align: center;">
+            {% if r.perm_unlink %}<span class="op-badge-check">&#10003;</span>{% else %}<span class="op-badge-uncheck"></span>{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="9" style="color: #9ca3af; padding: 24px; text-align: center;">No record rules found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

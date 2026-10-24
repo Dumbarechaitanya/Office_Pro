@@ -1,0 +1,126 @@
+{% extends "attendance/attendance_base.html" %}
+{% load static %}
+
+{% block content %}
+<div>
+
+  <!-- Top Control Bar (Matching Screenshot 5) -->
+  <div class="att-control-bar">
+    <div class="att-control-left">
+      <h1 class="att-title">
+        Time Off Ledger
+        <span class="att-title-cog" title="Configure Time Off Ledger">&#9881;</span>
+      </h1>
+    </div>
+
+    <!-- Search Box with Filter Chips -->
+    <div class="att-search-box" style="margin: 0; max-width: 580px;">
+      <span class="att-search-chip att-search-chip-filter">
+        Missing Hours
+        <a href="#" style="text-decoration: none; color: inherit; margin-left: 4px;">&times;</a>
+      </span>
+      <span class="att-search-chip att-search-chip-filter">
+        Last 2 Months
+        <a href="#" style="text-decoration: none; color: inherit; margin-left: 4px;">&times;</a>
+      </span>
+      <input 
+        type="text" 
+        class="att-search-input" 
+        placeholder="Search..."
+      >
+      <span style="color: #94a3b8; font-size: 11px; cursor: pointer; padding-left: 6px;">&#9660;</span>
+    </div>
+
+    <div class="att-control-right">
+      <!-- Pager (Matching Screenshot 5: 1-80 / 876) -->
+      <div class="att-pager">
+        <span>1-{{ attendances|length }} / {{ total_count }}</span>
+        <button type="button" class="att-pager-btn" disabled>&lt;</button>
+        <button type="button" class="att-pager-btn">&gt;</button>
+      </div>
+
+      <!-- View Switchers (List active, Pivot) -->
+      <div class="att-view-switchers">
+        <a href="{% url 'time_off_ledger' %}" class="att-view-btn active" title="List View">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </a>
+        <a href="{% url 'attendance_reporting_pivot' %}" class="att-view-btn" title="Pivot Matrix View">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time Off Ledger Table (Matching Screenshot 5) -->
+  <div class="att-table-container">
+    <table class="att-table">
+      <thead>
+        <tr>
+          <th style="width: 32px;"><input type="checkbox" id="selectAllLedger"></th>
+          <th>Employee</th>
+          <th>
+            Date 
+            <span style="font-size: 11px; color: #475569;">&#9660;</span>
+          </th>
+          <th>Expected Hours</th>
+          <th>Worked Hours</th>
+          <th>Approved Time Off</th>
+          <th>Difference</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for att in attendances %}
+        <tr>
+          <td><input type="checkbox" class="ledger-row-checkbox" value="{{ att.id }}"></td>
+          <td style="font-weight: 500; color: #1e293b;">
+            {{ att.employee.name }}
+          </td>
+          <td style="color: #475569;">
+            {{ att.date|date:"M d" }}
+          </td>
+          <td style="font-variant-numeric: tabular-nums;">
+            {{ att.expected_hours_str }}
+          </td>
+          <td style="font-variant-numeric: tabular-nums;">
+            {{ att.worked_hours_str }}
+          </td>
+          <td style="font-variant-numeric: tabular-nums; color: #64748b;">
+            00:00
+          </td>
+          <td style="font-variant-numeric: tabular-nums;" class="{% if att.is_negative_difference %}att-diff-negative{% else %}att-diff-positive{% endif %}">
+            {{ att.difference_str }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 48px; color: #94a3b8;">
+            No time off ledger records found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+document.getElementById('selectAllLedger')?.addEventListener('change', function() {
+  var isChecked = this.checked;
+  document.querySelectorAll('.ledger-row-checkbox').forEach(function(cb) {
+    cb.checked = isChecked;
+  });
+});
+</script>
+{% endblock %}

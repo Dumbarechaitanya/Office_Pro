@@ -1,0 +1,72 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+<style>
+  .op-check-cell {
+    width: 38px;
+    text-align: center;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="list-toolbar">
+  <div class="list-toolbar-left">
+    {% if create_url %}
+      <a href="{{ create_url }}" class="btn-new">New</a>
+    {% endif %}
+    <span class="toolbar-title">ManyToMany Relations</span>
+    <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+  </div>
+
+  <div class="list-toolbar-center">
+    {% include 'base/_search_panel.html' %}
+  </div>
+
+  <div class="list-toolbar-right">
+    <div class="toolbar-pagination">
+      {% if total_count %}{{ total_count }} record{{ total_count|pluralize }}{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="op-list-view">
+  <table>
+    <thead>
+      <tr>
+        <th class="op-check-cell"><input type="checkbox" id="select-all-m2m"></th>
+        <th>Relation Name</th>
+        <th>Module</th>
+        <th>Model</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in m2m_list %}
+        <tr>
+          <td class="op-check-cell" onclick="event.stopPropagation();">
+            <input type="checkbox" class="op-row-check">
+          </td>
+          <td>
+            <a href="{% url 'technical_m2m_detail' r.id %}" style="text-decoration: none; color: inherit; font-weight: 500; display: block;">{{ r.name }}</a>
+          </td>
+          <td style="color: #4b5563;">{{ r.module.name|title|default:'Base' }}</td>
+          <td>
+            {% if r.model %}
+              <a href="{% url 'technical_model_detail' r.model.id %}" style="text-decoration: none; color: #714b67;">{{ r.model.description|default:r.model.model_name }}</a>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="4" style="color: #9ca3af; padding: 24px; text-align: center;">No ManyToMany relations found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+﻿{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/form_view.css' %}">
+{% endblock %}
+
+{% block content %}
+<h2>New Access Right</h2>
+{% include 'base/_form_view.html' with fields=form_fields form_action=form_action %}
+{% endblock %}

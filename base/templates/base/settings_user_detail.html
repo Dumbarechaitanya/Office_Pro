@@ -1,0 +1,514 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/user_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<form method="post" id="userForm">
+    {% csrf_token %}
+
+    <!-- Top Control Bar (Matching Image 1 Reference Layout) -->
+    <div class="op-user-topbar" style="max-width: 1200px; margin: 12px auto 0 auto;">
+        <!-- Left: New Button + Breadcrumb (Users / Name ⚙) -->
+        <div class="op-user-topbar-left">
+            <a href="{{ create_url }}" class="op-btn-new-outline">
+                New
+            </a>
+            <div class="op-user-breadcrumb-group">
+                <a href="{% url 'settings_users' %}" class="op-user-breadcrumb-link">Users</a>
+                <span class="op-user-breadcrumb-name">
+                    {{ user_obj.name|default:user_obj.username }}
+                    <span style="font-size: 12px; color: #64748b; cursor: pointer;" title="Technical Settings">&#9881;</span>
+                </span>
+            </div>
+            <!-- Action buttons for save / discard / employee -->
+            <button type="submit" class="op-btn-save" style="margin-left: 12px; padding: 5px 14px; background: #2e7d32; color: #fff; border: none; border-radius: 4px; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+                Save
+            </button>
+            {% if user_obj.employee %}
+            <a href="{% url 'employee_detail' user_obj.employee.id %}" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 600;" title="View linked Employee record">
+                &#10003; Created &middot; View Employee
+            </a>
+            {% else %}
+            <a href="{% url 'settings_user_create_employee' user_obj.id %}" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 600;" title="Generate and link Employee profile">
+                + Create Employee
+            </a>
+            {% endif %}
+            <a href="{% url 'settings_user_send_invitation' user_obj.id %}" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; background: #0284c7; color: #fff; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 600;" title="Send Invitation Email">
+                &#9993; Send Invitation
+            </a>
+            <a href="{% url 'settings_users' %}" style="padding: 5px 10px; color: #64748b; text-decoration: none; font-size: 12.5px; font-weight: 500;">
+                Discard
+            </a>
+        </div>
+
+        <!-- Right: Smart Buttons Ribbon + Pager (Matching Image 1) -->
+        <div class="op-user-topbar-right">
+            <!-- Smart Buttons Ribbon (6 buttons) -->
+            <div class="op-smart-buttons-ribbon">
+                <!-- Groups -->
+                <a href="#tab_access_rights" onclick="switchUserTab('access_rights', document.querySelector('.op-tab-button'))" class="op-smart-stat-btn" title="Groups">
+                    <span class="op-smart-stat-icon">&#128101;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Groups</span>
+                        <span class="op-smart-stat-val">{{ groups_count|default:22 }}</span>
+                    </div>
+                </a>
+
+                <!-- Access Rights -->
+                <a href="{% url 'technical_access_rights' %}" class="op-smart-stat-btn" title="Access Rights">
+                    <span class="op-smart-stat-icon">&#128274;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Access Rights</span>
+                        <span class="op-smart-stat-val">{{ access_rights_count|default:276 }}</span>
+                    </div>
+                </a>
+
+                <!-- Record Rules -->
+                <a href="{% url 'technical_record_rules' %}" class="op-smart-stat-btn" title="Record Rules">
+                    <span class="op-smart-stat-icon">&#128272;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Record Rules</span>
+                        <span class="op-smart-stat-val">{{ record_rules_count|default:74 }}</span>
+                    </div>
+                </a>
+
+                <!-- Employee Smart Button -->
+                {% if user_obj.employee %}
+                <a href="{% url 'employee_detail' user_obj.employee.id %}" class="op-smart-stat-btn" title="View Employee Profile ({{ user_obj.employee.name }})">
+                    <span class="op-smart-stat-icon" style="color: #059669;">&#128100;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Employee</span>
+                        <span class="op-smart-stat-val" style="color: #059669; font-weight: 700;">Created</span>
+                    </div>
+                </a>
+                {% else %}
+                <a href="{% url 'settings_user_create_employee' user_obj.id %}" class="op-smart-stat-btn" title="Create Employee Profile for this User">
+                    <span class="op-smart-stat-icon" style="color: #94a3b8;">&#128100;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Employee</span>
+                        <span class="op-smart-stat-val" style="color: #2563eb; font-weight: 600;">+ Create</span>
+                    </div>
+                </a>
+                {% endif %}
+
+                <!-- Contact (navigates to res.partner detail) -->
+                <a href="{% if partner_obj %}{% url 'settings_partner_detail' partner_obj.id %}{% else %}#{% endif %}" class="op-smart-stat-btn" title="Related Contact Profile">
+                    <span class="op-smart-stat-icon">&#128176;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Contact</span>
+                    </div>
+                </a>
+
+                <!-- Karma -->
+                <div class="op-smart-stat-btn" title="Karma">
+                    <span class="op-smart-stat-icon" style="color: #f59e0b;">&#9728;</span>
+                    <div class="op-smart-stat-meta">
+                        <span class="op-smart-stat-label">Karma</span>
+                        <span class="op-smart-stat-val">{{ karma_count|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pager -->
+            <div class="op-pager">
+                <span>{{ pager_current|default:1 }} / {{ pager_total|default:1 }}</span>
+                {% if prev_id %}
+                    <a href="{% url 'settings_user_detail' prev_id %}" class="op-pager-btn" title="Previous">&lt;</a>
+                {% else %}
+                    <span class="op-pager-btn" style="opacity: 0.4; cursor: not-allowed;">&lt;</span>
+                {% endif %}
+
+                {% if next_id %}
+                    <a href="{% url 'settings_user_detail' next_id %}" class="op-pager-btn" title="Next">&gt;</a>
+                {% else %}
+                    <span class="op-pager-btn" style="opacity: 0.4; cursor: not-allowed;">&gt;</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- White Form Sheet Card -->
+    <div class="op-user-form-container" style="margin-top: 6px;">
+        
+        <!-- Sheet Header: Status Pipeline Widget (Top Right Inside Card) -->
+        <div class="op-user-sheet-header">
+            <div class="op-status-pipeline-chevron">
+                <span class="op-status-step">Invited</span>
+                <span class="op-status-step active">Confirmed</span>
+            </div>
+        </div>
+
+        <!-- Identity Header Section -->
+        <div class="op-user-header-section">
+            <div class="op-user-avatar-tile" style="background-color: {{ user_obj.avatar_color }};">
+                {{ user_obj.name|default:user_obj.username|slice:":1"|upper }}
+            </div>
+
+            <div class="op-user-identity-content">
+                <input type="text" name="name" class="op-user-name-input" value="{{ user_obj.name|default:user_obj.username }}" placeholder="e.g. Rohan Deshmukh" style="font-size: 24px; font-weight: 700; color: #1e293b; border: 1px solid transparent; background: transparent; width: 100%; max-width: 480px; padding: 2px 6px; border-radius: 4px; outline: none; margin-bottom: 8px; transition: all 0.15s ease;" onfocus="this.style.borderColor='#cbd5e1'; this.style.backgroundColor='#ffffff';" onblur="this.style.borderColor='transparent'; this.style.backgroundColor='transparent';" required title="User Name (Click to edit)">
+
+                <div class="op-user-contact-fields">
+                    <div class="op-contact-row">
+                        <span class="op-contact-row-icon" style="color: #6366f1;">&#9993;</span>
+                        <input type="email" name="email" class="op-contact-input" value="{{ user_obj.email }}" style="width: 280px;" placeholder="Email Address *" required>
+                    </div>
+
+                    <div class="op-contact-row">
+                        <span class="op-contact-row-icon" style="color: #64748b;">&#128222;</span>
+                        <input type="text" name="work_phone" class="op-contact-input" value="{{ user_obj.work_phone|default:'' }}" style="width: 200px;" placeholder="Work Phone">
+                    </div>
+
+                    <div class="op-contact-row">
+                        <span class="op-contact-row-icon" style="color: #64748b;">&#128241;</span>
+                        <input type="text" name="work_mobile" class="op-contact-input" value="{{ user_obj.work_mobile|default:'' }}" style="width: 200px;" placeholder="Work Mobile">
+                    </div>
+
+                    <!-- Related Partner Field (Clickable link to res.partner) -->
+                    <div class="op-contact-row" style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #475569; font-size: 13.5px; font-weight: 500;">Related Partner</span>
+                        <span class="op-help-icon">?
+                            <div class="op-tooltip-popover">
+                                <div class="op-tooltip-header">Partner-related data of the user</div>
+                                <ul>
+                                    <li><strong>Label:</strong> Related Partner</li>
+                                    <li><strong>Field:</strong> partner_id</li>
+                                    <li><strong>Model:</strong> res.users</li>
+                                    <li><strong>Relation:</strong> res.partner</li>
+                                </ul>
+                            </div>
+                        </span>
+                        {% if partner_obj %}
+                            <a href="{% url 'settings_partner_detail' partner_obj.id %}" class="op-related-partner-link" style="color: #714b67; font-weight: 600; font-size: 13.5px; text-decoration: none;" title="Click to open Contact / Partner record (Image 2)">
+                                {{ related_partner_name }}
+                            </a>
+                        {% else %}
+                            <span style="color: #334155; font-size: 13.5px;">{{ related_partner_name }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs (5 Tabs Matching Image 1) -->
+        <div class="op-tabs-nav">
+            <button type="button" class="op-tab-button active" onclick="switchUserTab('access_rights', this)">Access Rights</button>
+            <button type="button" class="op-tab-button" onclick="switchUserTab('preferences', this)">Preferences</button>
+            <button type="button" class="op-tab-button" onclick="switchUserTab('approval_stamp', this)">Approval Stamp</button>
+            <button type="button" class="op-tab-button" onclick="switchUserTab('calendar', this)">Calendar</button>
+            <button type="button" class="op-tab-button" onclick="switchUserTab('security', this)">Security</button>
+        </div>
+
+        <!-- TAB 1: ACCESS RIGHTS -->
+        <div id="tab_access_rights" class="op-tab-pane active">
+            
+            <!-- ROLES SECTION -->
+            <div class="op-roles-header">
+                <div class="op-section-heading">Roles</div>
+
+                <div class="op-field-grid-row">
+                    <div class="op-field-label">
+                        Role
+                        <span class="op-help-icon">?
+                            <div class="op-tooltip-popover">
+                                <div class="op-tooltip-header">User Security Role</div>
+                                <ul>
+                                    <li><strong>Field:</strong> role_id</li>
+                                    <li><strong>Model:</strong> res.users</li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #1e293b;">
+                            <input type="radio" name="role_level" value="user" {% if not user_obj.is_admin %}checked{% endif %} style="accent-color: var(--op-primary-purple, #714b67);"> User
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #1e293b;">
+                            <input type="radio" name="role_level" value="admin" {% if user_obj.is_admin %}checked{% endif %} style="accent-color: var(--op-primary-purple, #714b67);"> Administrator
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {% if privileges_list %}
+            <!-- DYNAMIC ACCESS RIGHTS MATRIX (Active Subsystems Only) -->
+            <div class="op-categories-matrix" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px;">
+                {% for priv in privileges_list %}
+                <div class="op-category-block">
+                    <div class="op-section-heading">{{ priv.name }}</div>
+                    <div class="op-category-rows">
+                        <div class="op-category-row" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
+                            <span class="op-field-label" style="font-weight: 500; font-size: 13.5px; color: #334155;">
+                                {{ priv.name }} <span class="op-help-icon">?</span>
+                            </span>
+                            <select name="groups" class="op-category-select" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; min-width: 180px;">
+                                <option value="">No Access</option>
+                                {% for g in priv.groups.all %}
+                                    <option value="{{ g.id }}" {% if g.id in user_group_ids %}selected{% endif %}>{{ g.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- TAB 2: PREFERENCES -->
+        <div id="tab_preferences" class="op-tab-pane">
+            <div class="op-preferences-grid">
+                <div>
+                    <div class="op-field-grid-row">
+                        <div class="op-field-label">Language <span class="op-help-icon">?</span></div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>English (US)</span>
+                            <span style="color: #6366f1; font-size: 15px;">&#127760;</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 18px;">
+                        <div class="op-field-label" style="margin-bottom: 8px;">Email Signature</div>
+                        <textarea class="op-signature-box" placeholder="Your email signature..."></textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="op-field-grid-row">
+                        <div class="op-field-label">Notification <span class="op-help-icon">?</span></div>
+                        <div style="display: flex; gap: 16px; align-items: center;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #1e293b;">
+                                <input type="radio" name="notification_type" value="email" checked style="accent-color: var(--op-primary-color, #2563eb);"> By Emails
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #1e293b;">
+                                <input type="radio" name="notification_type" value="inbox" style="accent-color: var(--op-primary-color, #2563eb);"> In Office Pro
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="op-field-grid-row" style="margin-top: 14px;">
+                        <div class="op-field-label">System Bot Status</div>
+                        <div style="font-size: 13.5px; color: #64748b;">
+                            Disabled
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: APPROVAL STAMP -->
+        <div id="tab_approval_stamp" class="op-tab-pane">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 36px;">
+                <!-- Left: Digital Signature & Stamp Upload -->
+                <div>
+                    <div class="op-section-heading">Digital Signature &amp; Official Seal</div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <div class="op-field-label" style="margin-bottom: 8px;">Digital Signature</div>
+                        <div style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; padding: 24px; text-align: center; color: #64748b;">
+                            <div style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 32px; color: #1e293b; margin-bottom: 8px;">
+                                {{ user_obj.name|default:user_obj.username }}
+                            </div>
+                            <div style="font-size: 12px; color: #94a3b8;">System-generated digital approval signature</div>
+                            <div style="margin-top: 12px; display: flex; justify-content: center; gap: 8px;">
+                                <button type="button" class="op-btn-security" style="padding: 4px 10px; font-size: 12px;">Draw Signature</button>
+                                <button type="button" class="op-btn-security" style="padding: 4px 10px; font-size: 12px;">Upload Image</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="op-field-label" style="margin-bottom: 8px;">Official Approval Seal / Stamp</div>
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; padding: 16px; display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 64px; height: 64px; border-radius: 50%; border: 2px dashed #714b67; display: flex; align-items: center; justify-content: center; color: #714b67; font-size: 11px; font-weight: 700; text-align: center; text-transform: uppercase;">
+                                SEAL
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 13px; font-weight: 600; color: #1e293b;">Corporate Approval Stamp</div>
+                                <div style="font-size: 12px; color: #64748b;">Applied automatically on approved purchase orders and invoices.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Approval Limits & Authorization PIN -->
+                <div>
+                    <div class="op-section-heading">Authorization &amp; Signing Limits</div>
+
+                    <div class="op-field-grid-row">
+                        <div class="op-field-label">Approval Role <span class="op-help-icon">?</span></div>
+                        <select class="op-category-select-bordered" style="width: 100%;">
+                            <option selected>Department Manager / Authorizer</option>
+                            <option>Financial Controller</option>
+                            <option>Executive / Director</option>
+                            <option>Standard Approver</option>
+                        </select>
+                    </div>
+
+                    <div class="op-field-grid-row" style="margin-top: 12px;">
+                        <div class="op-field-label">Max Approval Limit <span class="op-help-icon">?</span></div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 600; color: #64748b;">&#8377;</span>
+                            <input type="text" class="op-category-select-bordered" value="500,000.00" style="width: 180px;">
+                        </div>
+                    </div>
+
+                    <div class="op-field-grid-row" style="margin-top: 12px;">
+                        <div class="op-field-label">Approval PIN <span class="op-help-icon">?</span></div>
+                        <input type="password" class="op-category-select-bordered" value="••••" style="width: 120px;" placeholder="4-digit PIN">
+                    </div>
+
+                    <div class="op-field-grid-row" style="margin-top: 12px;">
+                        <div class="op-field-label">Multi-level Approval</div>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #1e293b;">
+                            <input type="checkbox" checked style="accent-color: #714b67;"> Require 2-step verification on POs over &#8377; 100,000
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: CALENDAR -->
+        <div id="tab_calendar" class="op-tab-pane">
+            <div class="op-section-heading">Working Hours & Availability</div>
+            <div class="op-field-grid-row" style="max-width: 500px;">
+                <div class="op-field-label">Work Schedule</div>
+                <select class="op-category-select-bordered">
+                    <option selected>Standard 40 Hours/Week (Mon-Fri 09:00 - 18:00)</option>
+                    <option>Flexible 45 Hours/Week</option>
+                    <option>Part Time (20 Hours/Week)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- TAB 5: SECURITY -->
+        <div id="tab_security" class="op-tab-pane">
+            <!-- Change Password Item -->
+            <div class="op-security-item">
+                <div class="op-security-item-left">
+                    <div class="op-security-title">Change Password</div>
+                    <div class="op-security-subtitle">Update if compromised.</div>
+                </div>
+                <div class="op-security-item-right">
+                    <button type="button" class="op-btn-security" onclick="openChangePasswordModal()">Change password</button>
+                    <button type="button" class="op-btn-security" onclick="sendPasswordResetOtp('{{ user_obj.email }}')">Send Password Reset</button>
+                </div>
+            </div>
+
+            <!-- Two-factor Authentication Item -->
+            <div class="op-security-item">
+                <div class="op-security-item-left">
+                    <div class="op-security-title">Two-factor Authentication</div>
+                    <div class="op-security-subtitle">Recommended for extra security.</div>
+                </div>
+                <div class="op-security-item-right">
+                    <span class="op-badge-disabled">&#10006; Disabled</span>
+                    <button type="button" class="op-btn-security" onclick="alert('Two-factor authentication invitation sent to {{ user_obj.email }}.')">Invite to use 2FA</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<!-- Change Password Modal -->
+<div id="opPasswordModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: #ffffff; border-radius: 8px; width: 100%; max-width: 440px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); border: 1px solid #cbd5e1; overflow: hidden;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #1e293b;">Change Password</h3>
+            <button type="button" onclick="closeChangePasswordModal()" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;">&times;</button>
+        </div>
+        <form method="post" action="{% url 'settings_user_change_password' user_obj.id %}" id="changePasswordModalForm" onsubmit="return handleChangePasswordSubmit(event)">
+            {% csrf_token %}
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">New Password</label>
+                    <input type="password" id="modalNewPassword" name="new_password" class="op-category-select-bordered" style="width: 100%;" minlength="3" required placeholder="Enter new password">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;">Confirm Password</label>
+                    <input type="password" id="modalConfirmPassword" name="confirm_password" class="op-category-select-bordered" style="width: 100%;" minlength="3" required placeholder="Confirm new password">
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid #e2e8f0; background: #f8fafc;">
+                <button type="button" class="pager-btn" style="padding: 6px 14px; height: auto; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; cursor: pointer;" onclick="closeChangePasswordModal()">Cancel</button>
+                <button type="submit" class="op-btn-new" style="background: var(--op-primary-purple, #714b67); color: #fff; border: none; padding: 6px 16px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer;">Change Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function switchUserTab(tabKey, btnElement) {
+    document.querySelectorAll('.op-tab-pane').forEach(function(pane) {
+        pane.classList.remove('active');
+    });
+    document.querySelectorAll('.op-tab-button').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+
+    const targetPane = document.getElementById('tab_' + tabKey);
+    if (targetPane) {
+        targetPane.classList.add('active');
+    }
+    if (btnElement) {
+        btnElement.classList.add('active');
+    }
+}
+
+function openChangePasswordModal() {
+    const modal = document.getElementById('opPasswordModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeChangePasswordModal() {
+    const modal = document.getElementById('opPasswordModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function handleChangePasswordSubmit(e) {
+    const p1 = document.getElementById('modalNewPassword').value.trim();
+    const p2 = document.getElementById('modalConfirmPassword').value.trim();
+    if (!p1) {
+        e.preventDefault();
+        alert('Please enter a new password.');
+        return false;
+    }
+    if (p1 !== p2) {
+        e.preventDefault();
+        alert('Passwords do not match.');
+        return false;
+    }
+    return true;
+}
+
+function sendPasswordResetOtp(email) {
+    if (!email) {
+        alert('User does not have an email address configured.');
+        return;
+    }
+    fetch("{% url 'send_otp' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            purpose: 'forgot_password',
+            email: email
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('A 6-digit OTP verification code for password reset has been sent to ' + (data.masked_email || email) + '.');
+        } else {
+            alert(data.message || 'Failed to send password reset code.');
+        }
+    })
+    .catch(() => alert('Network error while requesting password reset OTP.'));
+}
+</script>
+{% endblock %}

@@ -1,0 +1,249 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+  }
+  .op-title-input {
+    flex: 1;
+    border: none;
+    font-size: 24px;
+    font-weight: 600;
+    color: #111827;
+    outline: none;
+    background: transparent;
+  }
+  .op-lang-badge {
+    color: #714b67;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 2px 8px;
+    user-select: none;
+  }
+  .op-code-container {
+    display: flex;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background: #ffffff;
+    overflow: hidden;
+  }
+  .op-code-gutter {
+    width: 40px;
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+    padding: 10px 0;
+    text-align: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    color: #94a3b8;
+    user-select: none;
+  }
+  .op-code-editor {
+    flex: 1;
+    border: none;
+    padding: 10px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    color: #1e293b;
+    resize: vertical;
+    min-height: 120px;
+    outline: none;
+    background: transparent;
+    line-height: 1.5;
+  }
+  .op-chatter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+  .op-chatter-btn {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .op-chatter-btn.primary {
+    background: #714b67;
+    color: #ffffff;
+    border-color: #714b67;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-cron-create-form" method="post" action="{% url 'technical_cron_create' %}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_cron' %}">Scheduled Actions</a> / Execute Code
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 6px; cursor: pointer;" title="Cloud">&#9729;</span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 6px; cursor: pointer;" title="Cancel">&#10005;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_cron' %}" class="op-view-btn-discard">Discard</a>
+      </div>
+    </div>
+
+    <!-- Action Button Bar -->
+    <div style="margin-bottom: 16px;">
+      <button type="button" class="op-view-btn-new" style="background: #714b67; border: none; border-radius: 4px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; color: #fff;">
+        Run Manually
+      </button>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <!-- Title Input -->
+      <div class="op-title-row">
+        <input type="text" id="id_name" name="name" class="op-title-input" value="Execute Code" placeholder="Execute Code" required>
+        <span class="op-lang-badge">EN</span>
+      </div>
+
+      <!-- 2-Column Grid -->
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_model">
+              Model
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Model</li>
+                      <li>Field: model_id</li>
+                      <li>Model: ir.cron</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: ir.model</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_model" name="model" class="op-view-select">
+                <option value="">—</option>
+                {% for m in all_models %}
+                  <option value="{{ m.id }}">{{ m.description|default:m.model_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_allowed_groups">
+              Allowed Groups
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Allowed Groups</li>
+                      <li>Field: allowed_group_id</li>
+                      <li>Model: ir.cron</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: res.groups</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_allowed_groups" name="allowed_groups" class="op-view-select">
+                <option value="">—</option>
+                {% for g in all_groups %}
+                  <option value="{{ g.id }}">{{ g.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-view-tabs" style="margin-top: 24px;">
+        <button type="button" class="op-view-tab-btn active" data-tab="tab-code">Code</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-help">Help</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-usage">Usage</button>
+      </div>
+
+      <!-- Tab 1: Code -->
+      <div id="tab-code" class="op-view-tab-pane active">
+        <div class="op-code-container">
+          <div class="op-code-gutter">1</div>
+          <textarea id="id_code" name="code" class="op-code-editor" placeholder="# Python code to execute...&#10;model.process()"></textarea>
+        </div>
+      </div>
+
+      <!-- Tab 2: Help -->
+      <div id="tab-help" class="op-view-tab-pane">
+        <p style="font-size: 13.5px; color: #4b5563; line-height: 1.6;">
+          Specify the python code to be executed when the scheduler triggers this cron job.
+        </p>
+      </div>
+
+      <!-- Tab 3: Usage -->
+      <div id="tab-usage" class="op-view-tab-pane">
+        <p style="font-size: 13.5px; color: #4b5563; line-height: 1.6;">
+          Scheduled actions run automatically in the background at regular intervals.
+        </p>
+      </div>
+
+      <!-- Bottom Chatter Actions -->
+      <div class="op-chatter-bar">
+        <button type="button" class="op-chatter-btn primary">Send message</button>
+        <button type="button" class="op-chatter-btn">Log note</button>
+        <button type="button" class="op-chatter-btn">Activity</button>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const tabBtns = document.querySelectorAll('.op-view-tab-btn');
+  const tabPanes = document.querySelectorAll('.op-view-tab-pane');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabPanes.forEach(p => p.classList.remove('active'));
+
+      this.classList.add('active');
+      const target = document.getElementById(this.dataset.tab);
+      if (target) {
+        target.classList.add('active');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

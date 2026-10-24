@@ -1,0 +1,354 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    color: #1f2937;
+  }
+  .op-user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #714b67;
+    color: #ffffff;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .op-code-container {
+    display: flex;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background: #ffffff;
+    overflow: hidden;
+  }
+  .op-code-gutter {
+    width: 40px;
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+    padding: 10px 0;
+    text-align: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    color: #94a3b8;
+    user-select: none;
+  }
+  .op-code-editor {
+    flex: 1;
+    border: none;
+    padding: 10px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    color: #1e293b;
+    resize: vertical;
+    min-height: 120px;
+    outline: none;
+    background: transparent;
+    line-height: 1.5;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-cron-detail-form" method="post" action="{{ form_action }}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        {% if create_url %}
+          <a href="{{ create_url }}" class="op-view-btn-new">New</a>
+        {% endif %}
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_cron' %}">Scheduled Actions</a> / {{ cron.name|truncatechars:45 }}
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_cron' %}" class="op-view-btn-discard">Discard</a>
+
+        <!-- Pager -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #4b5563; margin-left: 12px;">
+          <span>{{ current_index }} / {{ total_crons }}</span>
+          {% if prev_id %}
+            <a href="{% url 'technical_cron_detail' prev_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&lt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&lt;</span>
+          {% endif %}
+          {% if next_id %}
+            <a href="{% url 'technical_cron_detail' next_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&gt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary Action Button Bar -->
+    <div style="margin-bottom: 16px;">
+      <button type="button" class="op-view-btn-new" style="background: #714b67; border: none; border-radius: 4px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; color: #fff;">
+        Run Manually
+      </button>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <!-- Title Heading -->
+      <div style="margin-bottom: 24px;">
+        <input type="text" id="id_name" name="name" class="op-view-input" value="{{ cron.name }}" style="font-size: 22px; font-weight: 600; color: #111827; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px;" required>
+      </div>
+
+      <!-- 2-Column Grid -->
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_model">
+              Model
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Model</li>
+                      <li>Field: model_id</li>
+                      <li>Model: ir.cron</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: ir.model</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_model" name="model" class="op-view-select">
+                <option value="">—</option>
+                {% for m in all_models %}
+                  <option value="{{ m.id }}" {% if cron.model_id == m.id %}selected{% endif %}>{{ m.description|default:m.model_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_user">
+              Scheduler User
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Scheduler User</li>
+                      <li>Field: user_id</li>
+                      <li>Model: ir.cron</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: res.users</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <div class="op-user-badge">
+                <span class="op-user-avatar">S</span>
+                <select id="id_user" name="user" class="op-view-select" style="flex: 1;">
+                  <option value="">System Bot</option>
+                  {% for u in all_users %}
+                    <option value="{{ u.id }}" {% if cron.user_id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label">
+              Execute Every
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Execute Every</li>
+                      <li>Field: interval_number / interval_type</li>
+                      <li>Model: ir.cron</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap" style="display: flex; gap: 10px; align-items: center;">
+              <input type="number" id="id_interval_number" name="interval_number" class="op-view-input" style="width: 70px;" value="{{ cron.interval_number|default:1 }}">
+              <select id="id_interval_type" name="interval_type" class="op-view-select" style="width: 120px;">
+                {% for val, label in interval_type_choices %}
+                  <option value="{{ val }}" {% if cron.interval_type == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_active">
+              Active
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Active</li>
+                      <li>Field: active</li>
+                      <li>Model: ir.cron</li>
+                      <li>Type: boolean</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <label class="op-switch">
+                <input type="checkbox" id="id_active" name="is_active" {% if cron.is_active %}checked{% endif %}>
+                <span class="op-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label">
+              Next Execution Date
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Next Execution Date</li>
+                      <li>Field: nextcall</li>
+                      <li>Model: ir.cron</li>
+                      <li>Type: datetime</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <div class="op-view-input" style="border-bottom: 1px solid #cbd5e1; color: #4b5563;">
+                {% if cron.next_execution_date %}
+                  {{ cron.next_execution_date|date:"M d, g:i A" }}
+                {% else %}
+                  Aug 30, 7:30 AM
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_priority">
+              Priority
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Priority</li>
+                      <li>Field: priority</li>
+                      <li>Model: ir.cron</li>
+                      <li>Type: integer</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="number" id="id_priority" name="priority" class="op-view-input" value="{{ cron.priority|default:5 }}">
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_allowed_groups">
+              Allowed Groups
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Allowed Groups</li>
+                      <li>Field: allowed_group_id</li>
+                      <li>Model: ir.cron</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: res.groups</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_allowed_groups" name="allowed_groups" class="op-view-select">
+                <option value="">—</option>
+                {% for g in all_groups %}
+                  <option value="{{ g.id }}" {% if cron.allowed_groups_id == g.id %}selected{% endif %}>{{ g.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-view-tabs" style="margin-top: 24px;">
+        <button type="button" class="op-view-tab-btn active" data-tab="tab-code">Code</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-help">Help</button>
+        <button type="button" class="op-view-tab-btn" data-tab="tab-usage">Usage</button>
+      </div>
+
+      <!-- Tab 1: Code -->
+      <div id="tab-code" class="op-view-tab-pane active">
+        <div class="op-code-container">
+          <div class="op-code-gutter">1</div>
+          <textarea id="id_code" name="code" class="op-code-editor" placeholder="model._autopost_draft_entries()">{{ cron.code|default:"model._autopost_draft_entries()" }}</textarea>
+        </div>
+      </div>
+
+      <!-- Tab 2: Help -->
+      <div id="tab-help" class="op-view-tab-pane">
+        <p style="font-size: 13.5px; color: #4b5563; line-height: 1.6;">
+          Specify the python code to be executed when the scheduler triggers this cron job. The variable <code>model</code> refers to the active model.
+        </p>
+      </div>
+
+      <!-- Tab 3: Usage -->
+      <div id="tab-usage" class="op-view-tab-pane">
+        <p style="font-size: 13.5px; color: #4b5563; line-height: 1.6;">
+          Scheduled actions run automatically in the background at regular intervals determined by the <strong>Execute Every</strong> frequency settings.
+        </p>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const tabBtns = document.querySelectorAll('.op-view-tab-btn');
+  const tabPanes = document.querySelectorAll('.op-view-tab-pane');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabPanes.forEach(p => p.classList.remove('active'));
+
+      this.classList.add('active');
+      const target = document.getElementById(this.dataset.tab);
+      if (target) {
+        target.classList.add('active');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

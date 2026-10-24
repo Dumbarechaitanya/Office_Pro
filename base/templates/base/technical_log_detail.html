@@ -1,0 +1,183 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-log-sheet {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 32px;
+    margin: 20px auto;
+    max-width: 980px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  .op-log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  .op-level-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .op-level-ERROR, .op-level-CRITICAL {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+  }
+  .op-level-WARNING {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+  }
+  .op-level-INFO {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+  }
+  .op-level-DEBUG {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+  .op-meta-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .op-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .op-meta-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .op-meta-val {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1e293b;
+    font-family: monospace;
+    word-break: break-all;
+  }
+  .op-trace-box {
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-x: auto;
+    max-height: 500px;
+    white-space: pre-wrap;
+    border: 1px solid #334155;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="view-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #fff; border-bottom: 1px solid #e2e8f0;">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <a href="{% url 'technical_logging' %}" class="op-view-btn-discard">&#8592; Back to Logs</a>
+    <span style="font-size: 14px; font-weight: 700; color: #1e293b;">Log Record #{{ log_obj.id }}</span>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 10px;">
+    {% if prev_id %}<a href="{% url 'technical_log_detail' prev_id %}" style="text-decoration: none; color: inherit; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px;">&lt;</a>{% endif %}
+    {% if next_id %}<a href="{% url 'technical_log_detail' next_id %}" style="text-decoration: none; color: inherit; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px;">&gt;</a>{% endif %}
+
+    <form method="post" action="{% url 'technical_log_detail' log_obj.id %}" style="display: inline;" onsubmit="return confirm('Delete this log record?');">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete">
+      <button type="submit" class="op-view-btn-discard" style="color: #dc2626; border-color: #fca5a5;">&#128465; Delete</button>
+    </form>
+  </div>
+</div>
+
+<div style="padding: 20px; background: #f8fafc; min-height: calc(100vh - 120px);">
+  <div class="op-log-sheet">
+    <div class="op-log-header">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <span class="op-level-badge op-level-{{ log_obj.level }}">{{ log_obj.level }}</span>
+          <span style="font-size: 12px; color: #64748b;">{{ log_obj.get_type_display }}</span>
+          <span style="font-size: 12px; color: #94a3b8;">&bull;</span>
+          <span style="font-size: 12px; color: #64748b; font-family: monospace;">{{ log_obj.created_at|date:"Y-m-d H:i:s" }}</span>
+        </div>
+        <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.4;">
+          {{ log_obj.message }}
+        </h2>
+      </div>
+    </div>
+
+    <!-- Execution Point & Request Metadata Grid -->
+    <div class="op-meta-card">
+      <div class="op-meta-item">
+        <span class="op-meta-label">File / Module</span>
+        <span class="op-meta-val" style="color: #0284c7;">{{ log_obj.path|default:"N/A" }}</span>
+      </div>
+      <div class="op-meta-item">
+        <span class="op-meta-label">Line Number</span>
+        <span class="op-meta-val" style="color: #b91c1c;">Line {{ log_obj.line_no|default:"N/A" }}</span>
+      </div>
+      <div class="op-meta-item">
+        <span class="op-meta-label">Function / Method</span>
+        <span class="op-meta-val" style="color: #7c3aed;">{{ log_obj.func_name|default:"N/A" }}()</span>
+      </div>
+      <div class="op-meta-item">
+        <span class="op-meta-label">Logger Name</span>
+        <span class="op-meta-val">{{ log_obj.name }}</span>
+      </div>
+      <div class="op-meta-item">
+        <span class="op-meta-label">Request Endpoint</span>
+        <span class="op-meta-val">{{ log_obj.request_url|default:"N/A" }} [{{ log_obj.request_method|default:"N/A" }}]</span>
+      </div>
+      <div class="op-meta-item">
+        <span class="op-meta-label">User Context</span>
+        <span class="op-meta-val">{{ log_obj.user.username|default:"System / Guest" }}</span>
+      </div>
+    </div>
+
+    <!-- Traceback Stack -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h3 style="font-size: 14px; font-weight: 700; color: #334155; margin: 0;">Traceback &amp; Execution Frames</h3>
+        <button type="button" class="op-btn-secondary" style="padding: 4px 10px; font-size: 12px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;" onclick="copyTraceback()">
+          &#128203; Copy Traceback
+        </button>
+      </div>
+
+      <pre id="traceBox" class="op-trace-box">{% if log_obj.traceback %}{{ log_obj.traceback }}{% else %}{{ log_obj.message }}{% endif %}</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  function copyTraceback() {
+    const text = document.getElementById('traceBox').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Traceback copied to clipboard.');
+    });
+  }
+</script>
+{% endblock %}

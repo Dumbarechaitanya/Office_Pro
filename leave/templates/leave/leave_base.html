@@ -1,0 +1,209 @@
+{% extends "base/layout.html" %}
+{% load static %}
+
+{% block title %}Time Off &middot; Office Pro{% endblock %}
+{% block navbar_title %}Time Off{% endblock %}
+
+{% block app_icon %}
+<!-- Calendar / Time Off Icon (morphs to `<` on hover) -->
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+  <line x1="16" y1="2" x2="16" y2="6"></line>
+  <line x1="8" y1="2" x2="8" y2="6"></line>
+  <line x1="3" y1="10" x2="21" y2="10"></line>
+  <path d="M8 14h.01"></path>
+  <path d="M12 14h.01"></path>
+  <path d="M16 14h.01"></path>
+  <path d="M8 18h.01"></path>
+  <path d="M12 18h.01"></path>
+  <path d="M16 18h.01"></path>
+</svg>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* Ribbon on Kanban Card */
+.op-ribbon-wrapper {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 90px;
+  height: 90px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.op-ribbon {
+  position: absolute;
+  top: 18px;
+  right: -24px;
+  transform: rotate(45deg);
+  width: 110px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 0;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.op-ribbon-to-approve {
+  background: #f59e0b;
+  color: #78350f;
+}
+.op-ribbon-approved {
+  background: #10b981;
+  color: #064e3b;
+}
+.op-ribbon-refused {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* Kanban card interactive hover */
+.leave-kanban-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  overflow: hidden;
+}
+.leave-kanban-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+  border-color: #cbd5e1;
+}
+
+/* Calendar Day Grid */
+.leave-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: #e2e8f0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.leave-cal-header-cell {
+  background: #f8fafc;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.leave-cal-cell {
+  background: #ffffff;
+  min-height: 96px;
+  padding: 6px 8px;
+  position: relative;
+  transition: background 0.15s ease;
+}
+.leave-cal-cell.is-today {
+  background: #fffbeb;
+  border-left: 2px solid #f59e0b;
+}
+.leave-cal-cell.is-holiday {
+  background: repeating-linear-gradient(
+    45deg,
+    #faf5ff,
+    #faf5ff 10px,
+    #ffffff 10px,
+    #ffffff 20px
+  );
+}
+.leave-cal-date-badge {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+.leave-cal-cell.is-today .leave-cal-date-badge {
+  background: #dc2626;
+  color: #ffffff;
+}
+.leave-event-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+</style>
+{% endblock %}
+
+{% block app_menus %}
+<!-- My Time Dropdown -->
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle {% if request.resolver_match.url_name in 'leave_dashboard,my_time_off,my_allocations' %}active{% endif %}">
+    My Time
+  </button>
+  <div class="menu-dropdown">
+    <a href="{% url 'leave_dashboard' %}">Dashboard</a>
+    <a href="{% url 'my_time_off' %}">My Time Off</a>
+    <a href="{% url 'my_allocations' %}">My Allocations</a>
+  </div>
+</div>
+
+<!-- Overview Link -->
+<a href="{% url 'leave_dashboard' %}" class="menu-link {% if request.resolver_match.url_name == 'leave_dashboard' %}active{% endif %}">
+  Overview
+</a>
+
+{% if is_leave_officer_or_manager or is_admin or is_officer %}
+<!-- Management Dropdown (Visible to Managers and Officers) -->
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle {% if request.resolver_match.url_name in 'leave_management_requests,leave_management_allocations' %}active{% endif %}">
+    Management
+  </button>
+  <div class="menu-dropdown">
+    <a href="{% url 'leave_management_requests' %}">Time Off</a>
+    <a href="{% url 'leave_management_allocations' %}">Allocations</a>
+  </div>
+</div>
+{% endif %}
+
+{% if is_leave_officer or is_admin %}
+<!-- Reporting Dropdown (Visible to Officers and Admins) -->
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle {% if request.resolver_match.url_name in 'leave_reporting_employee,leave_reporting_type' %}active{% endif %}">
+    Reporting
+  </button>
+  <div class="menu-dropdown">
+    <a href="{% url 'leave_reporting_employee' %}">by Employee</a>
+    <a href="{% url 'leave_reporting_type' %}">by Type</a>
+  </div>
+</div>
+
+<!-- Configuration Dropdown (Visible to Officers and Admins) -->
+<div class="menu-item">
+  <button type="button" class="menu-link menu-dropdown-toggle {% if request.resolver_match.url_name in 'leave_config_types,leave_config_mandatory_days' %}active{% endif %}">
+    Configuration
+  </button>
+  <div class="menu-dropdown">
+    <a href="{% url 'leave_config_types' %}">Time Off Types</a>
+    <a href="{% url 'leave_config_mandatory_days' %}">Public Holidays &amp; Mandatory Days</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

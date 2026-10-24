@@ -1,0 +1,85 @@
+<td class="op-select-col" onclick="event.stopPropagation()" style="width: 36px; padding: 10px 14px; vertical-align: middle;">
+  <input type="checkbox" class="op-row-select-checkbox" value="{{ att.id }}" onchange="handleRowSelect(this, event)">
+</td>
+<td style="padding: 10px 14px; vertical-align: middle;">
+  <a href="{% if att.is_absent_synthetic %}{% url 'attendance_create' %}?employee={{ att.employee.id }}&date={{ att.date|date:'Y-m-d' }}{% else %}{% url 'attendance_detail' att.id %}{% endif %}" class="att-emp-cell" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit;" title="{{ att.employee.name }}">
+    <div style="width: 30px; height: 30px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; background-color: {{ att.employee.avatar_color|default:'#0284c7' }}; flex-shrink: 0;">
+      {{ att.employee.name|slice:":1"|upper }}
+    </div>
+    <div>
+      <div style="font-weight: 600; color: #1e293b; font-size: 13px;">{{ att.employee.name }}</div>
+      <div style="font-size: 11px; color: #64748b;">{{ att.employee.job_title|default:'' }}</div>
+    </div>
+  </a>
+</td>
+<td style="padding: 10px 14px; vertical-align: middle;">
+  {% if att.employee.department_rel %}
+    <span class="emp-dept-badge" style="background: #f1f5f9; color: #334155; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600; border-left: 3px solid {{ att.employee.department_rel.color|default:'#0284c7' }};">
+      {{ att.employee.department_rel.name }}
+    </span>
+  {% else %}
+    <span style="color: #64748b; font-size: 12px;">{{ att.employee.department|default:"General" }}</span>
+  {% endif %}
+</td>
+<td style="padding: 10px 14px; font-size: 12.5px; color: #334155; font-weight: 500; vertical-align: middle;">
+  <a href="{% if att.is_absent_synthetic %}{% url 'attendance_create' %}?employee={{ att.employee.id }}&date={{ att.date|date:'Y-m-d' }}{% else %}{% url 'attendance_detail' att.id %}{% endif %}" style="text-decoration: none; color: #334155; font-weight: 500;">
+    {{ att.date|date:"d M Y" }}
+  </a>
+</td>
+<td class="{% if att.is_currently_checked_in %}att-timestamp-active{% endif %}" style="padding: 10px 14px; font-size: 12.5px; vertical-align: middle;">
+  {% if att.status == 'Absent' or att.is_absent_synthetic %}
+    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #fee2e2; color: #dc2626;">
+      Absent (No Punch)
+    </span>
+  {% elif att.check_in %}
+    <span style="font-weight: 600; color: #0f172a;">{{ att.check_in|date:"g:i A" }}</span>
+  {% else %}
+    &mdash;
+  {% endif %}
+</td>
+<td style="padding: 10px 14px; font-size: 12.5px; vertical-align: middle;">
+  {% if att.check_out %}
+    <span style="font-weight: 600; color: #0f172a;">{{ att.check_out|date:"g:i A" }}</span>
+  {% elif att.is_currently_checked_in %}
+    <span style="display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #dcfce7; color: #166534;">
+      Active In Office
+    </span>
+  {% else %}
+    &mdash;
+  {% endif %}
+</td>
+<td style="padding: 10px 14px; vertical-align: middle;">
+  {% if att.status == 'Present' %}
+    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: #dcfce7; color: #15803d;">Present</span>
+  {% elif att.status == 'Half Day' %}
+    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: #fef3c7; color: #b45309;">Half Day</span>
+  {% elif att.status == 'Late' %}
+    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: #ffedd5; color: #c2410c;">Late</span>
+  {% else %}
+    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: #fee2e2; color: #b91c1c;">Absent</span>
+  {% endif %}
+</td>
+<td style="padding: 10px 14px; font-variant-numeric: tabular-nums; font-size: 12.5px; font-weight: 600; color: #1e293b; vertical-align: middle;" class="{% if att.is_currently_checked_in %}att-timestamp-active{% endif %}">
+  {{ att.worked_hours_str }}
+</td>
+<td style="padding: 10px 14px; font-variant-numeric: tabular-nums; font-size: 12px; vertical-align: middle;" class="{% if att.is_currently_checked_in %}att-timestamp-active{% else %}text-muted{% endif %}">
+  {{ att.worked_extra_hours_str }}
+</td>
+<td style="padding: 10px 14px; vertical-align: middle;">
+  {% if att.status == 'Absent' or att.is_absent_synthetic %}
+    <span style="color: #94a3b8;">&mdash;</span>
+  {% else %}
+    <span class="att-mode-badge" style="font-size: 11px; padding: 2px 6px; border-radius: 3px; background: #f1f5f9; color: #475569; font-weight: 600;">{{ att.input_mode_in|default:"Biometric" }}</span>
+  {% endif %}
+</td>
+<td style="padding: 10px 14px; vertical-align: middle;">
+  {% if att.status == 'Absent' or att.is_absent_synthetic %}
+    <span style="color: #94a3b8;">&mdash;</span>
+  {% elif att.check_out %}
+    <span class="att-mode-badge" style="font-size: 11px; padding: 2px 6px; border-radius: 3px; background: #f1f5f9; color: #475569; font-weight: 600;">{{ att.input_mode_out|default:"Biometric" }}</span>
+  {% elif att.is_currently_checked_in %}
+    <span style="font-size: 11px; color: #059669; font-weight: 600;">Pending Out</span>
+  {% else %}
+    &mdash;
+  {% endif %}
+</td>

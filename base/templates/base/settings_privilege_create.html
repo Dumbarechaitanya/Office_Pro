@@ -1,0 +1,84 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block title %}New Privilege - Office Pro{% endblock %}
+{% block navbar_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  
+  <!-- Control Bar -->
+  <div class="op-view-control-bar">
+    <div class="op-view-control-left">
+      <div class="op-view-breadcrumb" style="display: flex; align-items: center; gap: 6px;">
+        <a href="{% url 'settings_privileges' %}">Privileges</a>
+        <span>/</span>
+        <span>New</span>
+      </div>
+
+      <button type="submit" form="privilegeCreateForm" class="op-view-btn-save" style="margin-left: 12px;">Save</button>
+      <a href="{% url 'settings_privileges' %}" class="op-view-btn-discard">Discard</a>
+    </div>
+  </div>
+
+  <!-- Form Sheet -->
+  <div class="op-view-sheet" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <form id="privilegeCreateForm" method="post" action="{% url 'settings_privilege_create' %}">
+      {% csrf_token %}
+
+      <!-- Big Title Input -->
+      <div class="op-view-title-wrap" style="margin-bottom: 24px;">
+        <input type="text" name="name" required class="op-view-input-title" placeholder="Privilege Name (e.g. Sales, Project...)" style="font-size: 26px; font-weight: 600; width: 100%; border: none; border-bottom: 2px solid #e2e8f0; padding: 6px 0; outline: none;">
+      </div>
+
+      <!-- Main Fields Grid -->
+      <div class="op-view-grid-2col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; margin-bottom: 30px;">
+        <!-- Sequence -->
+        <div class="op-view-field-row" style="display: flex; align-items: center;">
+          <label style="width: 140px; font-size: 13px; font-weight: 600; color: #475569;">
+            Sequence <span class="op-view-hint" title="Display sequence order in menus and lists">?</span>
+          </label>
+          <input type="number" name="sequence" value="10" class="op-view-input" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none;">
+        </div>
+
+        <!-- Category -->
+        <div class="op-view-field-row" style="display: flex; align-items: center;">
+          <label style="width: 140px; font-size: 13px; font-weight: 600; color: #475569;">
+            Category <span class="op-view-hint" title="Parent category hierarchy">?</span>
+          </label>
+          <select name="category" class="op-view-select" style="flex: 1; border: none; border-bottom: 1px solid #cbd5e1; padding: 4px 6px; outline: none; background: transparent;">
+            <option value="">-- None --</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Placeholder Toggle -->
+        <div class="op-view-field-row" style="display: flex; align-items: center;">
+          <label style="width: 140px; font-size: 13px; font-weight: 600; color: #475569;">
+            Placeholder <span class="op-view-hint" title="Whether this privilege is a placeholder grouping">?</span>
+          </label>
+          <div style="display: flex; gap: 16px; font-size: 13.5px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="radio" name="is_placeholder" value="false" checked> No
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="radio" name="is_placeholder" value="true"> Yes
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Notes</label>
+        <textarea name="notes" placeholder="Optional notes for this privilege..." style="width: 100%; min-height: 90px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; font-family: inherit; font-size: 13.5px; outline: none;"></textarea>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

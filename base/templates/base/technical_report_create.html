@@ -1,0 +1,445 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block title %}New Report - Office Pro{% endblock %}
+{% block navbar_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+<style>
+  .op-input-error {
+    background-color: #fef2f2 !important;
+    border-color: #ef4444 !important;
+    color: #991b1b !important;
+  }
+  .op-input-error:focus {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+  }
+
+  /* Toast Notification */
+  .op-toast-container {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 9999;
+    animation: slideIn 0.3s ease forwards;
+  }
+  .op-toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: #ffffff;
+    border-left: 4px solid #ef4444;
+    border-radius: 6px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    color: #1e293b;
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Language badge [EN] inside input */
+  .op-input-with-badge {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 450px;
+  }
+  .op-input-with-badge input {
+    width: 100%;
+    padding-right: 48px;
+  }
+  .op-input-badge {
+    position: absolute;
+    right: 8px;
+    padding: 2px 6px;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    pointer-events: none;
+  }
+
+  /* Header action buttons */
+  .op-report-header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+  .op-report-btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .op-report-btn-action:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  /* Notebook Tabs */
+  .op-notebook {
+    margin-top: 32px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .op-notebook-headers {
+    display: flex;
+    gap: 24px;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 4px;
+  }
+  .op-tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 4px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s ease;
+  }
+  .op-tab-btn.active {
+    color: #714b67;
+    border-bottom-color: #714b67;
+  }
+  .op-tab-pane {
+    display: none;
+    padding-top: 16px;
+  }
+  .op-tab-pane.active {
+    display: block;
+  }
+
+  /* Line Table */
+  .op-line-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  .op-line-table th {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    text-align: left;
+  }
+  .op-line-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+  }
+  .op-drag-handle {
+    color: #94a3b8;
+    cursor: grab;
+    margin-right: 8px;
+    user-select: none;
+  }
+  .op-btn-remove-line {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .op-btn-remove-line:hover {
+    color: #dc2626;
+    background: #fee2e2;
+  }
+  .op-add-line-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    color: #714b67;
+    background: none;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 4px;
+  }
+  .op-add-line-btn:hover {
+    background: #f8fafc;
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Validation Error Toast -->
+{% if missing_fields %}
+<div class="op-toast-container" id="opToastBox">
+  <div class="op-toast">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <span>Missing required fields</span>
+    <button type="button" onclick="document.getElementById('opToastBox').remove()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:16px; margin-left:8px;">&times;</button>
+  </div>
+</div>
+{% endif %}
+
+<div class="op-view-form-container">
+  
+  <!-- Control Bar -->
+  <div class="op-view-control-bar">
+    <div class="op-view-control-left">
+      <div class="op-view-breadcrumb" style="display: flex; align-items: center; gap: 6px;">
+        <a href="{% url 'technical_reports' %}">Reports</a>
+        <span>/</span>
+        <span>New</span>
+      </div>
+
+      <button type="submit" form="reportCreateForm" class="op-view-btn-save" style="margin-left: 12px;">Save</button>
+      <a href="{% url 'technical_reports' %}" class="op-view-btn-discard">Discard</a>
+    </div>
+  </div>
+
+  <!-- Header Quick Actions -->
+  <div class="op-report-header-buttons">
+    <button type="button" class="op-report-btn-action" onclick="alert('Save record first to add to Print menu.')">
+      <span style="font-weight: bold; font-size: 14px;">+</span>
+      <span>Add to the 'Print' menu</span>
+    </button>
+    <button type="button" class="op-report-btn-action" onclick="alert('Save record first to view associated QWeb templates.')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+      </svg>
+      <span>Qweb Views</span>
+    </button>
+  </div>
+
+  <!-- Sheet Card -->
+  <div class="op-view-sheet">
+    <form id="reportCreateForm" method="post" action="{% url 'technical_report_create' %}">
+      {% csrf_token %}
+
+      <!-- Top Title Area: Action Name -->
+      <div class="op-form-title-group" style="margin-bottom: 24px;">
+        <label class="op-field-label" style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 600;">
+          Action Name <span class="op-view-hint" title="Display title for this report action">?</span>
+        </label>
+        <div class="op-input-with-badge">
+          <input type="text" name="name" value="{{ form_data.name|default:'' }}" 
+                 class="op-form-title-input {% if 'name' in missing_fields %}op-input-error{% endif %}" 
+                 placeholder="e.g. Invoices" style="font-size: 20px; font-weight: 600; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px;">
+          <span class="op-input-badge">EN</span>
+        </div>
+      </div>
+
+      <!-- Form Grid -->
+      <div class="op-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+        
+        <!-- Left Column -->
+        <div class="op-form-col">
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Report Type <span class="op-view-hint" title="Output format of the report">?</span></label>
+            <select name="report_type" class="op-form-input">
+              {% for val, label in report_type_choices %}
+                <option value="{{ val }}" {% if form_data.report_type == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Paper Format <span class="op-view-hint" title="Paper format configuration">?</span></label>
+            <select name="paperformat" class="op-form-input">
+              <option value="">-- Default / None --</option>
+              {% for pf in all_paperformats %}
+                <option value="{{ pf.id }}" {% if form_data.paperformat == pf.id|stringformat:"i" %}selected{% endif %}>{{ pf.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="op-form-col">
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Model Name <span class="op-view-hint" title="Target data model for report generation">?</span></label>
+            <select name="model" class="op-form-input {% if 'model' in missing_fields %}op-input-error{% endif %}">
+              <option value="">-- Select Model --</option>
+              {% for m in all_models %}
+                <option value="{{ m.id }}" {% if form_data.model == m.id|stringformat:"i" %}selected{% endif %}>{{ m.description|default:m.model_name }} ({{ m.model_name }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="op-form-group" style="margin-bottom: 16px;">
+            <label class="op-field-label">Template Name <span class="op-view-hint" title="QWeb template XML ID or report identifier">?</span></label>
+            <input type="text" name="report_name" value="{{ form_data.report_name|default:'' }}" 
+                   class="op-form-input {% if 'report_name' in missing_fields %}op-input-error{% endif %}" 
+                   placeholder="e.g. account.report_invoice_with_payments">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-notebook">
+        <div class="op-notebook-headers">
+          <button type="button" class="op-tab-btn active" onclick="switchNotebookTab('tab-visibility', this)">Visibility</button>
+          <button type="button" class="op-tab-btn" onclick="switchNotebookTab('tab-advanced', this)">Advanced Properties</button>
+        </div>
+
+        <!-- Tab 1: Visibility -->
+        <div id="tab-visibility" class="op-tab-pane active">
+          <table class="op-line-table">
+            <thead>
+              <tr>
+                <th style="width: 32px;"></th>
+                <th>Privilege</th>
+                <th>Name</th>
+                <th style="width: 40px;"></th>
+              </tr>
+            </thead>
+            <tbody id="groupsTableBody">
+              <!-- Dynamically populated or empty initially -->
+            </tbody>
+          </table>
+
+          <button type="button" class="op-add-line-btn" onclick="openAddGroupModal()">
+            <span>+</span>
+            <span>Add a line</span>
+          </button>
+        </div>
+
+        <!-- Tab 2: Advanced Properties -->
+        <div id="tab-advanced" class="op-tab-pane">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding-top: 8px;">
+            <div class="op-form-col">
+              <div class="op-form-group" style="margin-bottom: 16px;">
+                <label class="op-field-label">Filter domain <span class="op-view-hint" title="Domain filter for when this report is active">?</span></label>
+                <input type="text" name="filter_domain" value="{{ form_data.filter_domain|default:'' }}" class="op-form-input" placeholder="[]">
+              </div>
+
+              <div class="op-form-group" style="margin-bottom: 16px;">
+                <label class="op-field-label">Printed Report Name <span class="op-view-hint" title="Dynamic expression for downloaded file name">?</span></label>
+                <input type="text" name="print_report_name" value="{{ form_data.print_report_name|default:'' }}" class="op-form-input" placeholder="object.name and ('Invoice - ' + object.name) or 'Invoice'">
+              </div>
+            </div>
+
+            <div class="op-form-col">
+              <div class="op-form-group" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" name="attachment_use" id="id_attachment_use" {% if form_data.attachment_use %}checked{% endif %} class="op-form-checkbox">
+                <label for="id_attachment_use" class="op-field-label" style="margin-bottom: 0;">Reload from Attachment <span class="op-view-hint" title="Use stored attachment if already generated">?</span></label>
+              </div>
+
+              <div class="op-form-group" style="margin-bottom: 16px;">
+                <label class="op-field-label">Save as Attachment Prefix <span class="op-view-hint" title="Prefix filename when storing as attachment">?</span></label>
+                <input type="text" name="attachment_prefix" value="{{ form_data.attachment_prefix|default:'' }}" class="op-form-input" placeholder="e.g. object.name">
+              </div>
+
+              <div class="op-form-group" style="margin-bottom: 16px;">
+                <label class="op-field-label">Report file <span class="op-view-hint" title="Specific report file path if different from template">?</span></label>
+                <input type="text" name="report_file" value="{{ form_data.report_file|default:'' }}" class="op-form-input" placeholder="e.g. account.report_invoice_with_payments">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Add Group Line -->
+<div id="opAddGroupModal" class="op-modal-backdrop" style="display: none;">
+  <div class="op-modal-dialog">
+    <div class="op-modal-header">
+      <h3 class="op-modal-title">Select User Group</h3>
+      <button type="button" class="op-modal-close" onclick="closeAddGroupModal()">&times;</button>
+    </div>
+    <div class="op-modal-body">
+      <label class="op-field-label">Group</label>
+      <select id="modalGroupSelect" class="op-form-input" style="margin-top: 4px;">
+        {% for g in all_groups %}
+          <option value="{{ g.id }}" data-privilege="{{ g.privilege|default:'General' }}" data-name="{{ g.name }}">
+            {{ g.privilege|default:'General' }} / {{ g.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="op-modal-footer" style="padding: 12px 16px; display: flex; justify-content: flex-end; gap: 8px;">
+      <button type="button" class="btn btn-secondary" onclick="closeAddGroupModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="confirmAddGroupLine()">Select</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchNotebookTab(tabId, btn) {
+    document.querySelectorAll('.op-tab-pane').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.op-tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function openAddGroupModal() {
+    document.getElementById('opAddGroupModal').style.display = 'flex';
+  }
+
+  function closeAddGroupModal() {
+    document.getElementById('opAddGroupModal').style.display = 'none';
+  }
+
+  function confirmAddGroupLine() {
+    const sel = document.getElementById('modalGroupSelect');
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt) return;
+
+    const gid = opt.value;
+    const priv = opt.dataset.privilege;
+    const name = opt.dataset.name;
+
+    // Check if already in table
+    if (document.querySelector(`input[name="groups"][value="${gid}"]`)) {
+      alert('Group already added to visibility list.');
+      closeAddGroupModal();
+      return;
+    }
+
+    const tbody = document.getElementById('groupsTableBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="op-drag-handle">&#9776;</span></td>
+      <td>${priv}</td>
+      <td>${name}</td>
+      <td style="text-align: center;">
+        <input type="hidden" name="groups" value="${gid}">
+        <button type="button" class="op-btn-remove-line" onclick="this.closest('tr').remove()">&times;</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+    closeAddGroupModal();
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,323 @@
+{% extends 'base/layout.html' %}
+{% load static %}
+
+{% block navbar_title %}Mail{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mail/css/mail_app.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-mail-app-wrapper">
+  {% csrf_token %}
+
+  <!-- =========================================================================
+       1. Left Sidebar (Folders & Labels)
+       ========================================================================= -->
+  <aside class="op-mail-sidebar">
+    <!-- Compose Button -->
+    <button type="button" class="op-compose-btn" onclick="openComposer('new')" title="Compose new message (C)">
+      <span class="op-compose-icon" style="font-size: 17px;">✏️</span>
+      <span>Compose</span>
+    </button>
+
+    <!-- Standard Folders -->
+    <div class="op-mail-nav-section">
+      <div class="op-mail-nav-title">Mailboxes</div>
+      
+      <a href="javascript:void(0)" class="op-mail-folder-item {% if current_folder == 'inbox' %}active{% endif %}" id="opFolderItem_inbox" onclick="selectFolder('inbox')">
+        <div class="op-folder-left">
+          <span class="op-folder-icon">📥</span>
+          <span>Inbox</span>
+        </div>
+        <span class="op-folder-badge {% if folder_counts.inbox_unread %}badge-highlight{% endif %}" id="opFolderBadge_inbox" style="{% if not folder_counts.inbox_unread %}display: none;{% endif %}">
+          {{ folder_counts.inbox_unread|default:'0' }}
+        </span>
+      </a>
+
+      <a href="javascript:void(0)" class="op-mail-folder-item {% if current_folder == 'starred' %}active{% endif %}" id="opFolderItem_starred" onclick="selectFolder('starred')">
+        <div class="op-folder-left">
+          <span class="op-folder-icon" style="color: #f59e0b;">⭐</span>
+          <span>Starred</span>
+        </div>
+        <span class="op-folder-badge" id="opFolderBadge_starred" style="{% if not folder_counts.starred_count %}display: none;{% endif %}">
+          {{ folder_counts.starred_count|default:'0' }}
+        </span>
+      </a>
+
+      <a href="javascript:void(0)" class="op-mail-folder-item {% if current_folder == 'sent' %}active{% endif %}" id="opFolderItem_sent" onclick="selectFolder('sent')">
+        <div class="op-folder-left">
+          <span class="op-folder-icon">📤</span>
+          <span>Sent</span>
+        </div>
+        <span class="op-folder-badge" id="opFolderBadge_sent" style="display: none;">0</span>
+      </a>
+
+      <a href="javascript:void(0)" class="op-mail-folder-item {% if current_folder == 'drafts' %}active{% endif %}" id="opFolderItem_drafts" onclick="selectFolder('drafts')">
+        <div class="op-folder-left">
+          <span class="op-folder-icon">📝</span>
+          <span>Drafts</span>
+        </div>
+        <span class="op-folder-badge" id="opFolderBadge_drafts" style="{% if not folder_counts.drafts_count %}display: none;{% endif %}">
+          {{ folder_counts.drafts_count|default:'0' }}
+        </span>
+      </a>
+
+      <a href="javascript:void(0)" class="op-mail-folder-item {% if current_folder == 'archive' %}active{% endif %}" id="opFolderItem_archive" onclick="selectFolder('archive')">
+        <div class="op-folder-left">
+          <span class="op-folder-icon">📦</span>
+          <span>Archive</span>
+        </div>
+      </a>
+
+      <a href="javascript:void(0)" class="op-mail-folder-item {% if current_folder == 'trash' %}active{% endif %}" id="opFolderItem_trash" onclick="selectFolder('trash')">
+        <div class="op-folder-left">
+          <span class="op-folder-icon">🗑️</span>
+          <span>Trash</span>
+        </div>
+        <span class="op-folder-badge" id="opFolderBadge_trash" style="{% if not folder_counts.trash_count %}display: none;{% endif %}">
+          {{ folder_counts.trash_count|default:'0' }}
+        </span>
+      </a>
+    </div>
+
+    <!-- Category Labels -->
+    <div class="op-mail-nav-section">
+      <div class="op-mail-nav-title">Categories &amp; Labels</div>
+      {% for lbl in labels %}
+        <a href="javascript:void(0)" class="op-mail-folder-item" id="opLabelItem_{{ lbl.key }}" onclick="selectLabel('{{ lbl.key }}')">
+          <div class="op-folder-left">
+            <span class="op-label-dot" style="background-color: {{ lbl.color }};"></span>
+            <span>{{ lbl.name }}</span>
+          </div>
+          {% if lbl.count %}
+            <span class="op-folder-badge">{{ lbl.count }}</span>
+          {% endif %}
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- Storage Usage Meter -->
+    <div class="op-mail-storage-box">
+      <div style="display: flex; justify-content: space-between; font-weight: 600; color: #475569;">
+        <span>Storage</span>
+        <span>1.2 GB / 15 GB</span>
+      </div>
+      <div class="op-storage-bar">
+        <div class="op-storage-fill" style="width: 8%;"></div>
+      </div>
+      <div style="color: #94a3b8; font-size: 11px;">8% used • Cloud Synced</div>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       2. Middle Pane (Thread List & Filters)
+       ========================================================================= -->
+  <section class="op-mail-threadlist-pane">
+    <div class="op-threadlist-header">
+      <!-- Search Input -->
+      <div class="op-mail-search-box">
+        <span class="op-mail-search-icon">🔍</span>
+        <input type="text" id="opMailSearchInput" class="op-mail-search-input" placeholder="Search mail, sender, subject, ERP..." oninput="handleMailSearch(this.value)">
+      </div>
+
+      <!-- Quick Filter Chips -->
+      <div class="op-filter-chips">
+        <button type="button" class="op-filter-chip active" id="opChip_all" onclick="setFilterChip('all')">All</button>
+        <button type="button" class="op-filter-chip" id="opChip_unread" onclick="setFilterChip('unread')">Unread</button>
+        <button type="button" class="op-filter-chip" id="opChip_starred" onclick="setFilterChip('starred')">⭐ Starred</button>
+        <button type="button" class="op-filter-chip" id="opChip_attachment" onclick="setFilterChip('attachment')">📎 Attachments</button>
+      </div>
+    </div>
+
+    <!-- Normal Actions Toolbar -->
+    <div class="op-threadlist-actions" id="opNormalActionsBar">
+      <div class="op-actions-group">
+        <input type="checkbox" id="opSelectAllCheckbox" title="Select all" onchange="toggleSelectAll(this.checked)">
+        <button type="button" class="op-icon-btn" onclick="loadEmails()" title="Refresh messages">🔄</button>
+        <strong id="opCurrentFolderTitle" style="color: #1e293b; font-size: 13px; margin-left: 4px;">Inbox</strong>
+      </div>
+      <div class="op-actions-group">
+        <span id="opMailCountText" style="font-size: 12px; color: #64748b;">0–0 of 0</span>
+      </div>
+    </div>
+
+    <!-- Bulk Actions Toolbar (Shown when emails are selected) -->
+    <div class="op-threadlist-actions" id="opBulkActionsBar" style="display: none; background: #e0f2fe;">
+      <div class="op-actions-group">
+        <strong id="opSelectedCountLabel" style="color: #0369a1; font-weight: 700;">0 selected</strong>
+        <button type="button" class="op-icon-btn" onclick="executeBatchAction('mark_read')" title="Mark as read">✓ Mark Read</button>
+        <button type="button" class="op-icon-btn" onclick="executeBatchAction('mark_unread')" title="Mark as unread">📬 Unread</button>
+        <button type="button" class="op-icon-btn" onclick="executeBatchAction('archive')" title="Archive">📦 Archive</button>
+        <button type="button" class="op-icon-btn" onclick="executeBatchAction('trash')" title="Delete">🗑️ Trash</button>
+        <button type="button" class="op-icon-btn" onclick="executeBatchAction('star')" title="Star">⭐ Star</button>
+      </div>
+      <div class="op-actions-group">
+        <select class="op-icon-btn" style="padding: 2px 6px; font-size: 12px; background: #ffffff; border: 1px solid #cbd5e1;" onchange="executeBatchAction('set_label', this.value); this.value='';">
+          <option value="">Apply Label...</option>
+          <option value="work">Work</option>
+          <option value="internal">Internal</option>
+          <option value="clients">Clients</option>
+          <option value="finance">Finance</option>
+          <option value="support">Support</option>
+          <option value="system">System</option>
+          <option value="personal">Personal</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Scrollable Emails List -->
+    <div class="op-thread-items-container" id="opThreadListContainer">
+      <div style="padding: 30px; text-align: center; color: #94a3b8;">Loading messages...</div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       3. Right Reading Pane (Thread View & Body)
+       ========================================================================= -->
+  <main class="op-mail-reading-pane" id="opReadingPane">
+    <div class="op-reading-empty-state">
+      <div class="op-empty-icon">📨</div>
+      <h3 style="font-size: 16px; margin-bottom: 6px; color: #475569;">Select an item to read</h3>
+      <p style="font-size: 13px; margin: 0;">Nothing is selected. Click on a thread on the left.</p>
+    </div>
+  </main>
+</div>
+
+<!-- =========================================================================
+     4. Floating Composer Window (Gmail / Outlook style)
+     ========================================================================= -->
+<div class="op-composer-dock" id="opMailComposerModal" style="display: none;">
+  <input type="hidden" id="opComposerParentId" value="">
+
+  <!-- Header -->
+  <div class="op-composer-header" onclick="minimizeComposer()">
+    <span class="op-composer-title" id="opComposerTitle">New Message</span>
+    <div class="op-composer-controls" onclick="event.stopPropagation();">
+      <button type="button" class="op-ctrl-btn" onclick="minimizeComposer()" title="Minimize">_</button>
+      <button type="button" class="op-ctrl-btn" onclick="maximizeComposer()" title="Maximize / Pop out">⤢</button>
+      <button type="button" class="op-ctrl-btn" onclick="closeComposer()" title="Close">&times;</button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="op-composer-body">
+    <!-- To Row -->
+    <div class="op-composer-field-row">
+      <span class="op-field-tag">To</span>
+      <input type="text" id="opComposerTo" class="op-field-input" placeholder="Recipient email or name...">
+      <button type="button" class="op-field-extra-btn" onclick="toggleCcBcc('cc')">Cc</button>
+      <button type="button" class="op-field-extra-btn" onclick="toggleCcBcc('bcc')">Bcc</button>
+    </div>
+
+    <!-- Cc Row -->
+    <div class="op-composer-field-row" id="opComposerRow_cc" style="display: none;">
+      <span class="op-field-tag">Cc</span>
+      <input type="text" id="opComposerCc" class="op-field-input" placeholder="Carbon copy recipients...">
+    </div>
+
+    <!-- Bcc Row -->
+    <div class="op-composer-field-row" id="opComposerRow_bcc" style="display: none;">
+      <span class="op-field-tag">Bcc</span>
+      <input type="text" id="opComposerBcc" class="op-field-input" placeholder="Blind carbon copy recipients...">
+    </div>
+
+    <!-- Subject Row -->
+    <div class="op-composer-field-row">
+      <span class="op-field-tag">Subject</span>
+      <input type="text" id="opComposerSubject" class="op-field-input" placeholder="Subject...">
+    </div>
+
+    <!-- ERP Link & Label Options Row -->
+    <div class="op-composer-field-row" style="background: #fbfcfe; gap: 8px;">
+      <span style="font-size: 12px; color: #64748b; font-weight: 600;">Category:</span>
+      <select id="opComposerLabel" style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 8px; font-size: 12px; background: #fff;">
+        <option value="work">Work</option>
+        <option value="internal">Internal</option>
+        <option value="clients">Clients</option>
+        <option value="finance">Finance</option>
+        <option value="support">Support</option>
+        <option value="system">System</option>
+        <option value="personal">Personal</option>
+      </select>
+
+      <span style="font-size: 12px; color: #64748b; font-weight: 600; margin-left: 8px;">Link ERP:</span>
+      <select id="opComposerResModel" style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 8px; font-size: 12px; background: #fff;" onchange="document.getElementById('opComposerResName').placeholder = 'Name for ' + this.value;">
+        <option value="">None</option>
+        <option value="res.company">Company</option>
+        <option value="res.users">User</option>
+        <option value="res.groups">Group</option>
+        <option value="ir.actions.act_window">Action</option>
+        <option value="ir.model">Model</option>
+      </select>
+      <input type="text" id="opComposerResName" placeholder="Document Ref / Title..." style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 8px; font-size: 12px;">
+
+      {% if mail_servers %}
+        <span style="font-size: 12px; color: #64748b; font-weight: 600; margin-left: 8px;">Outgoing:</span>
+        <select id="opComposerMailServer" style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 8px; font-size: 12px; background: #fff;">
+          <option value="">Default SMTP</option>
+          {% for s in mail_servers %}
+            <option value="{{ s.id }}">{{ s.name }} ({{ s.smtp_host }})</option>
+          {% endfor %}
+        </select>
+      {% endif %}
+    </div>
+
+    <!-- Rich Editor Toolbar -->
+    <div class="op-editor-toolbar">
+      <button type="button" class="op-tb-btn" onclick="formatEditor('bold')" title="Bold"><b>B</b></button>
+      <button type="button" class="op-tb-btn" onclick="formatEditor('italic')" title="Italic"><i>I</i></button>
+      <button type="button" class="op-tb-btn" onclick="formatEditor('underline')" title="Underline"><u>U</u></button>
+      <button type="button" class="op-tb-btn" onclick="formatEditor('strikeThrough')" title="Strikethrough"><s>S</s></button>
+      <span class="op-tb-divider"></span>
+      <button type="button" class="op-tb-btn" onclick="formatEditor('insertUnorderedList')" title="Bullet List">• List</button>
+      <button type="button" class="op-tb-btn" onclick="formatEditor('insertOrderedList')" title="Numbered List">1. List</button>
+      <button type="button" class="op-tb-btn" onclick="formatEditor('formatBlock', 'blockquote')" title="Quote">❝ Quote</button>
+      <span class="op-tb-divider"></span>
+      <button type="button" class="op-tb-btn" onclick="formatEditor('createLink', prompt('Enter web link URL:', 'https://'))" title="Insert Link">🔗 Link</button>
+      <button type="button" class="op-tb-btn" onclick="formatEditor('removeFormat')" title="Clear Formatting">🧹 Clean</button>
+    </div>
+
+    <!-- Contenteditable Message Editor -->
+    <div id="opComposerEditor" class="op-rich-editor" contenteditable="true" data-placeholder="Write your email here..."></div>
+
+    <!-- Uploaded Attachments Bar -->
+    <div id="opComposerAttachmentsList" class="op-composer-attachments-bar" style="display: none;"></div>
+  </div>
+
+  <!-- Footer Actions -->
+  <div class="op-composer-footer">
+    <div class="op-composer-footer-left">
+      <button type="button" class="op-btn-send-main" onclick="sendMail(false)">
+        <span>Send</span>
+        <span style="font-size: 14px;">➤</span>
+      </button>
+
+      <button type="button" class="op-icon-btn" onclick="document.getElementById('opComposerFileInput').click()" title="Attach files">
+        📎 Attach
+      </button>
+      <input type="file" id="opComposerFileInput" style="display: none;" multiple onchange="handleAttachmentPicker(event)">
+
+      <button type="button" class="op-icon-btn" onclick="sendMail(true)" title="Save as Draft">
+        💾 Save Draft
+      </button>
+    </div>
+
+    <div class="op-composer-footer-right">
+      <span style="font-size: 11px; color: #94a3b8;">Ctrl+Enter to send</span>
+      <button type="button" class="op-icon-btn" onclick="closeComposer()" title="Discard message" style="color: #ef4444;">
+        🗑️
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="opMailToast" class="op-mail-toast"></div>
+
+<!-- JS Engine -->
+<script>
+  window.initialMailFolder = '{{ current_folder|default:"inbox" }}';
+</script>
+<script src="{% static 'mail/js/mail_app.js' %}"></script>
+{% endblock %}

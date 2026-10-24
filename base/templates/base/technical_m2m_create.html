@@ -1,0 +1,63 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-m2m-create-form" method="post" action="{% url 'technical_m2m_create' %}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_m2m' %}">ManyToMany Relations</a> / New
+        </span>
+      </div>
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_m2m' %}" class="op-view-btn-discard">Discard</a>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <div style="max-width: 600px;">
+        <div class="op-view-row" style="margin-bottom: 12px;">
+          <label class="op-view-label" for="id_name">Relation Name</label>
+          <div class="op-view-input-wrap">
+            <input type="text" id="id_name" name="name" class="op-view-input" placeholder="e.g. custom_model_group_rel" required>
+          </div>
+        </div>
+
+        <div class="op-view-row" style="margin-bottom: 12px;">
+          <label class="op-view-label" for="id_module">Module</label>
+          <div class="op-view-input-wrap">
+            <select id="id_module" name="module" class="op-view-select">
+              <option value="">—</option>
+              {% for mod in all_modules %}
+                <option value="{{ mod.id }}">{{ mod.name|title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="op-view-row" style="margin-bottom: 12px;">
+          <label class="op-view-label" for="id_model">Model</label>
+          <div class="op-view-input-wrap">
+            <select id="id_model" name="model" class="op-view-select">
+              <option value="">—</option>
+              {% for mdl in all_models %}
+                <option value="{{ mdl.id }}">{{ mdl.description|default:mdl.model_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

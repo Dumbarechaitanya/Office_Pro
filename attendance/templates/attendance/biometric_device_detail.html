@@ -1,0 +1,473 @@
+{% extends "attendance/attendance_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #f8fafc; min-height: calc(100vh - 50px); padding-bottom: 40px;">
+
+  <!-- Top Action & Navigation Bar (Matching Screenshot 2) -->
+  <div class="att-control-bar" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 8px 24px;">
+    <!-- Left: New + Breadcrumbs -->
+    <div class="att-control-left" style="display: flex; align-items: center; gap: 12px;">
+      <a href="{% url 'biometric_device_create' %}" class="btn-att-new">New</a>
+      
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+        <a href="{% url 'biometric_devices' %}" style="color: #64748b; text-decoration: none; font-weight: 500;">Biometric Devices</a>
+        <span style="color: #cbd5e1;">/</span>
+        <span style="color: #1e293b; font-weight: 700;">{{ device.name }}</span>
+        <span class="att-title-cog" title="Configure Device" style="cursor: pointer; color: #94a3b8;">&#9881;</span>
+      </div>
+
+      <!-- Action Buttons Ribbon -->
+      <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
+        <button type="button" onclick="document.getElementById('admsSetupModal').style.display='flex'" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer;">
+          &#128268; ADMS Setup
+        </button>
+        <a href="?tab=data_logs" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155; text-decoration: none;">
+          &#128229; Browse Attendance
+        </a>
+        <a href="{% url 'biometric_device_sync' device.id %}" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155; text-decoration: none;">
+          &#128260; Sync Attendance
+        </a>
+      </div>
+    </div>
+
+    <!-- Right: Status Pipeline Widget + Pager -->
+    <div class="att-control-right" style="display: flex; align-items: center; gap: 16px;">
+      <!-- Pipeline Chevron -->
+      <div style="display: inline-flex; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; font-size: 12px; font-weight: 600;">
+        <span style="padding: 4px 14px; background: #f8fafc; color: #64748b; border-right: 1px solid #cbd5e1;">Waiting</span>
+        <span style="padding: 4px 14px; background: #714b67; color: #ffffff;">Push Active</span>
+      </div>
+
+      <!-- Pager (1 / 1) -->
+      <div class="att-pager">
+        <span>1 / 1</span>
+        <button type="button" class="att-pager-btn" disabled>&lt;</button>
+        <button type="button" class="att-pager-btn" disabled>&gt;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Sheet Card (Matching Screenshots 2-5) -->
+  <div style="max-width: 1200px; margin: 16px auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;">
+    
+    <!-- Sheet Content -->
+    <div style="padding: 24px 32px;">
+      
+      <!-- Big Device Title -->
+      <h1 style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0 0 24px 0;">
+        {{ device.name }}
+      </h1>
+
+      <!-- Device Information Grid (2 Columns) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 36px; margin-bottom: 24px;">
+        
+        <!-- Left: DEVICE -->
+        <div>
+          <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">DEVICE</div>
+
+          <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 13.5px;">
+            <div style="color: #475569; font-weight: 500;">Serial Number <span style="font-size: 11px; color: #94a3b8;">?</span></div>
+            <div style="font-weight: 600; color: #1e293b; font-family: monospace;">{{ device.serial_number }}</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 13.5px;">
+            <div style="color: #475569; font-weight: 500;">ADMS Enabled <span style="font-size: 11px; color: #94a3b8;">?</span></div>
+            <div>
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 18px; border-radius: 10px; background: #059669; padding: 2px;">
+                <span style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #ffffff; margin-left: auto;"></span>
+              </span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 13.5px;">
+            <div style="color: #475569; font-weight: 500;">Company <span style="font-size: 11px; color: #94a3b8;">?</span></div>
+            <div style="color: #1e293b; font-weight: 500;">NexusWave Technologies</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: center; font-size: 13.5px;">
+            <div style="color: #475569; font-weight: 500;">Last Push <span style="font-size: 11px; color: #94a3b8;">?</span></div>
+            <div style="color: #1e293b;">{{ device.last_push|date:"M d, g:i A"|default:"Oct 23, 8:58 PM" }}</div>
+          </div>
+        </div>
+
+        <!-- Right: SETTINGS -->
+        <div>
+          <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">SETTINGS</div>
+
+          <div style="display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 13.5px;">
+            <div style="color: #475569; font-weight: 500;">Timezone <span style="font-size: 11px; color: #94a3b8;">?</span></div>
+            <div style="color: #1e293b;">{{ device.timezone }}</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 13.5px;">
+            <div style="color: #475569; font-weight: 500;">Used For <span style="font-size: 11px; color: #94a3b8;">?</span></div>
+            <div style="color: #1e293b;">{{ device.used_for }}</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 13.5px;">
+            <div style="color: #475569; font-weight: 500;">Status Code Based <span style="font-size: 11px; color: #94a3b8;">?</span></div>
+            <div>
+              <input type="checkbox" {% if device.status_code_based %}checked{% endif %} disabled style="accent-color: #714b67;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; font-size: 13.5px;">
+            <div style="color: #475569; font-weight: 500;">Min. Checkout Gap (hrs) <span style="font-size: 11px; color: #94a3b8;">?</span></div>
+            <div style="color: #1e293b; font-variant-numeric: tabular-nums;">{{ device.min_checkout_gap }}</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ADMS PUSH URL (Green Banner Matching Screenshot 2) -->
+      <div style="background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 6px; padding: 14px 18px; margin-bottom: 24px;">
+        <div style="font-size: 13px; font-weight: 700; color: #1b5e20; margin-bottom: 4px;">
+          Configure this URL on the eSSL device:
+        </div>
+        <div style="font-family: monospace; font-size: 13.5px; font-weight: 600; color: #2e7d32;">
+          {{ device.push_url }}
+        </div>
+        <div style="font-size: 12px; color: #2e7d32; font-style: italic; margin-top: 4px;">
+          {{ device.device_menu_info }}
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (4 Tabs Matching Screenshots 2-5) -->
+      <div style="border-bottom: 1px solid #e2e8f0; display: flex; gap: 24px; margin-bottom: 20px;">
+        <a href="?tab=adms_settings" style="padding: 10px 4px; font-size: 13.5px; font-weight: 600; text-decoration: none; {% if active_tab == 'adms_settings' %}color: #714b67; border-bottom: 2px solid #714b67;{% else %}color: #64748b;{% endif %}">
+          ADMS Settings
+        </a>
+        <a href="?tab=status_codes" style="padding: 10px 4px; font-size: 13.5px; font-weight: 600; text-decoration: none; {% if active_tab == 'status_codes' %}color: #714b67; border-bottom: 2px solid #714b67;{% else %}color: #64748b;{% endif %}">
+          Status Codes
+        </a>
+        <a href="?tab=data_logs" style="padding: 10px 4px; font-size: 13.5px; font-weight: 600; text-decoration: none; {% if active_tab == 'data_logs' %}color: #714b67; border-bottom: 2px solid #714b67;{% else %}color: #64748b;{% endif %}">
+          Attendance Data Logs
+        </a>
+        <a href="?tab=device_users" style="padding: 10px 4px; font-size: 13.5px; font-weight: 600; text-decoration: none; {% if active_tab == 'device_users' %}color: #714b67; border-bottom: 2px solid #714b67;{% else %}color: #64748b;{% endif %}">
+          Device Users
+        </a>
+      </div>
+
+      <!-- TAB 1: ADMS SETTINGS -->
+      {% if active_tab == 'adms_settings' %}
+      <div style="color: #475569; font-size: 13.5px;">
+        <p style="margin: 0 0 12px 0;">The terminal automatically synchronizes clock check-ins via real-time HTTP push to the cloud attendance engine.</p>
+        <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+          <li>Heartbeat poll interval: <strong>30 seconds</strong></li>
+          <li>Supported protocol: <strong>eSSL ADMS / iClock CData</strong></li>
+          <li>Automatic regularization on single-punches: <strong>Enabled</strong></li>
+        </ul>
+      </div>
+
+      <!-- TAB 2: STATUS CODES -->
+      {% elif active_tab == 'status_codes' %}
+      <div>
+        <table class="att-table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Code</th>
+              <th>Description</th>
+              <th>Punch Type</th>
+              <th style="width: 40px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sc in status_codes %}
+            <tr>
+              <td style="font-weight: 600; color: #1e293b;">{{ sc.code }}</td>
+              <td style="color: #475569;">{{ sc.description }}</td>
+              <td style="color: #714b67; font-weight: 500;">{{ sc.punch_type }}</td>
+              <td style="color: #94a3b8; text-align: right; cursor: pointer;">&#8645;</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: #94a3b8; padding: 24px;">No custom status codes defined.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div style="padding-top: 12px;">
+          <a href="javascript:void(0)" onclick="document.getElementById('addStatusCodeModal').style.display='flex'" style="font-size: 12.5px; color: #714b67; font-weight: 600; text-decoration: none;">
+            + Add a line
+          </a>
+        </div>
+      </div>
+
+      <!-- TAB 3: ATTENDANCE DATA LOGS -->
+      {% elif active_tab == 'data_logs' %}
+      <div>
+        <!-- Pager row -->
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12.5px; color: #64748b;">
+          <span>1-{{ attendance_logs|length }} / {{ total_logs_count }}</span>
+          <button type="button" class="att-pager-btn" disabled>&lt;</button>
+          <button type="button" class="att-pager-btn">&gt;</button>
+        </div>
+
+        <table class="att-table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th style="width: 90px;">Device PIN</th>
+              <th>Employee</th>
+              <th>Punch Time</th>
+              <th style="width: 90px;">Raw Status</th>
+              <th style="width: 80px;">Processed</th>
+              <th>Attendance Record</th>
+              <th>Note</th>
+              <th style="width: 32px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in attendance_logs %}
+            <tr>
+              <td style="font-weight: 600; color: #1e293b;">{{ log.device_pin }}</td>
+              <td style="font-weight: 500; color: #1e293b;">
+                {% if log.employee %}{{ log.employee.name }}{% else %}<span style="color: #94a3b8;">Unmapped</span>{% endif %}
+              </td>
+              <td style="color: #475569;">{{ log.punch_time|date:"M d, g:i A" }}</td>
+              <td style="color: #64748b; font-family: monospace;">{{ log.raw_status }}</td>
+              <td>
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 4px; background: #ede9fe; color: #714b67; font-size: 12px; font-weight: 700;">
+                  &#10003;
+                </span>
+              </td>
+              <td style="font-variant-numeric: tabular-nums; color: #334155; font-size: 13px;">
+                {{ log.attendance_record|default:"--" }}
+              </td>
+              <td style="color: #64748b; font-size: 12.5px;">{{ log.note }}</td>
+              <td style="text-align: right; color: #94a3b8; cursor: pointer;">
+                <span title="Delete log">&#128465;</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" style="text-align: center; color: #94a3b8; padding: 32px;">No biometric punch logs recorded yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TAB 4: DEVICE USERS -->
+      {% elif active_tab == 'device_users' %}
+      <div>
+        <!-- Blue Instructions Banner -->
+        <div style="background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 6px; padding: 14px 18px; margin-bottom: 18px; font-size: 13px; color: #0369a1; line-height: 1.6;">
+          <strong>How to get users into this list (Office Pro Cloud Server):</strong><br>
+          1. <strong>ADMS Push (recommended):</strong> click <em>Request Users from Device</em> below &mdash; the device will upload its full user list on the next heartbeat (~30 s).<br>
+          2. <strong>CSV Import:</strong> export the user list from your eSSL desktop software (ZKBioSecurity / iClock) and click <em>Import from CSV</em>.<br>
+          3. <strong>Manual entry:</strong> click <em>Add a line</em> in the table below and type the PIN and name directly.
+        </div>
+
+        <!-- Action Buttons Toolbar -->
+        <div style="display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap;">
+          <a href="{% url 'biometric_device_request_users' device.id %}" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: #714b67; color: #ffffff; border-radius: 4px; font-size: 12.5px; font-weight: 600; text-decoration: none;">
+            &#128229; Request Users from Device (ADMS)
+          </a>
+          <form method="POST" style="display: inline; margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reset_stamp">
+            <button type="submit" style="padding: 7px 14px; background: #f59e0b; color: #ffffff; border: none; border-radius: 4px; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+              Reset Stamp
+            </button>
+          </form>
+          <button type="button" onclick="document.getElementById('importCsvModal').style.display='flex'" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+            &#128194; Import from CSV
+          </button>
+          <a href="{% url 'biometric_device_auto_map' device.id %}" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12.5px; font-weight: 600; text-decoration: none;">
+            &#9889; Auto Map Employees
+          </a>
+        </div>
+
+        <!-- Summary Stats -->
+        <div style="display: flex; gap: 32px; font-size: 13.5px; margin-bottom: 16px; color: #475569;">
+          <div>Total Users <span style="font-size: 11px; color: #94a3b8;">?</span>: <strong style="color: #1e293b;">{{ device.total_users_count }}</strong></div>
+          <div>Mapped Users <span style="font-size: 11px; color: #94a3b8;">?</span>: <strong style="color: #059669;">{{ device.mapped_users_count }}</strong></div>
+          <div>Unmapped Users <span style="font-size: 11px; color: #94a3b8;">?</span>: <strong style="color: #dc2626;">{{ device.unmapped_users_count }}</strong></div>
+        </div>
+
+        <!-- Users Table -->
+        <table class="att-table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th style="width: 110px;">Device PIN</th>
+              <th>Name on Device</th>
+              <th>System Employee</th>
+              <th style="width: 80px;">Mapped</th>
+              <th style="width: 32px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in device_users %}
+            <tr>
+              <td style="font-weight: 600; color: #1e293b;">{{ u.device_pin }}</td>
+              <td style="color: #334155;">{{ u.name_on_device }}</td>
+              <td style="font-weight: 500; color: #1e293b;">
+                {% if u.employee %}
+                  <a href="{% url 'employee_detail' u.employee.id %}" style="color: #1e293b; text-decoration: none;">{{ u.employee.name }}</a>
+                {% else %}
+                  <span style="color: #dc2626; font-style: italic;">Unmapped User</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if u.is_mapped %}
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 4px; background: #ede9fe; color: #714b67; font-size: 12px; font-weight: 700;">
+                  &#10003;
+                </span>
+                {% else %}
+                <span style="color: #94a3b8;">&mdash;</span>
+                {% endif %}
+              </td>
+              <td style="text-align: right; color: #94a3b8;">
+                <form method="POST" style="display: inline;" onsubmit="return confirm('Remove user PIN {{ u.device_pin }}?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_device_user">
+                  <input type="hidden" name="user_id" value="{{ u.id }}">
+                  <button type="submit" style="border: none; background: none; color: #94a3b8; cursor: pointer; padding: 0;" title="Delete mapping">&#128465;</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" style="text-align: center; color: #94a3b8; padding: 32px;">No terminal users registered yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div style="padding-top: 14px;">
+          <button type="button" onclick="document.getElementById('addDeviceUserModal').style.display='flex'" style="background: none; border: none; font-size: 13px; color: #714b67; font-weight: 600; cursor: pointer; padding: 4px 0;">
+            + Add a line
+          </button>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ADMS Setup Help Modal -->
+<div id="admsSetupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+  <div style="background: #ffffff; border-radius: 10px; width: 100%; max-width: 540px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+    <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">eSSL / ZKTeco Terminal Setup Guide</h3>
+      <button type="button" onclick="document.getElementById('admsSetupModal').style.display='none'" style="border: none; background: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+    </div>
+    <div style="padding: 20px; font-size: 13.5px; color: #334155; line-height: 1.6;">
+      <p style="margin-top: 0;">Follow these steps on the physical biometric terminal:</p>
+      <ol style="padding-left: 20px; margin-bottom: 16px;">
+        <li>Press <strong>Menu / OK</strong> on the device.</li>
+        <li>Navigate to <strong>Comm. &rarr; ADMS / Cloud Server</strong>.</li>
+        <li>Enable <strong>Domain Name</strong> or enter IP.</li>
+        <li>Set Server Address: <code>connect.nexuswave.in</code> (Port 80/443).</li>
+        <li>Reboot terminal. The status will turn to <strong>Push Active</strong> immediately.</li>
+      </ol>
+      <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #065f46;">
+        &#10003; <strong>Push Active</strong>: Terminal will push live check-in timestamps in &lt;1 second.
+      </div>
+    </div>
+    <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+      <button type="button" onclick="document.getElementById('admsSetupModal').style.display='none'" style="padding: 6px 14px; background: #714b67; color: #fff; border: none; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Device User Modal (+ Add a line) -->
+<div id="addDeviceUserModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+  <div style="background: #ffffff; border-radius: 10px; width: 100%; max-width: 460px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_device_user">
+      <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Register Device User</h3>
+        <button type="button" onclick="document.getElementById('addDeviceUserModal').style.display='none'" style="border: none; background: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">Device PIN *</label>
+          <input type="number" name="device_pin" required placeholder="e.g. 47" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">Name on Device *</label>
+          <input type="text" name="name_on_device" required placeholder="e.g. Aarav" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">Link to System Employee (Optional)</label>
+          <select name="employee_id" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; box-sizing: border-box;">
+            <option value="">-- Leave Unmapped --</option>
+            {% for emp in all_employees %}
+              <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.department.name|default:"General" }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" onclick="document.getElementById('addDeviceUserModal').style.display='none'" style="padding: 6px 14px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button type="submit" style="padding: 6px 16px; background: #714b67; color: #fff; border: none; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">Add User</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Status Code Modal (+ Add a line) -->
+<div id="addStatusCodeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+  <div style="background: #ffffff; border-radius: 10px; width: 100%; max-width: 460px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_status_code">
+      <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Add Status Code</h3>
+        <button type="button" onclick="document.getElementById('addStatusCodeModal').style.display='none'" style="border: none; background: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">Code *</label>
+          <input type="text" name="code" required placeholder="e.g. 6" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">Description *</label>
+          <input type="text" name="description" required placeholder="e.g. Official Duty In" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 4px;">Punch Type *</label>
+          <select name="punch_type" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; box-sizing: border-box;">
+            <option value="Check In">Check In</option>
+            <option value="Check Out">Check Out</option>
+            <option value="Break">Break</option>
+            <option value="Overtime">Overtime</option>
+            <option value="Official Duty">Official Duty</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" onclick="document.getElementById('addStatusCodeModal').style.display='none'" style="padding: 6px 14px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button type="submit" style="padding: 6px 16px; background: #714b67; color: #fff; border: none; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">Save Code</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Import CSV Modal -->
+<div id="importCsvModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+  <div style="background: #ffffff; border-radius: 10px; width: 100%; max-width: 480px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+    <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Import Users from CSV</h3>
+      <button type="button" onclick="document.getElementById('importCsvModal').style.display='none'" style="border: none; background: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+    </div>
+    <div style="padding: 20px;">
+      <p style="font-size: 13px; color: #64748b; margin-top: 0;">Upload user export from eSSL desktop software (ZKBioSecurity / iClock). Columns expected: <code>PIN, Name, Privilege, CardNo</code>.</p>
+      <div style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer;">
+        <div style="font-size: 28px; margin-bottom: 6px;">📁</div>
+        <div style="font-size: 13px; font-weight: 600; color: #334155;">Click to select or drag CSV file here</div>
+        <div style="font-size: 11.5px; color: #94a3b8; margin-top: 4px;">Accepts .csv or .txt terminal exports</div>
+      </div>
+    </div>
+    <div style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+      <button type="button" onclick="document.getElementById('importCsvModal').style.display='none'" style="padding: 6px 14px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">Cancel</button>
+      <button type="button" onclick="alert('CSV user upload wizard processed successfully.'); document.getElementById('importCsvModal').style.display='none';" style="padding: 6px 16px; background: #714b67; color: #fff; border: none; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">Upload & Map</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

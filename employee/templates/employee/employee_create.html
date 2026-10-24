@@ -1,0 +1,382 @@
+{% extends "employee/employee_base.html" %}
+
+{% block content %}
+<form method="post" action="{% url 'employee_create' %}" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <!-- Control Bar -->
+  <div class="emp-control-bar">
+    <div class="emp-actions-left">
+      <div style="font-size: 14px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px;">
+        <a href="{% url 'employee_list' %}" style="color: #64748b; text-decoration: none;">Employees</a>
+        <span>/</span>
+        <span style="color: #0f172a;">New Employee</span>
+      </div>
+
+      <button type="submit" class="emp-btn-primary" id="btnSaveNew">
+        <span>&#10004;</span> Save
+      </button>
+      <a href="{% url 'employee_list' %}" class="emp-btn-secondary" id="btnCancel">
+        Discard
+      </a>
+    </div>
+
+    <!-- Onboarding Template Selector -->
+    <div class="emp-actions-right">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 12.5px; font-weight: 600; color: #475569;">&#128221; Apply Template:</span>
+        <select id="templateSelector" class="emp-select" style="width: auto; padding: 5px 12px; font-size: 13px;" onchange="applyOnboardingTemplate(this.value)">
+          <option value="">-- Select Template --</option>
+          {% for t in templates %}
+          <option value="{{ t.id }}">{{ t.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="emp-form-container">
+    <div class="emp-sheet">
+      <!-- Title Header -->
+      <div class="emp-sheet-header">
+        <div class="emp-sheet-avatar-area" style="position: relative;">
+          <label for="newEmpAvatarInput" style="cursor: pointer; display: block;" title="Click to upload photo">
+            <div id="newEmpAvatarPlaceholder" class="emp-avatar" style="width: 72px; height: 72px; font-size: 24px; background: #f1f5f9; color: #64748b; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+              &#128247;
+            </div>
+            <img id="newEmpAvatarPreview" src="" alt="Preview" style="display: none; width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;">
+          </label>
+          <input type="file" name="avatar" id="newEmpAvatarInput" accept="image/*" style="display: none;" onchange="if(this.files && this.files[0]) { const r = new FileReader(); r.onload = function(e){ document.getElementById('newEmpAvatarPreview').src = e.target.result; document.getElementById('newEmpAvatarPreview').style.display='block'; document.getElementById('newEmpAvatarPlaceholder').style.display='none'; }; r.readAsDataURL(this.files[0]); }">
+        </div>
+
+        <div class="emp-sheet-title-area">
+          <input type="text" name="name" id="inpName" required class="emp-title-input" placeholder="Employee Name (e.g. John Doe)...">
+          
+          <div style="display: flex; gap: 16px; margin-top: 10px; align-items: center;">
+            <input type="text" name="employee_code" id="inpCode" required placeholder="Employee Code (e.g. EMP001)" class="emp-input" style="max-width: 220px;">
+            <input type="text" name="job_title" id="inpJobTitle" placeholder="Job Position (e.g. Architect)" class="emp-input" style="max-width: 260px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="emp-tabs">
+        <button type="button" class="emp-tab-btn active" onclick="switchEmpTab(this, 'tabWork')">Work Information</button>
+        <button type="button" class="emp-tab-btn" onclick="switchEmpTab(this, 'tabPersonal')">Personal Details</button>
+        <button type="button" class="emp-tab-btn" onclick="switchEmpTab(this, 'tabStatutory')">Statutory &amp; Identity</button>
+        <button type="button" class="emp-tab-btn" onclick="switchEmpTab(this, 'tabApprovers')">Approver Matrices</button>
+        <button type="button" class="emp-tab-btn" onclick="switchEmpTab(this, 'tabPayroll')">HR &amp; Costing</button>
+      </div>
+
+      <!-- Tab 1: Work Information -->
+      <div id="tabWork" class="emp-tab-content active">
+        <div class="emp-grid-2col">
+          <div>
+            <div class="emp-field-group">
+              <label class="emp-label">Work Email *</label>
+              <input type="email" name="email" id="inpEmail" required placeholder="email@company.com" class="emp-input">
+            </div>
+
+            <div class="emp-field-group">
+              <label class="emp-label">Work Phone</label>
+              <input type="text" name="phone" id="inpPhone" placeholder="+91 98765 43210" class="emp-input">
+            </div>
+
+            <div class="emp-field-group">
+              <label class="emp-label">Department</label>
+              <select name="department_id" id="selDepartment" class="emp-select">
+                <option value="">-- Select Department --</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}">{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="emp-field-group">
+              <label class="emp-label">Branch</label>
+              <input type="text" name="branch" id="inpBranch" value="Pune HQ" class="emp-input">
+            </div>
+          </div>
+
+          <div>
+            <div class="emp-field-group">
+              <label class="emp-label">Direct Reporting Manager</label>
+              <select name="manager_id" id="selManager" class="emp-select">
+                <option value="">-- No Manager (Executive / Top Level) --</option>
+                {% for m in all_employees %}
+                <option value="{{ m.id }}">{{ m.name }} ({{ m.employee_code }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="emp-field-group">
+              <label class="emp-label">Employment Type</label>
+              <select name="employment_type" id="selEmpType" class="emp-select">
+                <option value="Full-Time" selected>Full-Time</option>
+                <option value="Part-Time">Part-Time</option>
+                <option value="Contract">Contract</option>
+                <option value="Intern">Intern</option>
+              </select>
+            </div>
+
+            <div class="emp-field-group">
+              <label class="emp-label">Date of Joining *</label>
+              <input type="date" name="date_joined" id="inpDateJoined" required class="emp-input">
+            </div>
+
+            <div class="emp-field-group">
+              <label class="emp-label">Confirmation Date</label>
+              <input type="date" name="confirmation_date" class="emp-input">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Personal Details -->
+      <div id="tabPersonal" class="emp-tab-content">
+        <div class="emp-grid-2col">
+          <div>
+            <h4 style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Demographics</h4>
+            <div class="emp-field-group">
+              <label class="emp-label">Gender</label>
+              <select name="gender" class="emp-select">
+                <option value="">-- Select --</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Date of Birth</label>
+              <input type="date" name="date_of_birth" class="emp-input">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Marital Status</label>
+              <select name="marital_status" class="emp-select">
+                <option value="">-- Select --</option>
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Divorced">Divorced</option>
+              </select>
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Blood Group</label>
+              <input type="text" name="blood_group" placeholder="e.g. O+, B+, A+" class="emp-input">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Father / Spouse Name</label>
+              <input type="text" name="father_spouse_name" class="emp-input">
+            </div>
+          </div>
+
+          <div>
+            <h4 style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Emergency Contact</h4>
+            <div class="emp-field-group">
+              <label class="emp-label">Contact Name</label>
+              <input type="text" name="emergency_contact_name" class="emp-input">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Relationship</label>
+              <input type="text" name="emergency_contact_relation" placeholder="e.g. Spouse, Parent" class="emp-input">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Emergency Phone</label>
+              <input type="text" name="emergency_contact_phone" class="emp-input">
+            </div>
+
+            <h4 style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin: 16px 0 12px 0;">Current Address</h4>
+            <div class="emp-field-group">
+              <textarea name="current_address" rows="2" class="emp-textarea" placeholder="Street Address"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+              <input type="text" name="current_city" placeholder="City" class="emp-input">
+              <input type="text" name="current_state" placeholder="State" class="emp-input">
+              <input type="text" name="current_pincode" placeholder="Pincode" class="emp-input">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Statutory & Identity -->
+      <div id="tabStatutory" class="emp-tab-content">
+        <div class="emp-grid-2col">
+          <div>
+            <div class="emp-field-group">
+              <label class="emp-label">PAN Number</label>
+              <input type="text" name="pan_number" maxlength="10" placeholder="ABCDE1234F" class="emp-input" style="text-transform: uppercase;">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Aadhaar Number</label>
+              <input type="text" name="aadhaar_number" maxlength="12" placeholder="12-digit number" class="emp-input">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Passport Number</label>
+              <input type="text" name="passport_number" class="emp-input">
+            </div>
+          </div>
+
+          <div>
+            <div class="emp-field-group">
+              <label class="emp-label">UAN Number</label>
+              <input type="text" name="uan_number" class="emp-input">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">PF Number</label>
+              <input type="text" name="pf_number" class="emp-input">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">ESIC Number</label>
+              <input type="text" name="esic_number" class="emp-input">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Approver Matrices -->
+      <div id="tabApprovers" class="emp-tab-content">
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+          Configure designated managers for Timesheets, Leaves, and Expenses. (Can be pre-filled via Onboarding Template above).
+        </p>
+
+        <div class="emp-grid-2col">
+          <div class="emp-approver-box">
+            <div class="emp-approver-title">
+              <span>&#9200;</span> Timesheet Approver (1-Level)
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Weekly Sign-Off Manager</label>
+              <select name="timesheet_approver_id" id="selTimesheetApprover" class="emp-select">
+                <option value="">-- Direct Manager --</option>
+                {% for m in all_employees %}
+                <option value="{{ m.id }}">{{ m.name }} ({{ m.employee_code }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="emp-approver-box">
+            <div class="emp-approver-title">
+              <span>&#127807;</span> Leave Approvers (2-Tier Hierarchy)
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Level 1: Reporting Manager</label>
+              <select name="leave_approver_l1_id" id="selLeaveL1" class="emp-select">
+                <option value="">-- Direct Manager --</option>
+                {% for m in all_employees %}
+                <option value="{{ m.id }}">{{ m.name }} ({{ m.employee_code }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Level 2: Executive Approver</label>
+              <select name="leave_approver_l2_id" id="selLeaveL2" class="emp-select">
+                <option value="">-- Executive Approver --</option>
+                {% for m in all_employees %}
+                <option value="{{ m.id }}">{{ m.name }} ({{ m.employee_code }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="emp-approver-box" style="grid-column: 1 / -1;">
+            <div class="emp-approver-title">
+              <span>&#128178;</span> Expense Approvers (2-Tier Financial Chain)
+            </div>
+            <div class="emp-grid-2col">
+              <div class="emp-field-group">
+                <label class="emp-label">Level 1: Operational Reviewer</label>
+                <select name="expense_approver_l1_id" id="selExpL1" class="emp-select">
+                  <option value="">-- Direct Manager --</option>
+                  {% for m in all_employees %}
+                  <option value="{{ m.id }}">{{ m.name }} ({{ m.employee_code }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="emp-field-group">
+                <label class="emp-label">Level 2: Finance / Accounts Head</label>
+                <select name="expense_approver_l2_id" id="selExpL2" class="emp-select">
+                  <option value="">-- Finance Sign-Off --</option>
+                  {% for m in all_employees %}
+                  <option value="{{ m.id }}">{{ m.name }} ({{ m.employee_code }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 5: HR & Costing -->
+      <div id="tabPayroll" class="emp-tab-content">
+        <div class="emp-grid-2col">
+          <div>
+            <h4 style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Bank Details</h4>
+            <div class="emp-field-group">
+              <label class="emp-label">Bank Name</label>
+              <input type="text" name="bank_name" class="emp-input">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Account Number</label>
+              <input type="text" name="bank_account_number" class="emp-input">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">IFSC Code</label>
+              <input type="text" name="ifsc_code" class="emp-input" style="text-transform: uppercase;">
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Bank Branch</label>
+              <input type="text" name="bank_branch" class="emp-input">
+            </div>
+          </div>
+
+          <div>
+            <h4 style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Project Costing &amp; CTC</h4>
+            <div class="emp-field-group">
+              <label class="emp-label">Hourly Cost to Company (CTC Rate &#8377;/hr)</label>
+              <input type="number" step="0.01" name="hourly_cost" value="0.00" class="emp-input" style="font-weight: 700; color: #0284c7;">
+              <span style="font-size: 11px; color: #64748b;">Direct labor rate for real-time project profitability calculations</span>
+            </div>
+            <div class="emp-field-group">
+              <label class="emp-label">Annual Cost to Company (CTC &#8377;)</label>
+              <input type="number" step="0.01" name="annual_ctc" value="0.00" class="emp-input">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<script>
+function switchEmpTab(btn, tabId) {
+  document.querySelectorAll('.emp-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.emp-tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+function applyOnboardingTemplate(tmplId) {
+  if (!tmplId) return;
+  fetch(`/employees/api/template/${tmplId}/`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.department_id) document.getElementById('selDepartment').value = data.department_id;
+      if (data.job_title) document.getElementById('inpJobTitle').value = data.job_title;
+      if (data.employment_type) document.getElementById('selEmpType').value = data.employment_type;
+      if (data.branch) document.getElementById('inpBranch').value = data.branch;
+      if (data.timesheet_approver_id) document.getElementById('selTimesheetApprover').value = data.timesheet_approver_id;
+      if (data.leave_approver_l1_id) document.getElementById('selLeaveL1').value = data.leave_approver_l1_id;
+      if (data.leave_approver_l2_id) document.getElementById('selLeaveL2').value = data.leave_approver_l2_id;
+      if (data.expense_approver_l1_id) document.getElementById('selExpL1').value = data.expense_approver_l1_id;
+      if (data.expense_approver_l2_id) document.getElementById('selExpL2').value = data.expense_approver_l2_id;
+    })
+    .catch(err => console.error('Error applying template:', err));
+}
+
+// Set default Date Joined to today
+document.addEventListener('DOMContentLoaded', () => {
+  const d = new Date().toISOString().split('T')[0];
+  document.getElementById('inpDateJoined').value = d;
+});
+</script>
+{% endblock %}

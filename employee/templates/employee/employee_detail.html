@@ -1,0 +1,1142 @@
+{% extends "employee/employee_base.html" %}
+{% load static %}
+
+{% block content %}
+<form method="post" action="{% url 'employee_detail' emp.id %}" id="empDetailForm" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <!-- Control Bar / Breadcrumb Navigation -->
+  <div class="emp-control-bar">
+    <div class="emp-actions-left">
+      {% if is_hr %}
+      <a href="{% url 'employee_create' %}" class="emp-btn-primary" id="btnNew">
+        <span>&#43;</span> New
+      </a>
+      {% endif %}
+
+      <div style="font-size: 14px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px;">
+        <a href="{% url 'employee_list' %}" style="color: #64748b; text-decoration: none;">Employees</a>
+        <span>/</span>
+        <span style="color: #0f172a;">{{ emp.name }}</span>
+        <span style="color: #94a3b8; font-size: 13px; cursor: pointer;" title="Configuration">&#9881;</span>
+      </div>
+
+      {% if is_hr or is_self %}
+      <button type="submit" class="emp-btn-primary" id="btnSave" style="margin-left: 12px;">
+        <span>&#10004;</span> Save
+      </button>
+      <a href="{% url 'employee_detail' emp.id %}" class="emp-btn-secondary" id="btnDiscard">
+        Discard
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="emp-actions-right">
+      <!-- Pager -->
+      {% if total_employees %}
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; font-weight: 600;">
+        <span>{{ current_index }} / {{ total_employees }}</span>
+        <div style="display: inline-flex; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden;">
+          {% if prev_id %}
+          <a href="{% url 'employee_detail' prev_id %}" class="emp-btn-secondary" style="border: none; border-radius: 0; padding: 4px 10px;" title="Previous">&lt;</a>
+          {% else %}
+          <span style="padding: 4px 10px; background: #f8fafc; color: #cbd5e1; font-size: 12px;">&lt;</span>
+          {% endif %}
+          {% if next_id %}
+          <a href="{% url 'employee_detail' next_id %}" class="emp-btn-secondary" style="border: none; border-radius: 0; padding: 4px 10px; border-left: 1px solid #cbd5e1;" title="Next">&gt;</a>
+          {% else %}
+          <span style="padding: 4px 10px; background: #f8fafc; color: #cbd5e1; font-size: 12px; border-left: 1px solid #cbd5e1;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 2-Column Responsive Layout: Main Form Sheet + Right Chatter Pane -->
+  <div class="emp-detail-layout">
+
+    <!-- Left Column: Form Sheet -->
+    <div class="emp-detail-main">
+      <div class="emp-sheet">
+
+        <!-- Top Smart Buttons Bar (Odoo Style) -->
+        <div class="emp-stat-buttons-bar">
+          {% if 'leave' in installed_modules or 'time_off' in installed_modules %}
+          <a href="javascript:void(0)" class="emp-stat-btn" title="View Time Off Balances">
+            <span class="emp-stat-icon">&#128197;</span>
+            <div class="emp-stat-content">
+              <span class="emp-stat-title">Time Off</span>
+              <span class="emp-stat-value">1/1 Days</span>
+            </div>
+          </a>
+          {% endif %}
+          <a href="javascript:void(0)" class="emp-stat-btn" title="View Monthly Logged Hours">
+            <span class="emp-stat-icon">&#9200;</span>
+            <div class="emp-stat-content">
+              <span class="emp-stat-title">Monthly Hours</span>
+              <span class="emp-stat-value">160:00</span>
+            </div>
+          </a>
+          <a href="javascript:void(0)" class="emp-stat-btn" title="View Employee Work Contacts">
+            <span class="emp-stat-icon">&#128107;</span>
+            <div class="emp-stat-content">
+              <span class="emp-stat-title">Contacts</span>
+              <span class="emp-stat-value">1</span>
+            </div>
+          </a>
+          <a href="javascript:void(0)" class="emp-stat-btn" title="Profile Version History">
+            <span class="emp-stat-icon">&#128100;</span>
+            <div class="emp-stat-content">
+              <span class="emp-stat-title">History</span>
+              <span class="emp-stat-value">1</span>
+            </div>
+          </a>
+          {% if 'leave' in installed_modules or 'time_off' in installed_modules %}
+          <a href="javascript:void(0)" class="emp-stat-btn" title="Leave & Attendance Report">
+            <span class="emp-stat-icon">&#128203;</span>
+            <div class="emp-stat-content">
+              <span class="emp-stat-title">Leave Report</span>
+            </div>
+          </a>
+          {% endif %}
+          <a href="javascript:void(0)" class="emp-stat-btn" title="Performance & Timesheet Metrics">
+            <span class="emp-stat-icon">&#128202;</span>
+            <div class="emp-stat-content">
+              <span class="emp-stat-title">Performance</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Action Bar: Launch Plan & Date Version Pill -->
+        <div class="emp-sheet-action-bar">
+          <div>
+            {% if is_hr %}
+            <a href="{% url 'employee_onboarding_templates' %}" class="emp-plan-btn" title="Setup Onboarding or Offboarding Plan">
+              <span>&#9881;</span> Launch Plan
+            </a>
+            {% endif %}
+          </div>
+          <div class="emp-version-bar">
+            <span class="emp-version-pill">&#128197; {{ emp.date_joined|date:"M d, Y" }}</span>
+            <button type="button" class="emp-version-add-btn" title="Add Version Snapshot" onclick="alert('Profile version snapshot recorded.')">&#43;</button>
+          </div>
+        </div>
+
+        <!-- Employee Header: Avatar, Name, Present Status, Contact Meta -->
+        <div class="emp-sheet-header">
+          <div class="emp-sheet-avatar-area" style="position: relative;">
+            {% if emp.avatar_url %}
+            <img src="{{ emp.avatar_url }}" alt="{{ emp.name }}" id="empAvatarPreview" class="emp-square-avatar-img">
+            {% else %}
+            <div id="empAvatarInitial" class="emp-square-avatar" style="background-color: {{ emp.avatar_color }}; color: #ffffff;">
+              {{ emp.name|slice:":1"|upper }}
+            </div>
+            {% endif %}
+            {% if is_hr %}
+            <label for="empAvatarInput" title="Upload Photo (Cloudinary CDN)" style="position: absolute; bottom: -4px; right: -4px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.15); font-size: 13px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">
+              &#128247;
+            </label>
+            <input type="file" name="avatar" id="empAvatarInput" accept="image/*" style="display: none;" onchange="if (this.files && this.files[0]) { document.getElementById('empDetailForm').submit(); }">
+            {% endif %}
+          </div>
+
+          <div class="emp-sheet-title-area">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+              <div style="flex: 1;">
+                {% if is_hr %}
+                <input type="text" name="name" value="{{ emp.name }}" required class="emp-title-input" placeholder="Employee Name...">
+                {% else %}
+                <h1 style="font-size: 26px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">{{ emp.name }}</h1>
+                {% endif %}
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" class="op-chatter-icon-btn" onclick="toggleComposer('comment')" title="Send direct chat">&#128172;</button>
+                <span class="emp-status-pill present" title="Employee presence status">
+                  <span class="emp-status-dot"></span> Present
+                </span>
+              </div>
+            </div>
+
+            <!-- Quick Metadata Rows with Icons -->
+            <div class="emp-header-meta">
+              <div class="emp-meta-item">
+                <span class="meta-icon">&#9993;</span>
+                <span style="color: #0284c7;">{{ emp.email }}</span>
+              </div>
+              <div class="emp-meta-item">
+                <span class="meta-icon">&#9742;</span>
+                <span>{{ emp.phone|default:"+1 (555) 019-2834" }}</span>
+              </div>
+              <div class="emp-meta-item">
+                <span class="meta-icon">&#128241;</span>
+                <span>{{ emp.phone|default:"+1 (555) 019-2834" }}</span>
+              </div>
+              <div class="emp-meta-item">
+                <span class="meta-icon">&#127991;</span>
+                <span style="color: #64748b;">{{ emp.job_title|default:"Staff Member" }} &bull; {{ emp.employee_code }}</span>
+                {% if emp.department_rel %}
+                <span class="emp-dept-badge" data-dept-color="{{ emp.department_rel.color|default:'#0284c7' }}" style="margin-left: 8px;">
+                  {{ emp.department_rel.name }}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Odoo Form Navigation Tabs -->
+        <div class="emp-tabs">
+          <button type="button" class="emp-tab-btn active" onclick="switchEmpTab(this, 'tabWork')">Work</button>
+          <button type="button" class="emp-tab-btn" onclick="switchEmpTab(this, 'tabResume')">Resume</button>
+          <button type="button" class="emp-tab-btn" onclick="switchEmpTab(this, 'tabPersonal')">Personal</button>
+          <button type="button" class="emp-tab-btn" onclick="switchEmpTab(this, 'tabPayroll')">Payroll</button>
+          <button type="button" class="emp-tab-btn" onclick="switchEmpTab(this, 'tabBadges')">Badges</button>
+          <button type="button" class="emp-tab-btn" onclick="switchEmpTab(this, 'tabSettings')">Settings</button>
+        </div>
+
+        <!-- ===================================================================
+             Tab 1: Work (Matching Images 2, 4, 5)
+             =================================================================== -->
+        <div id="tabWork" class="emp-tab-content active">
+          <div class="emp-grid-2col">
+            <!-- Left Column: Work, Location, Mail Notifications, Usual Schedule -->
+            <div>
+              <div class="emp-form-section-title">WORK</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Company <span class="emp-field-qm" title="Assigned legal company entity">?</span></label>
+                <div class="emp-field-control">
+                  <span style="font-size: 13.5px; font-weight: 600; color: #1e293b;">{{ emp.branch|default:"Office Pro HQ" }}</span>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Department <span class="emp-field-qm" title="Reporting department unit">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <select name="department_id" class="emp-select" style="padding: 4px 8px; font-size: 13px;">
+                    <option value="">-- No Department Assigned --</option>
+                    {% for d in departments %}
+                    <option value="{{ d.id }}" {% if emp.department_rel_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                  </select>
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.display_department }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Job Position <span class="emp-field-qm" title="Standard job position title">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <input type="text" name="job_title" value="{{ emp.job_title|default:'' }}" placeholder="e.g. Sales Manager, Software Engineer" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.job_title|default:"Staff Member" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Manager <span class="emp-field-qm" title="Direct reporting line manager">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <select name="manager_id" class="emp-select" style="padding: 4px 8px; font-size: 13px;">
+                    <option value="">-- No Manager Assigned --</option>
+                    {% for m in all_employees %}
+                    <option value="{{ m.id }}" {% if emp.manager_id == m.id %}selected{% endif %}>{{ m.name }} ({{ m.employee_code }})</option>
+                    {% endfor %}
+                  </select>
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.manager.name|default:"Not Assigned" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Location Section -->
+              <div class="emp-form-section-title" style="margin-top: 24px;">LOCATION</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Work Address <span class="emp-field-qm" title="Physical office street address">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <textarea name="current_address" rows="2" class="emp-underline-input" placeholder="Corporate office campus address...">{{ emp.current_address|default:'' }}</textarea>
+                  {% else %}
+                  <div style="font-size: 13px; color: #475569; line-height: 1.4;">{{ emp.current_address|default:"Corporate Campus, Tech Park, Office Pro" }}</div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Work Location <span class="emp-field-qm" title="Desk, building, or remote location identifier">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <input type="text" name="branch" value="{{ emp.branch }}" placeholder="e.g. Building 2, Remote, Floor 4" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13px; color: #64748b;">{{ emp.branch }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Mail Notifications Section -->
+              <div class="emp-form-section-title" style="margin-top: 24px;">MAIL NOTIFICATIONS</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label" style="width: 220px;">Send Attendance Mail <span class="emp-field-qm" title="Receive automated daily attendance confirmation emails">?</span></label>
+                <div class="emp-field-control">
+                  <label class="emp-switch">
+                    <input type="checkbox" checked>
+                    <span class="emp-switch-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label" style="width: 220px;">Timesheet Reminder Mail <span class="emp-field-qm" title="Weekly reminder to submit labor timesheets">?</span></label>
+                <div class="emp-field-control">
+                  <label class="emp-switch">
+                    <input type="checkbox" checked>
+                    <span class="emp-switch-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label" style="width: 220px;">Task Allocation Mail <span class="emp-field-qm" title="Instant notification when new project tasks are assigned">?</span></label>
+                <div class="emp-field-control">
+                  <label class="emp-switch">
+                    <input type="checkbox" checked>
+                    <span class="emp-switch-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Usual Work Location Section (Monday to Sunday) -->
+              <div class="emp-form-section-title" style="margin-top: 24px;">USUAL WORK LOCATION</div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;">
+                <!-- Monday -->
+                <div class="emp-field-row" style="margin-bottom: 6px;">
+                  <span style="width: 90px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                    Monday <span class="emp-field-qm" title="Usual work location for Monday">?</span>
+                  </span>
+                  <select name="work_loc_monday" class="emp-select" style="padding: 2px 6px; font-size: 12px; height: 26px;">
+                    <option value="office" selected>Office</option>
+                    <option value="home">Home / Remote</option>
+                    <option value="unspecified">Unspecified</option>
+                  </select>
+                </div>
+
+                <!-- Tuesday -->
+                <div class="emp-field-row" style="margin-bottom: 6px;">
+                  <span style="width: 90px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                    Tuesday <span class="emp-field-qm" title="Usual work location for Tuesday">?</span>
+                  </span>
+                  <select name="work_loc_tuesday" class="emp-select" style="padding: 2px 6px; font-size: 12px; height: 26px;">
+                    <option value="office" selected>Office</option>
+                    <option value="home">Home / Remote</option>
+                    <option value="unspecified">Unspecified</option>
+                  </select>
+                </div>
+
+                <!-- Wednesday -->
+                <div class="emp-field-row" style="margin-bottom: 6px;">
+                  <span style="width: 90px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                    Wednesday <span class="emp-field-qm" title="Usual work location for Wednesday">?</span>
+                  </span>
+                  <select name="work_loc_wednesday" class="emp-select" style="padding: 2px 6px; font-size: 12px; height: 26px;">
+                    <option value="office" selected>Office</option>
+                    <option value="home">Home / Remote</option>
+                    <option value="unspecified">Unspecified</option>
+                  </select>
+                </div>
+
+                <!-- Thursday -->
+                <div class="emp-field-row" style="margin-bottom: 6px;">
+                  <span style="width: 90px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                    Thursday <span class="emp-field-qm" title="Usual work location for Thursday">?</span>
+                  </span>
+                  <select name="work_loc_thursday" class="emp-select" style="padding: 2px 6px; font-size: 12px; height: 26px;">
+                    <option value="office" selected>Office</option>
+                    <option value="home">Home / Remote</option>
+                    <option value="unspecified">Unspecified</option>
+                  </select>
+                </div>
+
+                <!-- Friday -->
+                <div class="emp-field-row" style="margin-bottom: 6px;">
+                  <span style="width: 90px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                    Friday <span class="emp-field-qm" title="Usual work location for Friday">?</span>
+                  </span>
+                  <select name="work_loc_friday" class="emp-select" style="padding: 2px 6px; font-size: 12px; height: 26px;">
+                    <option value="home" selected>Home / Remote</option>
+                    <option value="office">Office</option>
+                    <option value="unspecified">Unspecified</option>
+                  </select>
+                </div>
+
+                <!-- Saturday -->
+                <div class="emp-field-row" style="margin-bottom: 6px;">
+                  <span style="width: 90px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                    Saturday <span class="emp-field-qm" title="Usual work location for Saturday">?</span>
+                  </span>
+                  <select name="work_loc_saturday" class="emp-select" style="padding: 2px 6px; font-size: 12px; height: 26px;">
+                    <option value="unspecified" selected>Unspecified</option>
+                    <option value="office">Office</option>
+                    <option value="home">Home / Remote</option>
+                  </select>
+                </div>
+
+                <!-- Sunday -->
+                <div class="emp-field-row" style="margin-bottom: 6px;">
+                  <span style="width: 90px; font-size: 12.5px; font-weight: 600; color: #475569;">
+                    Sunday <span class="emp-field-qm" title="Usual work location for Sunday">?</span>
+                  </span>
+                  <select name="work_loc_sunday" class="emp-select" style="padding: 2px 6px; font-size: 12px; height: 26px;">
+                    <option value="unspecified" selected>Unspecified</option>
+                    <option value="office">Office</option>
+                    <option value="home">Home / Remote</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Note Section -->
+              <div class="emp-form-section-title" style="margin-top: 24px;">NOTE</div>
+              <textarea class="emp-underline-input" rows="2" placeholder="Provide additional information about this employee record..." style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px;"></textarea>
+            </div>
+
+            <!-- Right Column: Interactive Organization Hierarchy Widget (Matching Image 5) -->
+            <div>
+              <div class="emp-mini-org">
+                <div class="emp-mini-org-header">
+                  <span style="font-size: 12px; font-weight: 700; color: #475569; letter-spacing: 0.05em; text-transform: uppercase;">ORGANIZATION CHART</span>
+                  <a href="{% url 'employee_org_chart' %}" style="font-size: 12px; font-weight: 700; color: var(--op-primary-color, #714b67); text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                    <span>&#9881;</span> FULL CHART
+                  </a>
+                </div>
+
+                <div class="emp-mini-org-tree">
+                  <!-- Upward Management Chain -->
+                  {% for mgr in manager_chain %}
+                  <a href="{% url 'employee_detail' mgr.id %}" class="emp-mini-org-node" title="View Manager Profile">
+                    <div class="emp-mini-org-avatar" data-dept-color="{{ mgr.department_rel.color|default:'#059669' }}">
+                      {{ mgr.name|slice:":1"|upper }}
+                    </div>
+                    <div class="emp-mini-org-info">
+                      <div class="emp-mini-org-name">{{ mgr.name }}</div>
+                      <div class="emp-mini-org-role">{{ mgr.job_title|default:"Executive" }}</div>
+                    </div>
+                    {% if mgr.subordinates.count %}
+                    <span class="emp-mini-org-badge">{{ mgr.subordinates.count }}</span>
+                    {% endif %}
+                  </a>
+                  {% endfor %}
+
+                  <!-- Current Employee (Highlighted active node) -->
+                  <div class="emp-mini-org-node current">
+                    <div class="emp-mini-org-avatar" data-dept-color="{{ emp.department_rel.color|default:'#714b67' }}">
+                      {{ emp.name|slice:":1"|upper }}
+                    </div>
+                    <div class="emp-mini-org-info">
+                      <div class="emp-mini-org-name" style="color: var(--op-primary-color, #714b67);">{{ emp.name }}</div>
+                      <div class="emp-mini-org-role">{{ emp.job_title|default:"Current Staff" }}</div>
+                    </div>
+                    <span style="font-size: 11px; font-weight: 700; color: #10b981;">&#10004; Active</span>
+                  </div>
+
+                  <!-- Direct Reports (Subordinates) -->
+                  {% for sub in direct_reports %}
+                  <a href="{% url 'employee_detail' sub.id %}" class="emp-mini-org-node" style="margin-left: 20px; border-left: 3px solid #0284c7;" title="View Subordinate">
+                    <div class="emp-mini-org-avatar" style="background: #0284c7; width: 30px; height: 30px; font-size: 13px;">
+                      {{ sub.name|slice:":1"|upper }}
+                    </div>
+                    <div class="emp-mini-org-info">
+                      <div class="emp-mini-org-name">{{ sub.name }}</div>
+                      <div class="emp-mini-org-role">{{ sub.job_title|default:"Direct Report" }}</div>
+                    </div>
+                  </a>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             Tab 2: Resume (Matching Image 1)
+             =================================================================== -->
+        <div id="tabResume" class="emp-tab-content">
+          <div class="emp-grid-2col">
+            <!-- Left: Resume Lines -->
+            <div>
+              <div class="emp-form-section-title">RESUME</div>
+              <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 36px 24px; text-align: center; margin-bottom: 20px;">
+                <p style="font-size: 14px; color: #64748b; font-style: italic; margin-bottom: 16px;">
+                  There are no resume lines on this employee.
+                </p>
+                {% if is_hr or is_self %}
+                <button type="button" class="emp-btn-primary" onclick="alert('Resume editor dialog initialized.')">
+                  Create Resume Lines
+                </button>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Right: Skills & Certifications -->
+            <div>
+              <div class="emp-form-section-title">SKILLS &amp; CERTIFICATIONS</div>
+              <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 36px 24px; text-align: center; margin-bottom: 20px;">
+                <p style="font-size: 13.5px; color: #64748b; line-height: 1.5; margin-bottom: 16px;">
+                  You can add skills from our enterprise skill library to the employee profile. If skills are missing, they can be created by an HR officer.
+                </p>
+                {% if is_hr or is_self %}
+                <button type="button" class="emp-btn-secondary" onclick="alert('Skill selection library opened.')">
+                  Pick a skill from the list
+                </button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             Tab 3: Personal Information (Matching Reference Screenshots 3 & 4)
+             =================================================================== -->
+        <div id="tabPersonal" class="emp-tab-content">
+          <div class="emp-grid-2col">
+            <!-- Left Column: Private Contact, Emergency, Citizenship, Family, Documents -->
+            <div>
+              <div class="emp-form-section-title">PRIVATE CONTACT</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Email <span class="emp-field-qm" title="Personal private email address">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr or is_self %}
+                  <input type="email" name="email" value="{{ emp.email }}" required class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.email }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Phone <span class="emp-field-qm" title="Personal private phone number">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr or is_self %}
+                  <input type="text" name="phone" value="{{ emp.phone|default:'' }}" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.phone|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Bank Accounts <span class="emp-field-qm" title="Primary bank account for direct payroll deposit">?</span></label>
+                <div class="emp-field-control">
+                  <span style="font-size: 13px; font-family: monospace; color: #475569;">
+                    {% if emp.bank_account_number %}
+                    {{ emp.bank_name|default:"Primary Bank" }} &bull; XXXX-{{ emp.bank_account_number|slice:"-4:" }}
+                    {% else %}
+                    No primary payroll account linked
+                    {% endif %}
+                  </span>
+                </div>
+              </div>
+
+              <div class="emp-form-section-title" style="margin-top: 24px;">EMERGENCY CONTACT</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Contact <span class="emp-field-qm" title="Primary emergency contact person name">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr or is_self %}
+                  <input type="text" name="emergency_contact_name" value="{{ emp.emergency_contact_name|default:'' }}" placeholder="Full contact name" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.emergency_contact_name|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Phone <span class="emp-field-qm" title="Emergency telephone number">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr or is_self %}
+                  <input type="text" name="emergency_contact_phone" value="{{ emp.emergency_contact_phone|default:'' }}" placeholder="Emergency phone" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.emergency_contact_phone|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-form-section-title" style="margin-top: 24px;">CITIZENSHIP</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Nationality <span class="emp-field-qm" title="Nationality and country of citizenship">?</span></label>
+                <div class="emp-field-control">
+                  <input type="text" class="emp-underline-input" value="India" placeholder="Country of citizenship">
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Identification No <span class="emp-field-qm" title="National identity card / Aadhaar number">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <input type="text" name="aadhaar_number" value="{{ emp.aadhaar_number|default:'' }}" placeholder="National ID (Aadhaar)" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13px; font-family: monospace;">{{ emp.masked_aadhaar|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">SSN No <span class="emp-field-qm" title="Taxpayer identification or Social Security / PAN number">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <input type="text" name="pan_number" value="{{ emp.pan_number|default:'' }}" placeholder="PAN / SSN" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13px; font-family: monospace;">{{ emp.masked_pan|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Passport No <span class="emp-field-qm" title="Passport travel document number">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <input type="text" name="passport_number" value="{{ emp.passport_number|default:'' }}" placeholder="Passport number" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13px;">{{ emp.passport_number|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-form-section-title" style="margin-top: 24px;">FAMILY</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Marital Status <span class="emp-field-qm" title="Current civil or marital status">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr or is_self %}
+                  <select name="marital_status" class="emp-select" style="padding: 4px 8px; font-size: 13px;">
+                    <option value="Single" {% if emp.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                    <option value="Married" {% if emp.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                    <option value="Divorced" {% if emp.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
+                    <option value="Widowed" {% if emp.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
+                  </select>
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.marital_status|default:"Single" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Dependent Children <span class="emp-field-qm" title="Number of dependent minor children">?</span></label>
+                <div class="emp-field-control">
+                  <input type="number" min="0" value="0" class="emp-underline-input" style="max-width: 80px;">
+                </div>
+              </div>
+
+              <div class="emp-form-section-title" style="margin-top: 24px;">DOCUMENTS</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">ID Card Copy <span class="emp-field-qm" title="Scanned copy of government ID card">?</span></label>
+                <div class="emp-field-control">
+                  <button type="button" class="emp-btn-primary" style="padding: 4px 14px; font-size: 12px; background: #6366f1;" onclick="alert('Upload ID card document')">
+                    Upload your file
+                  </button>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Driving License <span class="emp-field-qm" title="Scanned copy of motor driving license">?</span></label>
+                <div class="emp-field-control">
+                  <button type="button" class="emp-btn-primary" style="padding: 4px 14px; font-size: 12px; background: #6366f1;" onclick="alert('Upload driving license document')">
+                    Upload your file
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Personal Info, Visa/Work Permit, Location, Education -->
+            <div>
+              <div class="emp-form-section-title">PERSONAL INFORMATION</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Legal Name <span class="emp-field-qm" title="Legal passport or government-issued name">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr or is_self %}
+                  <input type="text" name="father_spouse_name" value="{{ emp.father_spouse_name|default:emp.name }}" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.father_spouse_name|default:emp.name }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Birthday <span class="emp-field-qm" title="Date of birth">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr or is_self %}
+                  <input type="date" name="date_of_birth" value="{{ emp.date_of_birth|date:'Y-m-d' }}" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.date_of_birth|date:"M d, Y"|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Place of Birth <span class="emp-field-qm" title="City and country of birth">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr or is_self %}
+                  <input type="text" name="current_city" value="{{ emp.current_city|default:'' }}" placeholder="City, State" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.current_city|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Gender <span class="emp-field-qm" title="Gender identification">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr or is_self %}
+                  <select name="gender" class="emp-select" style="padding: 4px 8px; font-size: 13px;">
+                    <option value="">-- Select Gender --</option>
+                    <option value="Male" {% if emp.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if emp.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if emp.gender == 'Other' %}selected{% endif %}>Other</option>
+                  </select>
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.gender|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-form-section-title" style="margin-top: 24px;">VISA &amp; WORK PERMIT</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Visa No <span class="emp-field-qm" title="Visa identification number">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <input type="text" name="uan_number" value="{{ emp.uan_number|default:'' }}" placeholder="e.g. V98765432" class="emp-underline-input">
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.uan_number|default:"—" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Work Permit No <span class="emp-field-qm" title="Official statutory work permit ID">?</span></label>
+                <div class="emp-field-control">
+                  <input type="text" placeholder="Work Permit Number" class="emp-underline-input">
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Document <span class="emp-field-qm" title="Supporting identity and permit files">?</span></label>
+                <div class="emp-field-control">
+                  <button type="button" class="emp-btn-secondary" style="padding: 4px 14px; font-size: 12px;" onclick="alert('Upload work permit document')">
+                    Upload your file
+                  </button>
+                </div>
+              </div>
+
+              <div class="emp-form-section-title" style="margin-top: 24px;">LOCATION</div>
+
+              <div class="emp-field-row" style="align-items: flex-start;">
+                <label class="emp-field-label" style="padding-top: 4px;">Private Address <span class="emp-field-qm" title="Residential street address">?</span></label>
+                <div class="emp-field-control" style="display: flex; flex-direction: column; gap: 6px;">
+                  <input type="text" name="permanent_address" value="{{ emp.permanent_address|default:'' }}" placeholder="Street..." class="emp-underline-input">
+                  <input type="text" placeholder="Street 2..." class="emp-underline-input">
+                  <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
+                    <input type="text" name="permanent_city" value="{{ emp.permanent_city|default:'' }}" placeholder="City" class="emp-underline-input">
+                    <input type="text" name="permanent_state" value="{{ emp.permanent_state|default:'' }}" placeholder="State" class="emp-underline-input">
+                    <input type="text" name="permanent_pincode" value="{{ emp.permanent_pincode|default:'' }}" placeholder="Zip / Pin" class="emp-underline-input">
+                  </div>
+                  <input type="text" value="India" class="emp-underline-input" placeholder="Country">
+                </div>
+              </div>
+
+              <div class="emp-field-row" style="margin-top: 10px;">
+                <label class="emp-field-label">Home-Work Distance <span class="emp-field-qm" title="Commuting distance between residence and office in kilometers">?</span></label>
+                <div class="emp-field-control" style="display: flex; align-items: center; gap: 6px;">
+                  <input type="number" value="0" class="emp-underline-input" style="max-width: 80px;">
+                  <span style="font-size: 13px; color: #64748b;">km</span>
+                </div>
+              </div>
+
+              <div class="emp-form-section-title" style="margin-top: 24px;">EDUCATION</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Certificate Level <span class="emp-field-qm" title="Highest completed formal education degree">?</span></label>
+                <div class="emp-field-control">
+                  <select class="emp-select" style="padding: 4px 8px; font-size: 13px;">
+                    <option value="Graduate" selected>Graduate / Bachelor's</option>
+                    <option value="PostGraduate">Post Graduate / Master's</option>
+                    <option value="Doctorate">Doctorate / Ph.D.</option>
+                    <option value="Diploma">Diploma / Vocational</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Field of Study <span class="emp-field-qm" title="Major subject or engineering specialization">?</span></label>
+                <div class="emp-field-control">
+                  <input type="text" placeholder="e.g. Computer Science &amp; Engineering" class="emp-underline-input">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             Tab 4: Payroll (Matching Reference Screenshots 2 & 3)
+             =================================================================== -->
+        <div id="tabPayroll" class="emp-tab-content">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px;">
+              <span class="emp-form-section-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">CONTRACT OVERVIEW</span>
+              <a href="javascript:void(0)" onclick="alert('Load Contract Template dialog opened.')" style="font-size: 12.5px; font-weight: 700; color: var(--op-primary-color, #714b67); text-decoration: none;">
+                Load a Template
+              </a>
+            </div>
+
+            <div style="max-width: 600px;">
+              <div class="emp-field-row">
+                <label class="emp-field-label">Contract <span class="emp-field-qm" title="Current employment contract agreement">?</span></label>
+                <div class="emp-field-control">
+                  <span style="font-size: 13.5px; color: #64748b;">Not Employed</span>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Wage <span class="emp-field-qm" title="Monthly wage rate or gross basic compensation">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_admin or is_hr %}
+                  <span style="font-size: 14px; font-weight: 700; color: #1e293b;">&#8377; {{ emp.annual_ctc|default:'0.00' }}</span>
+                  {% else %}
+                  <span style="font-size: 14px; font-weight: 700; color: #1e293b;">&#8377; 0.00</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Employee Type <span class="emp-field-qm" title="Employment classification type">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_hr %}
+                  <select name="employment_type" class="emp-select" style="padding: 4px 8px; font-size: 13px; max-width: 220px;">
+                    <option value="Full-Time" {% if emp.employment_type == 'Full-Time' %}selected{% endif %}>Full-Time Employee</option>
+                    <option value="Part-Time" {% if emp.employment_type == 'Part-Time' %}selected{% endif %}>Part-Time Employee</option>
+                    <option value="Contractor" {% if emp.employment_type == 'Contractor' %}selected{% endif %}>Contractor</option>
+                    <option value="Intern" {% if emp.employment_type == 'Intern' %}selected{% endif %}>Intern</option>
+                  </select>
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">{{ emp.employment_type|default:"Employee" }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Contract Type <span class="emp-field-qm" title="Contract category template">?</span></label>
+                <div class="emp-field-control">
+                  <span style="font-size: 13.5px; color: #64748b;">Contract Type</span>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Pay Category <span class="emp-field-qm" title="Payroll category classification">?</span></label>
+                <div class="emp-field-control">
+                  <span style="font-size: 13.5px; color: #1e293b;">Employee</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="emp-form-section-title" style="margin-top: 32px;">SCHEDULE</div>
+
+            <div style="max-width: 600px;">
+              <div class="emp-field-row">
+                <label class="emp-field-label">Working Hours <span class="emp-field-qm" title="Standard weekly work hours calendar">?</span></label>
+                <div class="emp-field-control">
+                  <span style="font-size: 13.5px; color: #1e293b;">Standard 40 Hours/Week Schedule</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             Tab 5: Badges & Gamification
+             =================================================================== -->
+        <div id="tabBadges" class="emp-tab-content">
+          <div class="emp-form-section-title">RECOGNITION &amp; GAMIFICATION BADGES</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div style="font-size: 32px; margin-bottom: 8px;">&#127941;</div>
+              <div style="font-size: 14px; font-weight: 700; color: #1e293b;">Problem Solver</div>
+              <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Resolved complex architecture tickets</div>
+              <span style="display: inline-block; margin-top: 10px; font-size: 10.5px; font-weight: 700; background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 10px;">Granted</span>
+            </div>
+
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div style="font-size: 32px; margin-bottom: 8px;">&#11088;</div>
+              <div style="font-size: 14px; font-weight: 700; color: #1e293b;">Team Player</div>
+              <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Exemplary peer review and mentoring</div>
+              <span style="display: inline-block; margin-top: 10px; font-size: 10.5px; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 10px;">Granted</span>
+            </div>
+
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div style="font-size: 32px; margin-bottom: 8px;">&#128640;</div>
+              <div style="font-size: 14px; font-weight: 700; color: #1e293b;">Milestone 100</div>
+              <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">First 100 days completed seamlessly</div>
+              <span style="display: inline-block; margin-top: 10px; font-size: 10.5px; font-weight: 700; background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 10px;">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             Tab 6: Settings (Matching Reference Screenshot 1)
+             =================================================================== -->
+        <div id="tabSettings" class="emp-tab-content">
+          <div class="emp-grid-2col">
+            <!-- Left Column: User & Application Settings -->
+            <div>
+              <div class="emp-form-section-title">USER</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">User <span class="emp-field-qm" title="Linked system user account for Portal &amp; ERP access">?</span></label>
+                <div class="emp-field-control" style="display: flex; align-items: center; gap: 10px;">
+                  <div style="width: 24px; height: 24px; border-radius: 4px; background: var(--op-primary-color, #714b67); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">
+                    {{ emp.name|slice:":1"|upper }}
+                  </div>
+                  <span style="font-size: 13.5px; font-weight: 600; color: #1e293b;">{{ emp.name }}</span>
+                  <span style="font-size: 12px; color: #64748b; margin-left: 12px;">Asia/Kolkata</span>
+                </div>
+              </div>
+
+              <div class="emp-form-section-title" style="margin-top: 36px;">APPLICATION SETTINGS</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Hourly Cost <span class="emp-field-qm" title="Standard hourly cost for timesheet project costing">?</span></label>
+                <div class="emp-field-control">
+                  {% if is_admin or is_hr %}
+                  <span style="font-size: 13.5px; font-weight: 700; color: #1e293b;">&#8377; {{ emp.hourly_cost|default:'0.00' }}</span>
+                  {% else %}
+                  <span style="font-size: 13.5px; color: #1e293b;">&#8377; 0.00</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Approvers & Attendance / Point of Sale -->
+            <div>
+              <div class="emp-form-section-title">APPROVERS</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">HR Responsible <span class="emp-field-qm" title="HR officer responsible for employee lifecycle">?</span></label>
+                <div class="emp-field-control" style="display: flex; align-items: center; gap: 8px;">
+                  <div style="width: 22px; height: 22px; border-radius: 4px; background: #059669; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">
+                    {% if emp.manager %}{{ emp.manager.name|slice:":1"|upper }}{% else %}H{% endif %}
+                  </div>
+                  <span style="font-size: 13px; color: #1e293b;">{{ emp.manager.name|default:"HR Administrator" }}</span>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Expense <span class="emp-field-qm" title="Designated approver for expense claims">?</span></label>
+                <div class="emp-field-control" style="display: flex; align-items: center; gap: 8px;">
+                  <div style="width: 22px; height: 22px; border-radius: 4px; background: #0284c7; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">
+                    {% if emp.expense_approver_l1 %}{{ emp.expense_approver_l1.name|slice:":1"|upper }}{% elif emp.manager %}{{ emp.manager.name|slice:":1"|upper }}{% else %}E{% endif %}
+                  </div>
+                  <span style="font-size: 13px; color: #1e293b;">
+                    {% if emp.expense_approver_l1 %}{{ emp.expense_approver_l1.name }}{% elif emp.manager %}{{ emp.manager.name }}{% else %}Direct Manager{% endif %}
+                  </span>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Time Off <span class="emp-field-qm" title="Designated approver for leave and time off requests">?</span></label>
+                <div class="emp-field-control" style="display: flex; align-items: center; gap: 8px;">
+                  <div style="width: 22px; height: 22px; border-radius: 4px; background: #059669; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">
+                    {% if emp.leave_approver_l1 %}{{ emp.leave_approver_l1.name|slice:":1"|upper }}{% elif emp.manager %}{{ emp.manager.name|slice:":1"|upper }}{% else %}L{% endif %}
+                  </div>
+                  <span style="font-size: 13px; color: #1e293b;">
+                    {% if emp.leave_approver_l1 %}{{ emp.leave_approver_l1.name }}{% elif emp.manager %}{{ emp.manager.name }}{% else %}Direct Manager{% endif %}
+                  </span>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Attendance <span class="emp-field-qm" title="Designated approver for attendance and timesheet submissions">?</span></label>
+                <div class="emp-field-control" style="display: flex; align-items: center; gap: 8px;">
+                  <div style="width: 22px; height: 22px; border-radius: 4px; background: #7c3aed; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">
+                    {% if emp.timesheet_approver %}{{ emp.timesheet_approver.name|slice:":1"|upper }}{% elif emp.manager %}{{ emp.manager.name|slice:":1"|upper }}{% else %}A{% endif %}
+                  </div>
+                  <span style="font-size: 13px; color: #1e293b;">
+                    {% if emp.timesheet_approver %}{{ emp.timesheet_approver.name }}{% elif emp.manager %}{{ emp.manager.name }}{% else %}Direct Manager{% endif %}
+                  </span>
+                </div>
+              </div>
+
+              <div class="emp-form-section-title" style="margin-top: 36px;">ATTENDANCE/POINT OF SALE</div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">PIN Code <span class="emp-field-qm" title="POS and hardware terminal quick login PIN code">?</span></label>
+                <div class="emp-field-control">
+                  <input type="password" placeholder="e.g. 1234" class="emp-underline-input" style="max-width: 140px;">
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">RFID/Badge Number <span class="emp-field-qm" title="Hardware badge scan number">?</span></label>
+                <div class="emp-field-control" style="display: flex; align-items: center; gap: 14px;">
+                  <a href="javascript:void(0)" onclick="alert('Badge ID generated.')" style="font-size: 12.5px; font-weight: 600; color: var(--op-primary-color, #714b67); text-decoration: none;">Generate</a>
+                  <a href="javascript:void(0)" onclick="alert('Ready to scan hardware RFID reader badge.')" style="font-size: 12.5px; font-weight: 600; color: var(--op-primary-color, #714b67); text-decoration: none;">Read a badge</a>
+                </div>
+              </div>
+
+              <div class="emp-field-row">
+                <label class="emp-field-label">Overtime Ruleset <span class="emp-field-qm" title="Overtime calculation policy">?</span></label>
+                <div class="emp-field-control">
+                  <span style="font-size: 13px; color: #1e293b;">Default Ruleset</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Column: Chatter Panel (Matching Images 2, 3, 4, 5) -->
+    <div class="emp-detail-chatter">
+      <div class="op-chatter-panel">
+
+        <!-- Top Actions: Send message, Log note, Activity -->
+        <div class="op-chatter-topbar">
+          <div class="op-chatter-actions">
+            <button type="button" class="op-chatter-btn op-chatter-btn-primary" onclick="toggleComposer('comment')">Send message</button>
+            <button type="button" class="op-chatter-btn" onclick="toggleComposer('note')">Log note</button>
+            <button type="button" class="op-chatter-btn" onclick="openScheduleActivityModal('hr.employee', '{{ emp.id }}', '{{ emp.name|escapejs }}')">Activity</button>
+          </div>
+          <div class="op-chatter-icons">
+            <span class="op-chatter-icon-btn" title="Search messages">&#128269;</span>
+            <span class="op-chatter-icon-btn" title="Attachments">&#128206;</span>
+            <span class="op-chatter-icon-btn" title="Followers">&#128100; 1</span>
+          </div>
+        </div>
+
+        <!-- Composer Box -->
+        <div id="opChatterComposer" class="op-chatter-composer" style="display: none;">
+          <input type="hidden" id="composerMessageType" value="comment">
+          <textarea id="composerBody" class="op-chatter-textarea" placeholder="Write a message or log note..."></textarea>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+            <button type="button" onclick="toggleComposer(null)" class="op-chatter-btn">Cancel</button>
+            <button type="button" id="postChatterBtn" data-model="hr.employee" data-record-id="{{ emp.id }}" onclick="submitChatterMessage(this.dataset.model, this.dataset.recordId)" class="op-chatter-btn op-chatter-btn-primary">Post</button>
+          </div>
+        </div>
+
+        <!-- Messages Timeline Feed -->
+        <div class="op-chatter-feed" id="chatterFeed">
+          <div class="op-chatter-date-divider">
+            <span class="op-chatter-date-label">Audit History &amp; Activities</span>
+          </div>
+
+          {% for msg in messages_list %}
+          <div class="op-chatter-item">
+            <div class="op-chatter-avatar {% if msg.message_type == 'note' %}op-avatar-note{% else %}op-avatar-comment{% endif %}">
+              {{ msg.author.username|slice:":1"|upper|default:"U" }}
+            </div>
+            <div class="op-chatter-content">
+              <div class="op-chatter-meta">
+                <span class="op-chatter-author">{{ msg.author.username|default:"System" }}</span>
+                <span class="op-chatter-time">{{ msg.created_at|date:"M d, g:i A" }}</span>
+              </div>
+              <div class="op-chatter-body">{{ msg.body }}</div>
+            </div>
+          </div>
+          {% empty %}
+          <div style="text-align: center; color: #94a3b8; font-size: 12.5px; padding: 24px 0;">
+            No messages or log notes yet.
+          </div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</form>
+
+<script>
+function switchEmpTab(btn, tabId) {
+  document.querySelectorAll('.emp-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.emp-tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  const target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+}
+
+function toggleComposer(type) {
+  const comp = document.getElementById('opChatterComposer');
+  const typeInput = document.getElementById('composerMessageType');
+  if (!type || (comp.style.display !== 'none' && typeInput.value === type)) {
+    comp.style.display = 'none';
+    return;
+  }
+  typeInput.value = type;
+  document.getElementById('composerBody').placeholder = type === 'note' ? 'Log an internal note...' : 'Send a message to followers...';
+  comp.style.display = 'block';
+  document.getElementById('composerBody').focus();
+}
+
+function submitChatterMessage(model, recordId) {
+  const bodyEl = document.getElementById('composerBody');
+  const body = bodyEl.value.trim();
+  const messageType = document.getElementById('composerMessageType').value;
+  if (!body) return;
+
+  const formData = new FormData();
+  formData.append('model_name', model);
+  formData.append('record_id', recordId);
+  formData.append('message_type', messageType);
+  formData.append('body', body);
+
+  fetch("{% url 'mail_post_message' %}", {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}'
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === 'success') {
+      const feed = document.getElementById('chatterFeed');
+      const item = document.createElement('div');
+      item.className = 'op-chatter-item';
+      const avatarBg = messageType === 'note' ? '#f59e0b' : 'var(--op-primary-color, #714b67)';
+      item.innerHTML = `
+        <div class="op-chatter-avatar" style="background: ${avatarBg};">
+          ${data.message.author_avatar}
+        </div>
+        <div class="op-chatter-content">
+          <div class="op-chatter-meta">
+            <span class="op-chatter-author">${data.message.author_name}</span>
+            <span class="op-chatter-time">${data.message.created_at}</span>
+          </div>
+          <div class="op-chatter-body">${data.message.body}</div>
+        </div>
+      `;
+      const divider = feed.querySelector('.op-chatter-date-divider');
+      if (divider && divider.nextSibling) {
+        feed.insertBefore(item, divider.nextSibling);
+      } else {
+        feed.appendChild(item);
+      }
+      bodyEl.value = '';
+      toggleComposer(null);
+    } else {
+      alert('Failed to post: ' + (data.message || 'Error'));
+    }
+  })
+  .catch(err => alert('Post request failed.'));
+}
+</script>
+{% endblock %}

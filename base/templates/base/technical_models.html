@@ -1,0 +1,12 @@
+﻿{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include 'base/_list_toolbar.html' with title="Models" create_url=create_url total_count=total_count %}
+{% include 'base/_list_view.html' with columns=columns object_list=models groups=groups detail_url_name='technical_model_detail' %}
+{% endblock %}

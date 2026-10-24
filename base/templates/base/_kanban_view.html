@@ -1,0 +1,88 @@
+{% load static base_extras %}
+<div class="op-kanban-container">
+  {% if groups %}
+    <!-- Odoo-Style Grouped Kanban Multi-Column Swimlanes -->
+    <div class="op-kanban-board" style="display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; padding-bottom: 24px; min-height: calc(100vh - 200px);">
+      {% for group in groups %}
+        <div class="op-kanban-column" style="width: 290px; min-width: 290px; flex-shrink: 0; display: flex; flex-direction: column;">
+          <!-- Column Header -->
+          <div class="op-kanban-column-header" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 10px 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px;">
+            <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
+              <span>{{ group.label }}</span>
+              <span style="color: #64748b; font-weight: 600; margin-left: 4px;">({{ group.count }})</span>
+            </div>
+            {% if create_url %}
+              <a href="{{ create_url }}" class="op-column-plus-btn" style="text-decoration: none; color: #64748b; font-size: 20px; font-weight: 400; line-height: 1; padding: 0 4px;" title="Add record">&#43;</a>
+            {% else %}
+              <span style="color: #94a3b8; font-size: 18px; line-height: 1;">&#43;</span>
+            {% endif %}
+          </div>
+
+          <!-- Column Cards Stack -->
+          <div class="op-kanban-column-cards" style="display: flex; flex-direction: column; gap: 10px;">
+            {% for row in group.rows %}
+              <div class="op-kanban-card" style="margin: 0; width: 100%; box-sizing: border-box;" {% if detail_url_name %}data-href="{% url detail_url_name row.id %}"{% endif %}>
+                <div class="op-kanban-avatar-wrap">
+                  <div class="op-kanban-avatar op-avatar-color-{{ row.id|avatar_color_num }}">
+                    {{ row|record_initial }}
+                  </div>
+                </div>
+                <div class="op-kanban-body">
+                  <div class="op-kanban-header-row">
+                    <span class="op-kanban-title" title="{{ row|record_name }}">{{ row|record_name }}</span>
+                    {% if row.is_active %}
+                      <span class="op-status-dot active" title="Active"></span>
+                    {% else %}
+                      <span class="op-status-dot inactive" title="Inactive"></span>
+                    {% endif %}
+                  </div>
+                  <div class="op-kanban-field op-kanban-login">
+                    <span class="op-kanban-icon">&#9993;</span>
+                    <span class="op-kanban-text" title="{{ row|record_login }}">{{ row|record_login }}</span>
+                  </div>
+                  <div class="op-kanban-footer-row">
+                    <span class="op-kanban-lang">{{ row.lang|default:'English (US)' }}</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="op-kanban-grid">
+      {% for row in object_list %}
+        <div class="op-kanban-card" {% if detail_url_name %}data-href="{% url detail_url_name row.id %}"{% endif %}>
+          <div class="op-kanban-avatar-wrap">
+
+            <div class="op-kanban-avatar op-avatar-color-{% cycle '1' '2' '3' '4' '5' '6' '7' %}">
+              {{ row|record_initial }}
+            </div>
+          </div>
+          <div class="op-kanban-body">
+            <div class="op-kanban-header-row">
+              <span class="op-kanban-title" title="{{ row|record_name }}">{{ row|record_name }}</span>
+              {% if row.is_active %}
+                <span class="op-status-dot active" title="Active"></span>
+              {% else %}
+                <span class="op-status-dot inactive" title="Inactive"></span>
+              {% endif %}
+            </div>
+            <div class="op-kanban-field op-kanban-login">
+              <span class="op-kanban-icon">&#9993;</span>
+              <span class="op-kanban-text" title="{{ row|record_login }}">{{ row|record_login }}</span>
+            </div>
+            <div class="op-kanban-footer-row">
+              <span class="op-kanban-lang">{{ row.lang|default:'English (US)' }}</span>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="op-kanban-empty">
+          No records found.
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

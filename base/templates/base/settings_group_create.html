@@ -1,0 +1,108 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block title %}New Group - Office Pro{% endblock %}
+{% block navbar_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-container">
+  <form method="post" action="{% url 'settings_group_create' %}">
+    {% csrf_token %}
+
+    <!-- Top Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'settings_groups' %}">Groups</a> / New
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'settings_groups' %}" class="op-view-btn-discard">Discard</a>
+      </div>
+    </div>
+
+    <!-- Main Form Sheet -->
+    <div class="op-view-sheet">
+      <!-- Title Heading -->
+      <input type="text" name="name" class="op-heading-input" placeholder="Role Name (Administrator or User)" list="role_list" required autofocus>
+      <datalist id="role_list">
+        <option value="Administrator">
+        <option value="User">
+      </datalist>
+
+      <!-- Fields Grid -->
+      <div style="max-width: 600px; margin-bottom: 24px;">
+        <div class="op-view-row">
+          <label class="op-view-label" for="id_privilege">Privilege</label>
+          <div class="op-view-input-wrap">
+            <input type="text" id="id_privilege" name="privilege" class="op-view-input" placeholder="e.g. Project" list="privilege_list" value="General">
+            <datalist id="privilege_list">
+              {% for p in all_privileges %}
+                <option value="{{ p }}">
+              {% endfor %}
+            </datalist>
+          </div>
+        </div>
+
+        <div class="op-view-row">
+          <label class="op-view-label" for="id_share">Share Group</label>
+          <div class="op-view-input-wrap">
+            <input type="checkbox" id="id_share" name="is_share" style="accent-color: #714b67; width: 16px; height: 16px;">
+          </div>
+        </div>
+
+        <div class="op-view-row">
+          <label class="op-view-label" for="id_api_keys">API Keys maximum duration days</label>
+          <div class="op-view-input-wrap">
+            <input type="text" id="id_api_keys" name="api_keys_max_days" class="op-view-input" value="0.00" style="max-width: 120px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-view-tabs">
+        <button type="button" class="op-tab-btn active" onclick="switchTab('tab-users', this)">Users</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-inherited', this)">Inherited</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-menus', this)">Menus</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-views', this)">Views</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-access-rights', this)">Access Rights</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-record-rules', this)">Record Rules</button>
+        <button type="button" class="op-tab-btn" onclick="switchTab('tab-notes', this)">Notes</button>
+      </div>
+
+      <!-- Tab 1: Users -->
+      <div id="tab-users" class="op-tab-pane active" style="padding: 16px 0;">
+        <p style="color: #64748b; font-size: 13px;">Save the group first to add and manage member users.</p>
+      </div>
+
+      <!-- Tab 2: Notes -->
+      <div id="tab-notes" class="op-tab-pane" style="display: none; padding: 16px 0;">
+        <textarea name="notes" class="op-domain-editor" rows="5" placeholder="Add internal notes or documentation regarding this group..."></textarea>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function switchTab(tabId, btnElement) {
+    document.querySelectorAll('.op-tab-pane').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.op-tab-btn').forEach(b => b.classList.remove('active'));
+
+    const activePane = document.getElementById(tabId);
+    if (activePane) activePane.style.display = 'block';
+
+    if (btnElement) {
+      btnElement.classList.add('active');
+    }
+  }
+</script>
+{% endblock %}

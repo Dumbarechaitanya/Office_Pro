@@ -1,0 +1,103 @@
+{% load static base_extras %}
+<div class="op-list-view">
+  <table class="op-plain-table">
+    <thead>
+      <tr>
+        <th class="op-select-col">
+          <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" title="Select all">
+        </th>
+        {% for col in columns %}
+          <th class="op-col-{{ col.name }}" data-col-name="{{ col.name }}">{{ col.label }}</th>
+        {% endfor %}
+        <th class="op-col-picker-th">
+          <button type="button" class="op-col-picker-toggle" onclick="toggleColPickerMenu(this, event)" title="Select columns">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="21" x2="4" y2="14"></line>
+              <line x1="4" y1="10" x2="4" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12" y2="3"></line>
+              <line x1="20" y1="21" x2="20" y2="16"></line>
+              <line x1="20" y1="12" x2="20" y2="3"></line>
+              <line x1="1" y1="14" x2="7" y2="14"></line>
+              <line x1="9" y1="8" x2="15" y2="8"></line>
+              <line x1="17" y1="16" x2="23" y2="16"></line>
+            </svg>
+          </button>
+          <div class="op-col-picker-menu">
+            {% for col in columns %}
+              <label class="op-col-picker-item">
+                <input type="checkbox" class="op-col-toggle-cb" data-col="{{ col.name }}" checked onchange="toggleColumnVisibility('{{ col.name }}', this.checked)">
+                <span>{{ col.label }} <small style="color: #94a3b8; font-size: 11px;">({{ col.name }})</small></span>
+              </label>
+            {% endfor %}
+          </div>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if groups %}
+        <!-- Odoo-Style Single Table Grouped Rows -->
+        {% for group in groups %}
+          <!-- Group Header Row -->
+          <tr class="op-group-header-row" data-group-id="grp-{{ forloop.counter }}" style="cursor: pointer; background: #ffffff; border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;">
+            <td colspan="{{ columns|length|add:2 }}" style="padding: 10px 16px; font-weight: 700; color: #1e293b; user-select: none;">
+              <span class="op-group-caret" style="display: inline-block; width: 14px; font-size: 10px; color: #334155; margin-right: 4px;">
+                {% if forloop.first %}&#9660;{% else %}&#9654;{% endif %}
+              </span>
+              <strong class="op-group-label" style="font-size: 13.5px;">{{ group.label }}</strong>
+              <span class="op-group-count" style="font-size: 12.5px; font-weight: 600; color: #475569; margin-left: 4px;">({{ group.count }})</span>
+            </td>
+          </tr>
+
+          <!-- Child Data Rows -->
+          {% for row in group.rows %}
+            <tr class="op-clickable-row op-group-row grp-{{ forloop.parentloop.counter }}" {% if not forloop.parentloop.first %}style="display: none;"{% endif %} {% if detail_url_name %}data-href="{% url detail_url_name row.id %}"{% endif %}>
+              <td class="op-select-col" onclick="event.stopPropagation()">
+                <input type="checkbox" class="op-row-select-checkbox" value="{{ row.id }}" onchange="handleRowSelect(this, event)">
+              </td>
+              {% for col in columns %}
+                <td class="op-col-{{ col.name }}">
+                  {% if forloop.first %}
+                    <span class="op-avatar-badge op-avatar-color-{{ row.id|avatar_color_num }}">
+                      {{ row|record_initial:col.name }}
+                    </span>
+                  {% endif %}
+                  {{ row|get_attr:col.name }}
+                </td>
+              {% endfor %}
+              <td class="op-col-picker-td"></td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      {% else %}
+        <!-- Plain Flat Records -->
+        {% for row in object_list %}
+          <tr class="op-clickable-row" {% if detail_url_name %}data-href="{% url detail_url_name row.id %}"{% endif %}>
+            <td class="op-select-col" onclick="event.stopPropagation()">
+              <input type="checkbox" class="op-row-select-checkbox" value="{{ row.id }}" onchange="handleRowSelect(this, event)">
+            </td>
+            {% for col in columns %}
+              <td class="op-col-{{ col.name }}">
+                {% if forloop.first %}
+                  <span class="op-avatar-badge op-avatar-color-{% cycle '1' '2' '3' '4' '5' '6' '7' %}">
+                    {{ row|record_initial:col.name }}
+                  </span>
+                {% endif %}
+                {{ row|get_attr:col.name }}
+              </td>
+            {% endfor %}
+            <td class="op-col-picker-td"></td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="{{ columns|length|add:2 }}" style="text-align: center; color: #94a3b8; padding: 24px;">
+              No records found
+            </td>
+          </tr>
+        {% endfor %}
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<script src="{% static 'base/js/list_view.js' %}"></script>

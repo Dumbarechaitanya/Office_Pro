@@ -1,0 +1,274 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/view_form_custom.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="op-view-form-container">
+  <form id="op-menu-item-form" method="post" action="{{ form_action }}">
+    {% csrf_token %}
+
+    <!-- Control Bar -->
+    <div class="op-view-control-bar">
+      <div class="op-view-control-left">
+        {% if create_url %}
+          <a href="{{ create_url }}" class="op-view-btn-new">New</a>
+        {% endif %}
+        <span class="op-view-breadcrumb">
+          <a href="{% url 'technical_menu_items' %}">Menu Items</a> / {{ full_path|default:menu.name }}
+        </span>
+        <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+      </div>
+
+      <div class="op-view-control-right">
+        <button type="submit" class="op-view-btn-save">Save</button>
+        <a href="{% url 'technical_menu_items' %}" class="op-view-btn-discard">Discard</a>
+
+        <!-- Pager -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #4b5563; margin-left: 12px;">
+          <span>{{ current_index }} / {{ total_menus }}</span>
+          {% if prev_id %}
+            <a href="{% url 'technical_menu_item_detail' prev_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&lt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&lt;</span>
+          {% endif %}
+          {% if next_id %}
+            <a href="{% url 'technical_menu_item_detail' next_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; color: #4b5563; text-decoration: none; font-size: 12px;">&gt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 4px; color: #d1d5db; font-size: 12px;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Main View Sheet -->
+    <div class="op-view-sheet">
+      <!-- 2-Column Grid -->
+      <div class="op-view-grid-2col">
+        <!-- Left Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_name">
+              Menu
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Menu</li>
+                      <li>Field: name</li>
+                      <li>Model: ir.ui.menu</li>
+                      <li>Type: char</li>
+                      <li>Required: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_name" name="name" class="op-view-input" value="{{ menu.name }}" required>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_parent">
+              Parent Menu
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Parent Menu</li>
+                      <li>Field: parent_id</li>
+                      <li>Model: ir.ui.menu</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: ir.ui.menu</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_parent" name="parent" class="op-view-select">
+                <option value="">—</option>
+                {% for pm in parent_menus %}
+                  <option value="{{ pm.id }}" {% if menu.parent_id == pm.id %}selected{% endif %}>{{ pm.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_sequence">
+              Sequence
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Sequence</li>
+                      <li>Field: sequence</li>
+                      <li>Model: ir.ui.menu</li>
+                      <li>Type: integer</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="number" id="id_sequence" name="sequence" class="op-view-input" value="{{ menu.sequence|default:0 }}">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_visibility">
+              Visibility
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Visibility</li>
+                      <li>Field: visibility_group_id</li>
+                      <li>Model: ir.ui.menu</li>
+                      <li>Type: many2one</li>
+                      <li>Relation: res.groups</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <select id="id_visibility" name="visibility_group" class="op-view-select">
+                <option value="">—</option>
+                {% for g in groups %}
+                  <option value="{{ g.id }}" {% if menu.visibility_group_id == g.id %}selected{% endif %}>{{ g.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+          <div class="op-view-row">
+            <label class="op-view-label">
+              Full Path
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Full Path</li>
+                      <li>Field: full_path</li>
+                      <li>Model: ir.ui.menu</li>
+                      <li>Type: char</li>
+                      <li>Readonly: True</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <div class="op-view-input" style="border-bottom: 1px solid #cbd5e1; color: #4b5563;">{{ full_path }}</div>
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_action_model">
+              Action
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Action</li>
+                      <li>Field: action_model</li>
+                      <li>Model: ir.ui.menu</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_action_model" name="action_model" class="op-view-input" value="{{ menu.action_model|default:'' }}" placeholder="e.g. ir.actions.act_window">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label" for="id_web_icon">
+              Web Icon File
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Web Icon File</li>
+                      <li>Field: web_icon</li>
+                      <li>Model: ir.ui.menu</li>
+                      <li>Type: char</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <input type="text" id="id_web_icon" name="web_icon" class="op-view-input" value="{{ menu.web_icon|default:'' }}" placeholder="e.g. base,static/description/icon.png">
+            </div>
+          </div>
+
+          <div class="op-view-row">
+            <label class="op-view-label">
+              Web Icon Image
+              <span class="op-view-hint">?
+                <div class="op-debug-tooltip">
+                  <div class="op-debug-tooltip-meta">
+                    <ul>
+                      <li>Label: Web Icon Image</li>
+                      <li>Field: web_icon_image</li>
+                      <li>Model: ir.ui.menu</li>
+                      <li>Type: binary</li>
+                    </ul>
+                  </div>
+                </div>
+              </span>
+            </label>
+            <div class="op-view-input-wrap">
+              <button type="button" class="op-view-btn-new" style="background: #714b67; border: none; border-radius: 4px; padding: 5px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer; color: #fff;">Upload your file</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tabs -->
+      <div class="op-view-tabs">
+        <button type="button" class="op-view-tab-btn active" data-tab="tab-submenus">Submenus</button>
+      </div>
+
+      <!-- Tab: Submenus -->
+      <div id="tab-submenus" class="op-view-tab-pane active">
+        <table class="op-sub-table">
+          <thead>
+            <tr>
+              <th style="width: 120px;">Sequence</th>
+              <th>Menu</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for child in children %}
+              <tr>
+                <td>{{ child.sequence }}</td>
+                <td>
+                  <a href="{% url 'technical_menu_item_detail' child.id %}" class="op-sub-link">{{ child.name }}</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="2" style="color: #9ca3af; padding: 16px; text-align: center;">No submenus configured.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <a href="{% url 'technical_menu_items' %}" class="op-add-line-btn">+ Add a line</a>
+      </div>
+
+    </div>
+  </form>
+</div>
+{% endblock %}

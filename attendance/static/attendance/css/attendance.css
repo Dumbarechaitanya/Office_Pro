@@ -1,0 +1,330 @@
+/* Attendance Module Styling (Odoo 16/17 Parity) */
+
+:root {
+  --att-primary: #714b67;
+  --att-primary-hover: #5a3c53;
+  --att-green: #059669;
+  --att-green-bg: #ecfdf5;
+  --att-green-border: #a7f3d0;
+  --att-red: #dc2626;
+  --att-border: #e2e8f0;
+  --att-text-dark: #1e293b;
+  --att-text-muted: #64748b;
+}
+
+/* Control Bar */
+.att-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid var(--att-border);
+  padding: 8px 20px;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.att-control-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-att-new {
+  background: var(--att-primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 4px;
+  text-decoration: none;
+  border: 1px solid var(--att-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-att-new:hover {
+  background: var(--att-primary-hover);
+}
+
+.att-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--att-text-dark);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.att-title-cog {
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Search Bar (Matching Screenshot 1) */
+.att-search-box {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 10px;
+  flex: 1;
+  max-width: 560px;
+}
+
+.att-search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fdf2f8;
+  color: #714b67;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+  white-space: nowrap;
+  border: 1px solid #fbcfe8;
+}
+
+.att-search-chip-filter {
+  background: #ede9fe;
+  color: #5b21b6;
+  border-color: #ddd6fe;
+}
+
+.att-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  color: var(--att-text-dark);
+  flex: 1;
+  padding: 5px 0;
+}
+
+/* Pager & View Switcher */
+.att-control-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.att-pager {
+  font-size: 13px;
+  color: var(--att-text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.att-pager-btn {
+  background: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 8px;
+  color: #475569;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.att-pager-btn:hover {
+  background: #f1f5f9;
+}
+
+.att-view-switchers {
+  display: inline-flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.att-view-btn {
+  background: #ffffff;
+  border: none;
+  padding: 5px 9px;
+  color: #64748b;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.att-view-btn.active {
+  background: #f1f5f9;
+  color: var(--att-primary);
+}
+
+/* Main Table (Matching Screenshot 1) */
+.att-table-container {
+  padding: 0;
+  background: #ffffff;
+  min-height: calc(100vh - 105px);
+  overflow-x: auto;
+}
+
+.att-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.att-table th {
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+  padding: 9px 12px;
+  border-bottom: 1px solid #cbd5e1;
+  background: #ffffff;
+  white-space: nowrap;
+}
+
+.att-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.att-table tr:hover {
+  background: #f8fafc;
+}
+
+/* Employee Initial Badge */
+.att-emp-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.att-avatar-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Green Check-in Timestamp when currently active */
+.att-timestamp-active {
+  color: var(--att-green) !important;
+  font-weight: 500;
+}
+
+/* Mode Pill */
+.att-mode-badge {
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Difference Colors */
+.att-diff-negative {
+  color: #475569;
+}
+
+.att-diff-red {
+  color: var(--att-red);
+  font-weight: 500;
+}
+
+.att-diff-positive {
+  color: var(--att-green);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Pivot Matrix Grid Styling (Matching Screenshot 4)
+   ========================================================================== */
+.pivot-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--att-border);
+}
+
+.btn-measures {
+  background: var(--att-primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-pivot-icon {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 5px 9px;
+  color: #475569;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-pivot-icon:hover {
+  background: #f1f5f9;
+}
+
+.pivot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.pivot-table th,
+.pivot-table td {
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.pivot-table th.pivot-th-col {
+  text-align: center;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.pivot-table th.pivot-th-sub {
+  text-align: right;
+  font-weight: 500;
+  font-size: 12px;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.pivot-table td.pivot-td-header {
+  text-align: left;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.pivot-row-total {
+  background: #f8fafc;
+  font-weight: 700;
+  color: #0f172a;
+}

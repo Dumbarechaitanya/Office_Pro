@@ -1,0 +1,122 @@
+{% extends 'base/setting.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/list_view.css' %}">
+<style>
+  .op-check-cell {
+    width: 38px;
+    text-align: center;
+  }
+  .op-badge-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: #714b67;
+    color: #ffffff;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+  .op-badge-uncheck {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="list-toolbar">
+  <div class="list-toolbar-left">
+    {% if create_url %}
+      <a href="{{ create_url }}" class="btn-new">New</a>
+    {% endif %}
+    <span class="toolbar-title">Fields</span>
+    <span style="font-size: 15px; color: #4b5563; margin-left: 4px; cursor: pointer;" title="Actions">&#9881;</span>
+  </div>
+
+  <div class="list-toolbar-center">
+    {% include 'base/_search_panel.html' %}
+  </div>
+
+  <div class="list-toolbar-right">
+    <div class="toolbar-pagination">
+      {% if total_count %}1-{{ total_count }} / {{ total_count }} records{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="op-list-view">
+  <table>
+    <thead>
+      <tr>
+        <th class="op-check-cell"><input type="checkbox" id="select-all-fields"></th>
+        <th>Field Name</th>
+        <th>Field Label</th>
+        <th>Model</th>
+        <th>Field Type</th>
+        <th>Type</th>
+        <th style="text-align: center;">Indexed</th>
+        <th style="text-align: center;">Stored</th>
+        <th style="text-align: center;">Readonly</th>
+        <th>Related Model</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fields_list %}
+        <tr>
+          <td class="op-check-cell" onclick="event.stopPropagation();">
+            <input type="checkbox" class="op-row-check">
+          </td>
+          <td>
+            <a href="{% url 'technical_field_detail' f.id %}" style="text-decoration: none; color: inherit; font-weight: 500; display: block;">{{ f.field_name }}</a>
+          </td>
+          <td>
+            <a href="{% url 'technical_field_detail' f.id %}" style="text-decoration: none; color: inherit; display: block;">{{ f.field_name|title }}</a>
+          </td>
+          <td>
+            <a href="{% url 'technical_model_detail' f.model.id %}" style="text-decoration: none; color: inherit; display: block;">{{ f.model.description|default:f.model.model_name }}</a>
+          </td>
+          <td style="color: #4b5563;">{{ f.field_type|lower }}</td>
+          <td>
+            {% if f.model.state == 'base' %}Base Field{% else %}Custom Field{% endif %}
+          </td>
+          <td style="text-align: center;">
+            {% if f.field_name == 'id' or f.field_name == 'code' or f.field_name == 'email' or f.field_name == 'username' or f.field_name == 'employee_code' %}
+              <span class="op-badge-check">&#10003;</span>
+            {% else %}
+              <span class="op-badge-uncheck"></span>
+            {% endif %}
+          </td>
+          <td style="text-align: center;">
+            <span class="op-badge-check">&#10003;</span>
+          </td>
+          <td style="text-align: center;">
+            {% if f.field_name == 'id' or f.field_name == 'created_at' or f.field_name == 'updated_at' %}
+              <span class="op-badge-check">&#10003;</span>
+            {% else %}
+              <span class="op-badge-uncheck"></span>
+            {% endif %}
+          </td>
+          <td>
+            {% if f.relation_model %}
+              <span style="color: #4b5563;">{{ f.relation_model.model_name }}</span>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="10" style="color: #9ca3af; padding: 24px; text-align: center;">No fields found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

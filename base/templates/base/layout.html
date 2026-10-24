@@ -1,0 +1,559 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{% static 'base/css/layout.css' %}?v={{ static_version }}" />
+    <link rel="stylesheet" href="{% static 'base/css/list_view.css' %}?v={{ static_version }}" />
+    <link rel="stylesheet" href="{% static 'base/css/search_panel.css' %}?v={{ static_version }}" />
+    <link rel="stylesheet" href="{% static 'base/css/topbar_popovers.css' %}?v={{ static_version }}" />
+    <style>
+
+      :root {
+        --op-primary-color: {{ active_theme.primary_color|default:'#2563eb' }};
+        --op-primary-hover: {{ active_theme.primary_hover|default:'#1d4ed8' }};
+        --op-navbar-bg: {{ active_theme.navbar_bg|default:'#0f172a' }};
+      }
+      .navbar {
+        background: var(--op-navbar-bg) !important;
+      }
+      .btn-new, .op-btn-new, .op-view-btn-new, .op-view-btn-save, .btn-primary, .op-btn-primary {
+        background: var(--op-primary-color) !important;
+      }
+      .btn-new:hover, .op-btn-new:hover, .op-view-btn-new:hover, .op-view-btn-save:hover, .btn-primary:hover, .op-btn-primary:hover {
+        background: var(--op-primary-hover) !important;
+      }
+      .op-tab-btn.active, .op-view-tab-btn.active {
+        color: var(--op-primary-color) !important;
+        border-bottom-color: var(--op-primary-color) !important;
+      }
+    </style>
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="{% if is_debug %}op-debug-mode{% endif %}">
+    <header class="navbar">
+      <div class="navbar-left">
+        <!-- Interactive App Switcher / Back Icon Button (morphs to `<` on hover) -->
+        <a href="/" class="op-app-switcher-btn" id="opNavbarAppSwitcher" title="Return to Home (App Launcher)">
+          <span class="op-app-icon-default">
+            {% block app_icon %}
+              <!-- Default Grid / 9-dots icon -->
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="5" cy="5" r="2.5"></circle>
+                <circle cx="12" cy="5" r="2.5"></circle>
+                <circle cx="19" cy="5" r="2.5"></circle>
+                <circle cx="5" cy="12" r="2.5"></circle>
+                <circle cx="12" cy="12" r="2.5"></circle>
+                <circle cx="19" cy="12" r="2.5"></circle>
+                <circle cx="5" cy="19" r="2.5"></circle>
+                <circle cx="12" cy="19" r="2.5"></circle>
+                <circle cx="19" cy="19" r="2.5"></circle>
+              </svg>
+            {% endblock %}
+          </span>
+          <span class="op-app-icon-hover">
+            <!-- Exact `<` back arrow (Shift + comma key) -->
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 19 8 12 15 5"></polyline>
+            </svg>
+          </span>
+        </a>
+
+        <!-- App Name (No 'Office Pro') -->
+        <span class="op-navbar-app-title">{% block navbar_title %}{% endblock %}</span>
+
+        <nav class="app-menus">{% block app_menus %} {% endblock %}</nav>
+      </div>
+
+      <div class="navbar-right">
+        {% if is_debug %}
+          <div class="debug-indicator" title="Developer Mode Active (?debug=1)" style="display: flex; align-items: center; color: #f59e0b; font-size: 16px; margin-right: 4px;">
+            &#128030;
+          </div>
+        {% endif %}
+
+        {% if current_user %}
+          <!-- ✉️ Webmail Direct Link -->
+          <div class="topbar-item" id="opMailTopMenuItem">
+            <a href="{% url 'mail_app' %}" class="topbar-icon-btn" id="opMailTopBtn" title="Webmail Suite / Inbox" style="text-decoration: none;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="topbar-svg-icon">
+                <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+              </svg>
+            </a>
+          </div>
+
+          <!-- 💬 Conversations Popover -->
+          <div class="topbar-item" id="opConversationsMenu">
+            <button type="button" class="topbar-icon-btn" id="opConversationsBtn" title="Conversations & Direct Messages">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="topbar-svg-icon">
+                <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path>
+              </svg>
+              <span class="topbar-badge badge-purple" id="opConversationsBadge" style="display: none;">0</span>
+            </button>
+            <div class="topbar-popover op-conversations-popover" id="opConversationsDropdown">
+              <div class="op-popover-header">
+                <div class="op-popover-title">
+                  <span>&#128172; Conversations</span>
+                  <div class="op-popover-actions">
+                    <button type="button" class="op-popover-header-btn" onclick="markAllMessagesRead()" title="Mark all as read">&#10003;&#10003; Mark read</button>
+                    <button type="button" class="op-popover-header-btn" onclick="toggleConversationsComposer()" title="New message">&#9998; New</button>
+                  </div>
+                </div>
+                <div class="op-popover-tabs">
+                  <button type="button" class="op-popover-tab active" data-tab="inbox" onclick="switchConvTab('inbox')">Inbox</button>
+                  <button type="button" class="op-popover-tab" data-tab="chatter" onclick="switchConvTab('chatter')">Chatter Feed</button>
+                  <button type="button" class="op-popover-tab" data-tab="direct" onclick="switchConvTab('direct')">Direct Chat</button>
+                </div>
+                <div class="op-popover-search">
+                  <input type="text" id="opConvSearchInput" placeholder="Search conversations or users..." oninput="filterConversations(this.value)">
+                </div>
+              </div>
+
+              <!-- Quick Message Composer -->
+              <div id="opConvComposerBox" class="op-popover-composer" style="display: none;">
+                <div class="op-composer-row">
+                  <select id="opConvRecipientSelect" class="op-composer-select">
+                    <option value="">Select colleague...</option>
+                  </select>
+                </div>
+                <div class="op-composer-row">
+                  <textarea id="opConvBody" class="op-composer-textarea" placeholder="Type your direct message..."></textarea>
+                </div>
+                <div class="op-composer-actions">
+                  <button type="button" class="op-btn-sm" onclick="toggleConversationsComposer(false)">Cancel</button>
+                  <button type="button" class="op-btn-sm op-btn-primary" onclick="sendDirectMessage()">Send</button>
+                </div>
+              </div>
+
+              <!-- Messages List -->
+              <div class="op-popover-body" id="opConversationsList">
+                <div class="op-popover-loading">Loading conversations...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ⏰ Activities Popover -->
+          <div class="topbar-item" id="opActivitiesMenu">
+            <button type="button" class="topbar-icon-btn" id="opActivitiesBtn" title="Activities & Scheduled Actions">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="topbar-svg-icon">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span class="topbar-badge" id="opActivitiesBadge" style="display: none;">0</span>
+            </button>
+            <div class="topbar-popover op-activities-popover" id="opActivitiesDropdown">
+              <div class="op-popover-header">
+                <div class="op-popover-title">
+                  <span>&#9200; Activities</span>
+                  <button type="button" class="op-popover-header-btn op-btn-schedule-highlight" onclick="openScheduleActivityModal()">+ Schedule</button>
+                </div>
+                <div class="op-activity-chips">
+                  <button type="button" class="op-chip-filter active" data-filter="all" onclick="switchActivityFilter('all')">
+                    All <span id="opActChipAll">0</span>
+                  </button>
+                  <button type="button" class="op-chip-filter chip-overdue" data-filter="overdue" onclick="switchActivityFilter('overdue')">
+                    &#128308; Overdue <span id="opActChipOverdue">0</span>
+                  </button>
+                  <button type="button" class="op-chip-filter chip-today" data-filter="today" onclick="switchActivityFilter('today')">
+                    &#128993; Today <span id="opActChipToday">0</span>
+                  </button>
+                  <button type="button" class="op-chip-filter chip-planned" data-filter="planned" onclick="switchActivityFilter('planned')">
+                    &#128309; Planned <span id="opActChipPlanned">0</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Activities List -->
+              <div class="op-popover-body" id="opActivitiesList">
+                <div class="op-popover-loading">Loading activities...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Profile Menu -->
+          <div class="profile-menu">
+            <button
+              type="button"
+              class="profile-btn"
+              style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;"
+              onclick="
+                document
+                  .getElementById('profileDropdown')
+                  .classList.toggle('show')
+              "
+            >
+              <span class="profile-icon">&#128100;</span>
+              <span>{{ current_user.username }}</span>
+            </button>
+            <div id="profileDropdown" class="profile-dropdown">
+              <div style="padding: 8px 14px; font-size: 12px; color: #888; border-bottom: 1px solid #f0f0f5;">
+                Signed in as <strong>{{ current_user.username }}</strong>
+              </div>
+              <a href="{% url 'profile' %}">My Profile</a>
+              <a href="{% url 'mail_app' %}">Webmail / Inbox</a>
+              <a href="javascript:void(0)" onclick="openThemeModal()">Theme &amp; Wallpaper</a>
+              {% if is_admin %}
+                <a href="{% url 'settings_home' %}">Settings</a>
+              {% endif %}
+              {% if is_debug %}
+                <a href="?debug=0" style="color: #d97706;">Deactivate Developer Mode</a>
+              {% else %}
+                <a href="?debug=1" style="color: #6366f1;">Activate Developer Mode</a>
+              {% endif %}
+              <a href="{% url 'logout' %}" style="color: #c5221f;">Log Out</a>
+            </div>
+          </div>
+        {% else %}
+          <a href="{% url 'login' %}" style="color: #fff; text-decoration: none; font-size: 13.5px; font-weight: 600; padding: 6px 14px; background: #714b90; border-radius: 6px;">Sign In</a>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Global Schedule Activity Modal -->
+    <div id="opScheduleActivityModal" class="op-modal-backdrop" style="display: none;">
+      <div class="op-modal-card">
+        <div class="op-modal-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">&#9200;</span>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #1e293b;">Schedule Activity</h3>
+          </div>
+          <button type="button" class="op-modal-close" onclick="closeScheduleActivityModal()">&times;</button>
+        </div>
+        <form id="opScheduleActivityForm" onsubmit="handleScheduleActivitySubmit(event)">
+          <input type="hidden" id="opActResModel" name="res_model" value="general">
+          <input type="hidden" id="opActResId" name="res_id" value="0">
+          <input type="hidden" id="opActResName" name="res_name" value="">
+
+          <div class="op-form-grid">
+            <div class="op-form-group">
+              <label class="op-label">Activity Type *</label>
+              <select id="opActTypeSelect" name="activity_type_id" class="op-input-select" required onchange="handleActivityTypeChange(this)">
+                <!-- loaded dynamically -->
+              </select>
+            </div>
+
+            <div class="op-form-group">
+              <label class="op-label">Due Date *</label>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="date" id="opActDateDeadline" name="date_deadline" class="op-input-text" required>
+                <button type="button" class="op-quick-date-btn" onclick="setQuickDueDate(0)">Today</button>
+                <button type="button" class="op-quick-date-btn" onclick="setQuickDueDate(1)">+1d</button>
+                <button type="button" class="op-quick-date-btn" onclick="setQuickDueDate(7)">+1w</button>
+              </div>
+            </div>
+
+            <div class="op-form-group full-width">
+              <label class="op-label">Summary / Title *</label>
+              <input type="text" id="opActSummary" name="summary" class="op-input-text" placeholder="e.g. Follow up on proposal, audit user accounts..." required>
+            </div>
+
+            <div class="op-form-group">
+              <label class="op-label">Assigned To *</label>
+              <select id="opActAssigneeSelect" name="user_id" class="op-input-select" required>
+                <!-- loaded dynamically -->
+              </select>
+            </div>
+
+            <div class="op-form-group">
+              <label class="op-label">Target Document</label>
+              <input type="text" id="opActTargetDisplay" class="op-input-text" readonly placeholder="General ERP Task">
+            </div>
+
+            <div class="op-form-group full-width">
+              <label class="op-label">Log Note / Description</label>
+              <textarea id="opActNote" name="note" class="op-input-textarea" rows="3" placeholder="Add instructions, meeting details, or notes..."></textarea>
+            </div>
+          </div>
+
+          <div class="op-modal-footer">
+            <button type="button" class="op-btn-secondary" onclick="closeScheduleActivityModal()">Cancel</button>
+            <button type="submit" class="op-btn-primary">&#10004; Schedule Action</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Complete Activity / Feedback Modal -->
+    <div id="opActivityDoneModal" class="op-modal-backdrop" style="display: none;">
+      <div class="op-modal-card" style="max-width: 440px;">
+        <div class="op-modal-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">&#9989;</span>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #1e293b;">Complete Activity</h3>
+          </div>
+          <button type="button" class="op-modal-close" onclick="closeActivityDoneModal()">&times;</button>
+        </div>
+        <form id="opActivityDoneForm" onsubmit="handleActivityDoneSubmit(event)">
+          <input type="hidden" id="opDoneActId" value="">
+          <div style="padding: 20px 20px 0 20px;">
+            <p id="opDoneActTitle" style="font-size: 13.5px; color: #475569; margin: 0 0 14px 0; font-weight: 600;"></p>
+            <div class="op-form-group full-width">
+              <label class="op-label">Feedback / Notes (optional)</label>
+              <textarea id="opDoneFeedback" class="op-input-textarea" rows="3" placeholder="Write outcome details to log on the activity timeline..."></textarea>
+            </div>
+          </div>
+          <div class="op-modal-footer">
+            <button type="button" class="op-btn-secondary" onclick="closeActivityDoneModal()">Cancel</button>
+            <button type="submit" class="op-btn-primary" style="background: #059669 !important;">&#10003; Mark as Done</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Quick Theme Modal for All Users -->
+    <div id="opThemeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+      <div style="background: #1e1e2f; color: #fff; border: 1px solid #3d3d5c; border-radius: 12px; padding: 24px; width: 100%; max-width: 480px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #2d2d44; padding-bottom: 12px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700;">Customize Your Theme &amp; Wallpaper</h3>
+          <button type="button" onclick="closeThemeModal()" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">&times;</button>
+        </div>
+
+        <form method="post" action="{% url 'settings_general' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action_type" value="theme">
+          <input type="hidden" name="next" value="{{ request.path }}">
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin-bottom: 8px;">Theme Preset</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #28283e; border: 1px solid #3d3d5c; border-radius: 6px; cursor: pointer;">
+                <input type="radio" name="preset" value="corporate_blue" checked onclick="setThemeColors('#2563eb', '#1d4ed8', '#0f172a', 'corporate_clean')">
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #2563eb;"></span>
+                <span style="font-size: 13px;">Corporate Blue</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #28283e; border: 1px solid #3d3d5c; border-radius: 6px; cursor: pointer;">
+                <input type="radio" name="preset" value="dark_slate" onclick="setThemeColors('#0f766e', '#115e59', '#0f172a', 'dark_slate')">
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #0f766e;"></span>
+                <span style="font-size: 13px;">Dark Slate</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #28283e; border: 1px solid #3d3d5c; border-radius: 6px; cursor: pointer;">
+                <input type="radio" name="preset" value="ocean_blue" onclick="setThemeColors('#0284c7', '#0369a1', '#0c4a6e', 'ocean_blue')">
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #0284c7;"></span>
+                <span style="font-size: 13px;">Ocean Blue</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #28283e; border: 1px solid #3d3d5c; border-radius: 6px; cursor: pointer;">
+                <input type="radio" name="preset" value="emerald" onclick="setThemeColors('#059669', '#047857', '#064e3b', 'emerald')">
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #059669;"></span>
+                <span style="font-size: 13px;">Emerald Green</span>
+              </label>
+            </div>
+          </div>
+
+          <input type="hidden" id="modalPrimaryColor" name="primary_color" value="{{ active_theme.primary_color|default:'#2563eb' }}">
+          <input type="hidden" id="modalPrimaryHover" name="primary_hover" value="{{ active_theme.primary_hover|default:'#1d4ed8' }}">
+          <input type="hidden" id="modalNavbarBg" name="navbar_bg" value="{{ active_theme.navbar_bg|default:'#0f172a' }}">
+          <input type="hidden" id="modalWallpaper" name="wallpaper" value="{{ active_theme.wallpaper|default:'corporate_clean' }}">
+
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin-bottom: 8px;">Theme Background Style</label>
+            <select class="op-category-select" style="background: #28283e; color: #fff; border-color: #3d3d5c; width: 100%; padding: 8px 10px; border-radius: 6px;" onchange="document.getElementById('modalWallpaper').value = this.value">
+              <option value="corporate_clean" selected>Corporate Clean Slate</option>
+              <option value="live_mesh">Live Animated Mesh Canvas</option>
+              <option value="live_waves">Live Interactive Waves</option>
+            </select>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" onclick="closeThemeModal()" style="padding: 8px 16px; background: #28283e; color: #cbd5e1; border: 1px solid #3d3d5c; border-radius: 6px; font-size: 13px; cursor: pointer;">Cancel</button>
+            <button type="submit" style="padding: 8px 18px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">Save for this device</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <main class="page-content">{% block content %} {% endblock %}</main>
+
+    <!-- Universal Global Error & Diagnostics Modal -->
+    <div id="opGlobalErrorModal" class="op-modal-backdrop" style="display: none; z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(6px);">
+      <div class="op-modal-card" style="max-width: 650px; width: 92%; background: #ffffff; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; border: 1px solid #e2e8f0;">
+        <div class="op-modal-header" style="background: #fef2f2; border-bottom: 1px solid #fee2e2; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px; color: #dc2626;">&#9888;</span>
+            <h3 id="opGlobalErrorTitle" style="margin: 0; font-size: 16px; font-weight: 700; color: #991b1b;">Application Diagnostic Report</h3>
+          </div>
+          <button type="button" class="op-modal-close" onclick="closeGlobalErrorModal()" style="background: none; border: none; font-size: 20px; color: #991b1b; cursor: pointer;">&times;</button>
+        </div>
+        <div style="padding: 20px; max-height: calc(85vh - 120px); overflow-y: auto;">
+          <div id="opGlobalErrorMessage" style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 14px; padding: 12px; background: #f8fafc; border-left: 4px solid #dc2626; border-radius: 0 6px 6px 0; word-break: break-word;"></div>
+          
+          <div id="opGlobalErrorMeta" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 14px; background: #f1f5f9; padding: 12px; border-radius: 8px;">
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Offending File</div>
+              <div id="opGlobalErrorFile" style="font-size: 12.5px; font-family: monospace; font-weight: 600; color: #0284c7; word-break: break-all;">N/A</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Line Number</div>
+              <div id="opGlobalErrorLine" style="font-size: 12.5px; font-family: monospace; font-weight: 700; color: #dc2626;">N/A</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Function / View</div>
+              <div id="opGlobalErrorFunc" style="font-size: 12.5px; font-family: monospace; font-weight: 600; color: #7c3aed;">N/A</div>
+            </div>
+          </div>
+
+          <div id="opGlobalErrorHint" style="display: none; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #92400e; margin-bottom: 14px;"></div>
+
+          <div style="margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 12px; font-weight: 700; color: #475569;">Traceback Stack</span>
+              <button type="button" onclick="copyGlobalErrorTrace()" style="padding: 2px 8px; font-size: 11px; border: 1px solid #cbd5e1; background: #fff; border-radius: 4px; cursor: pointer;">&#128203; Copy</button>
+            </div>
+            <pre id="opGlobalErrorTrace" style="background: #0f172a; color: #f1f5f9; padding: 12px; border-radius: 6px; font-size: 11px; font-family: monospace; max-height: 220px; overflow-x: auto; white-space: pre-wrap; margin: 0;"></pre>
+          </div>
+        </div>
+        <div class="op-modal-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="op-btn-secondary" onclick="closeGlobalErrorModal()" style="padding: 6px 14px; font-size: 12.5px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;">Dismiss</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Universal Toast Container -->
+    <div id="opToastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10001; display: flex; flex-direction: column; gap: 10px; max-width: 400px;">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="op-floating-toast op-toast-{{ message.tags|default:'info' }}">
+            <div>
+              <span style="font-weight: 700; margin-right: 4px;">
+                {% if message.tags == 'error' %}&#10060;{% elif message.tags == 'warning' %}&#9888;{% else %}&#9989;{% endif %}
+              </span>
+              <span>{{ message }}</span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 16px; cursor: pointer; color: inherit; opacity: 0.7;">&times;</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <script src="{% static 'base/js/layout.js' %}"></script>
+    <script src="{% static 'base/js/topbar_popovers.js' %}"></script>
+    <script>
+      function openThemeModal() {
+        const modal = document.getElementById('opThemeModal');
+        if (modal) modal.style.display = 'flex';
+        const dropdown = document.getElementById('profileDropdown');
+        if (dropdown) dropdown.classList.remove('show');
+      }
+
+      function closeThemeModal() {
+        const modal = document.getElementById('opThemeModal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      function setThemeColors(primary, hover, nav, wallpaper) {
+        document.getElementById('modalPrimaryColor').value = primary;
+        document.getElementById('modalPrimaryHover').value = hover;
+        document.getElementById('modalNavbarBg').value = nav;
+        document.getElementById('modalWallpaper').value = wallpaper;
+      }
+
+      // Universal Error Diagnostics Modal Controller
+      function showGlobalErrorModal(err) {
+        const modal = document.getElementById('opGlobalErrorModal');
+        if (!modal) return;
+
+        document.getElementById('opGlobalErrorMessage').textContent = err.message || err.error || 'An unexpected exception occurred.';
+        document.getElementById('opGlobalErrorFile').textContent = err.file || 'N/A';
+        document.getElementById('opGlobalErrorLine').textContent = err.line ? ('Line ' + err.line) : 'N/A';
+        document.getElementById('opGlobalErrorFunc').textContent = err.function ? (err.function + '()') : 'N/A';
+
+        const hintBox = document.getElementById('opGlobalErrorHint');
+        if (err.hint) {
+          hintBox.innerHTML = '<strong>Tip:</strong> ' + err.hint;
+          hintBox.style.display = 'block';
+        } else {
+          hintBox.style.display = 'none';
+        }
+
+        document.getElementById('opGlobalErrorTrace').textContent = err.traceback || err.details || err.message || 'No additional stack frames captured.';
+        modal.style.display = 'flex';
+      }
+
+      function closeGlobalErrorModal() {
+        const modal = document.getElementById('opGlobalErrorModal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      function copyGlobalErrorTrace() {
+        const text = document.getElementById('opGlobalErrorTrace').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Traceback copied to clipboard', 'info');
+        });
+      }
+
+      // Universal Toast Manager
+      function showToast(msg, type = 'info', actionCallback = null, actionLabel = 'Details') {
+        const container = document.getElementById('opToastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `op-floating-toast op-toast-${type}`;
+        
+        let bg = '#ecfdf5', bc = '#a7f3d0', color = '#065f46', icon = '&#9989;';
+        if (type === 'error') {
+          bg = '#fee2e2'; bc = '#fca5a5'; color = '#991b1b'; icon = '&#10060;';
+        } else if (type === 'warning') {
+          bg = '#fef3c7'; bc = '#fde68a'; color = '#92400e'; icon = '&#9888;';
+        }
+
+        toast.style.cssText = `background: ${bg}; border: 1px solid ${bc}; color: ${color}; padding: 12px 16px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 10px; animation: slideIn 0.2s ease;`;
+        
+        let actionBtnHtml = '';
+        if (actionCallback) {
+          actionBtnHtml = `<button type="button" class="op-toast-action-btn" style="background: #fff; border: 1px solid ${bc}; color: ${color}; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; cursor: pointer; margin-left: 8px;">${actionLabel}</button>`;
+        }
+
+        toast.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span>${icon}</span>
+            <span>${msg}</span>
+            ${actionBtnHtml}
+          </div>
+          <button type="button" style="background: none; border: none; font-size: 16px; cursor: pointer; color: inherit; opacity: 0.7;">&times;</button>
+        `;
+
+        toast.querySelector('button:last-child').onclick = () => toast.remove();
+        if (actionCallback) {
+          toast.querySelector('.op-toast-action-btn').onclick = actionCallback;
+        }
+
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 6000);
+      }
+
+      // Universal Fetch / AJAX Interceptor
+      const originalFetch = window.fetch;
+      window.fetch = async function(...args) {
+        try {
+          const response = await originalFetch.apply(this, args);
+          if (!response.ok && response.headers.get('content-type')?.includes('application/json')) {
+            const clone = response.clone();
+            clone.json().then(data => {
+              if (data && (data.error || data.success === false)) {
+                showToast(
+                  data.message || `Server responded with status ${response.status}`,
+                  'error',
+                  () => showGlobalErrorModal(data),
+                  data.line ? `View Line ${data.line}` : 'View Trace'
+                );
+              }
+            }).catch(() => {});
+          }
+          return response;
+        } catch (err) {
+          showToast(`Network request failed: ${err.message}`, 'error');
+          throw err;
+        }
+      };
+
+      // Client-side unhandled exception listener
+      window.addEventListener('error', function(e) {
+        if (e.filename && e.filename.includes('layout.js')) return; // Ignore harmless layout clicks
+        console.error('[Office Pro Diagnostic Interceptor]', e);
+      });
+    </script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>
+
