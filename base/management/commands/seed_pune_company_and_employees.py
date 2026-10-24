@@ -111,8 +111,8 @@ class Command(BaseCommand):
         # Clean existing dummy employee 1 if Johnathan Doe
         Employee.objects.filter(name="Johnathan Doe").delete()
 
-        admin_group = ResGroups.objects.filter(name='Administrator').first()
-        user_group = ResGroups.objects.filter(name='User').first()
+        admin_group, _ = ResGroups.objects.get_or_create(name='Administrator', defaults={'privilege': 'General', 'is_active': True})
+        user_group, _ = ResGroups.objects.get_or_create(name='User', defaults={'privilege': 'General', 'is_active': True})
         hashed_pwd = make_password('123')
 
         created_employees = []
@@ -182,14 +182,25 @@ class Command(BaseCommand):
         for d in departments.values():
             d.save()
 
-        # Update admin user 1 to be linked to Rohan Deshmukh and company NexusWave
-        admin_user = ResUsers.objects.filter(id=1).first()
-        if admin_user:
+        # Update or create admin user to be linked to Rohan Deshmukh and company NexusWave
+        admin_user = ResUsers.objects.filter(username='admin').first() or ResUsers.objects.filter(id=1).first()
+        if not admin_user:
+            admin_user = ResUsers.objects.create(
+                username='admin',
+                email='admin@nexuswave.in',
+                password_hash=hashed_pwd,
+                company=company,
+                employee=created_employees[0],
+                is_active=True,
+            )
+        else:
             admin_user.company = company
             admin_user.employee = created_employees[0]
+            admin_user.password_hash = hashed_pwd
+            admin_user.is_active = True
             admin_user.save()
-            if admin_group:
-                ResUsersGroups.objects.get_or_create(user=admin_user, group=admin_group)
+        if admin_group:
+            ResUsersGroups.objects.get_or_create(user=admin_user, group=admin_group)
 
         # 4. Seed Attendance Records
         # Clean old attendance
