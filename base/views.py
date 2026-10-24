@@ -139,6 +139,209 @@ def _resolve_model(model_key):
     return None
 
 
+@require_POST
+@login_required_ir
+def kanban_move_card(request):
+    """
+    Universal Drag-and-Drop Kanban API:
+    Allows moving record cards from one column to another when grouped.
+    Dynamically updates the underlying field (e.g. department, status, stage)
+    and persists changes to the database.
+    """
+    try:
+        data = json.loads(request.body.decode('utf-8')) if request.body else request.POST
+    except Exception:
+        data = request.POST
+
+    model_key = data.get('model_key') or data.get('model')
+    record_id = data.get('record_id')
+    field_name = data.get('field_name') or data.get('group_by')
+    new_value = data.get('new_value')
+
+    if not record_id or not field_name:
+        return JsonResponse({'success': False, 'error': 'Missing record_id or field_name.'}, status=400)
+
+    try:
+        record_id = int(record_id)
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid record_id.'}, status=400)
+
+    # 1. Specialized handling for Employee model
+    if model_key in ('hr.employee', 'employee', 'Employee'):
+        if Employee is None:
+            return JsonResponse({'success': False, 'error': 'Employee module unavailable.'}, status=500)
+        emp = Employee.objects.filter(id=record_id).first()
+        if not emp:
+            return JsonResponse({'success': False, 'error': f'Employee #{record_id} not found.'}, status=404)
+
+        current_user = get_current_ir_user(request)
+        if not (is_admin_user(current_user) or is_hr_officer_or_admin(current_user)):
+            return JsonResponse({'success': False, 'error': 'Permission denied: HR Officer role required to move employee records.'}, status=403)
+
+        new_val_str = str(new_value).strip() if new_value is not None else ''
+
+        if field_name in ('department', 'department_rel', 'department_id'):
+            dept = None
+            if new_val_str.isdigit():
+                dept = Department.objects.filter(id=int(new_val_str)).first() if Department else None
+            if not dept and Department:
+                dept = Department.objects.filter(name__iexact=new_val_str).first()
+            if dept:
+                emp.department = dept.name
+                emp.department_rel = dept
+            else:
+                emp.department = new_val_str
+                emp.department_rel = None
+            emp.save(update_fields=['department', 'department_rel'])
+            return JsonResponse({
+                'success': True,
+                'message': f"Updated {emp.name}'s department to {emp.department}",
+                'record_id': emp.id,
+                'field_name': field_name,
+                'new_value': emp.department,
+                'display_label': emp.department
+            })
+
+        elif field_name == 'job_title':
+            emp.job_title = new_val_str
+            emp.save(update_fields=['job_title'])
+            return JsonResponse({
+                'success': True,
+                'message': f"Updated {emp.name}'s job position to {emp.job_title}",
+                'record_id': emp.id,
+                'new_value': emp.job_title
+            })
+
+        elif field_name == 'employment_type':
+            emp.employment_type = new_val_str
+            emp.save(update_fields=['employment_type'])
+            return JsonResponse({
+                'success': True,
+                'message': f"Updated {emp.name}'s employment type to {emp.employment_type}",
+                'record_id': emp.id,
+                'new_value': emp.employment_type
+            })
+
+        elif field_name == 'branch':
+            emp.branch = new_val_str
+            emp.save(update_fields=['branch'])
+            return JsonResponse({
+                'success': True,
+                'message': f"Updated {emp.name}'s branch to {emp.branch}",
+                'record_id': emp.id,
+                'new_value': emp.branch
+            })
+
+        elif field_name in ('manager', 'manager_id'):
+            mgr = None
+            if new_val_str.isdigit():
+                mgr = Employee.objects.filter(id=int(new_val_str)).first()
+            if not mgr:
+                mgr = Employee.objects.filter(name__iexact=new_val_str).first()
+            emp.manager = mgr
+            emp.save(update_fields=['manager'])
+            return JsonResponse({
+                'success': True,
+                'message': f"Updated {emp.name}'s manager to {mgr.name if mgr else 'None'}",
+                'record_id': emp.id,
+                'new_value': mgr.name if mgr else ''
+            })
+
+        elif hasattr(emp, field_name):
+            setattr(emp, field_name, new_val_str)
+            emp.save(update_fields=[field_name])
+            return JsonResponse({
+                'success': True,
+                'message': f"Updated {emp.name}'s {field_name} to {new_val_str}",
+                'record_id': emp.id,
+                'new_value': new_val_str
+            })
+
+    # 2. Specialized handling for Leave Request model
+    elif model_key in ('hr.leave', 'leave', 'LeaveRequest'):
+        if LeaveRequest is None:
+            return JsonResponse({'success': False, 'error': 'Leave module unavailable.'}, status=500)
+        req_obj = LeaveRequest.objects.filter(id=record_id).first()
+        if not req_obj:
+            return JsonResponse({'success': False, 'error': f'Leave request #{record_id} not found.'}, status=404)
+
+        new_val_str = str(new_value).strip() if new_value is not None else ''
+
+        if field_name == 'status':
+            current_user = get_current_ir_user(request)
+            current_emp = get_user_linked_employee(current_user)
+
+            val_lower = new_val_str.lower()
+            status_map = {
+                'to approve': 'confirm',
+                'confirm': 'confirm',
+                'pending': 'confirm',
+                'approved': 'validate',
+                'validate': 'validate',
+                'refused': 'refuse',
+                'refuse': 'refuse',
+                'rejected': 'refuse',
+                'draft': 'draft',
+            }
+            mapped_status = status_map.get(val_lower, val_lower)
+            req_obj.status = mapped_status
+            update_fields = ['status']
+            if mapped_status == 'validate':
+                req_obj.approved_by = current_emp
+                update_fields.append('approved_by')
+            elif mapped_status == 'confirm':
+                req_obj.approved_by = None
+                update_fields.append('approved_by')
+            elif mapped_status == 'refuse':
+                if not req_obj.refusal_reason:
+                    req_obj.refusal_reason = 'Refused via Kanban board'
+                    update_fields.append('refusal_reason')
+
+            req_obj.save(update_fields=update_fields)
+            return JsonResponse({
+                'success': True,
+                'message': f"Leave status updated to {req_obj.status_label}",
+                'record_id': req_obj.id,
+                'new_value': mapped_status,
+                'display_label': req_obj.status_label
+            })
+
+        elif field_name in ('leave_type', 'leave_type_id'):
+            lt = None
+            if new_val_str.isdigit():
+                lt = LeaveType.objects.filter(id=int(new_val_str)).first() if LeaveType else None
+            if not lt and LeaveType:
+                lt = LeaveType.objects.filter(name__iexact=new_val_str).first()
+            if lt:
+                req_obj.leave_type = lt
+                req_obj.save(update_fields=['leave_type'])
+                return JsonResponse({
+                    'success': True,
+                    'message': f"Leave type updated to {lt.name}",
+                    'record_id': req_obj.id,
+                    'new_value': lt.name,
+                    'display_label': lt.name
+                })
+
+    # 3. Generic model fallback
+    model_cls = _resolve_model(model_key)
+    if model_cls:
+        record = model_cls.objects.filter(id=record_id).first()
+        if not record:
+            return JsonResponse({'success': False, 'error': f'Record #{record_id} not found.'}, status=404)
+        if hasattr(record, field_name):
+            setattr(record, field_name, new_value)
+            record.save(update_fields=[field_name])
+            return JsonResponse({
+                'success': True,
+                'message': f'Record updated successfully.',
+                'record_id': record_id,
+                'new_value': str(new_value)
+            })
+
+    return JsonResponse({'success': False, 'error': f'Unsupported model or field ({model_key}.{field_name}).'}, status=400)
+
+
 def batch_action(request):
     """
     Unified batch action processor for all list views:

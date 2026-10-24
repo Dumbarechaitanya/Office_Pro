@@ -50,14 +50,14 @@
          ========================================================================= -->
     {% if groups %}
       <!-- Odoo-Style Grouped Kanban Multi-Column Panels / Swimlanes -->
-      <div class="op-kanban-board" style="display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; padding-bottom: 24px; min-height: calc(100vh - 200px);">
+      <div class="op-kanban-board" data-model="hr.leave" data-group-by="{{ active_group_by|default:'status' }}" style="display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; padding-bottom: 24px; min-height: calc(100vh - 200px);">
         {% for grp in groups %}
-          <div class="op-kanban-column" style="width: 310px; min-width: 310px; flex-shrink: 0; display: flex; flex-direction: column;">
+          <div class="op-kanban-column" data-group-field="{{ active_group_by|default:'status' }}" data-group-value="{{ grp.raw_val|default:grp.key|default:grp.label }}" data-group-label="{{ grp.label }}" style="width: 310px; min-width: 310px; flex-shrink: 0; display: flex; flex-direction: column;">
             <!-- Column Header -->
             <div class="op-kanban-column-header" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 10px 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px;">
               <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
                 <span>{{ grp.label }}</span>
-                <span style="color: #64748b; font-weight: 600; margin-left: 4px;">({{ grp.count }})</span>
+                <span class="op-column-count" style="color: #64748b; font-weight: 600; margin-left: 4px;">({{ grp.count }})</span>
               </div>
               {% if create_url %}
               <a href="{{ create_url }}" class="op-column-plus-btn" style="text-decoration: none; color: #64748b; font-size: 20px; font-weight: 400; line-height: 1; padding: 0 4px;" title="New request">&#43;</a>
@@ -67,9 +67,9 @@
             </div>
 
             <!-- Column Cards Stack -->
-            <div class="op-kanban-column-cards" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="op-kanban-column-cards" style="display: flex; flex-direction: column; gap: 12px; min-height: 180px; flex: 1; border-radius: 6px; padding: 4px; transition: background 0.15s ease;">
               {% for req in grp.rows %}
-                <div class="leave-kanban-card" id="leaveCard_{{ req.id }}" style="margin: 0;">
+                <div class="leave-kanban-card" id="leaveCard_{{ req.id }}" data-record-id="{{ req.id }}" data-model="hr.leave" data-kanban-card="true" style="margin: 0;">
                   <!-- Diagonal Ribbon -->
                   <div class="op-ribbon-wrapper">
                     {% if req.status == 'confirm' or req.status == 'Pending' %}
@@ -154,6 +154,10 @@
                       </div>
                     {% endif %}
                   </div>
+                </div>
+              {% empty %}
+                <div class="op-empty-column-placeholder" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 32px 16px; text-align: center; color: #94a3b8; font-size: 13px; font-weight: 500; background: #f8fafc; pointer-events: none; margin-top: 4px;">
+                  Drop cards here
                 </div>
               {% endfor %}
             </div>
@@ -431,4 +435,5 @@
 </div>
 
 <script src="{% static 'base/js/list_view.js' %}"></script>
+<script src="{% static 'base/js/kanban_drag_drop.js' %}"></script>
 {% endblock %}

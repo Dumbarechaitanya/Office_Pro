@@ -228,6 +228,8 @@ def leave_management_requests(request):
     filter_mode = request.GET.get('filter', 'all')
     search_q = request.GET.get('q', '').strip()
     group_by_field = request.GET.get('group_by', '').strip()
+    if not group_by_field and view_mode == 'kanban':
+        group_by_field = 'status'
 
     qs = LeaveRequest.objects.filter(is_active=True).select_related('employee', 'leave_type', 'approved_by')
 

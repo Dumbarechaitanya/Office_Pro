@@ -174,27 +174,84 @@ def apply_group_by(dataset, group_by_field):
                 return None
         return curr
 
-    from collections import defaultdict
-    buckets = defaultdict(list)
+    from collections import OrderedDict
+    buckets = OrderedDict()
+    custom_labels = {}
+    ordering_keys = []
+
     rows = dataset if isinstance(dataset, (list, tuple)) else list(dataset)
+
+    # 1. Specialized pre-seeding for Leave Request status stages
+    if group_by_field == 'status':
+        ordering_keys = ['confirm', 'validate', 'refuse']
+        custom_labels = {
+            'confirm': 'To Approve',
+            'validate': 'Approved',
+            'refuse': 'Refused',
+            'draft': 'Draft',
+        }
+        for k in ordering_keys:
+            buckets[k] = []
+
+    # 2. Specialized pre-seeding for Department (Employee model)
+    elif group_by_field in ('department', 'department_rel'):
+        try:
+            from employee.models import Department
+            depts = list(Department.objects.filter(is_active=True).order_by('name'))
+            for d in depts:
+                buckets[d.name] = []
+                ordering_keys.append(d.name)
+        except Exception:
+            pass
 
     for row in rows:
         val = resolve_val(row, group_by_field)
-        buckets[val].append(row)
+
+        # Handle object values (e.g. Department or LeaveType foreign keys)
+        if hasattr(val, 'name'):
+            key = val.name
+        elif hasattr(val, 'id') and not isinstance(val, (int, str)):
+            key = str(val)
+        else:
+            key = val
+
+        # Normalize status aliases
+        if group_by_field == 'status':
+            if key in ('Pending', 'To Approve'):
+                key = 'confirm'
+            elif key in ('Approved',):
+                key = 'validate'
+            elif key in ('Rejected', 'Refused'):
+                key = 'refuse'
+
+        if key in buckets:
+            buckets[key].append(row)
+        else:
+            buckets[key] = [row]
 
     groups = []
     for key, items in buckets.items():
-        if isinstance(key, bool):
+        if key in custom_labels:
+            label = custom_labels[key]
+        elif isinstance(key, bool):
             label = 'Yes' if key else 'No'
         elif hasattr(key, 'name'):
             label = str(key.name)
         elif key not in (None, ''):
             label = str(key)
         else:
-            label = 'None'
-        groups.append({'key': key, 'label': label, 'count': len(items), 'rows': items})
+            label = 'Unassigned'
 
-    groups.sort(key=lambda g: str(g['label']))
+        raw_val = getattr(key, 'id', key) if hasattr(key, 'id') else key
+        groups.append({'key': key, 'raw_val': raw_val, 'label': label, 'count': len(items), 'rows': items})
+
+    # Sort groups: if ordering_keys defined, follow that sequence; otherwise alphabetical
+    if ordering_keys:
+        order_map = {k: idx for idx, k in enumerate(ordering_keys)}
+        groups.sort(key=lambda g: order_map.get(g['key'], 999))
+    else:
+        groups.sort(key=lambda g: str(g['label']))
+
     return groups
 
 

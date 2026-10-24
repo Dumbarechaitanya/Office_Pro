@@ -71,6 +71,8 @@ def employee_list(request):
         domain = []
     group_by_field = request.GET.get('group_by') or ''
     view_mode = request.GET.get('view_mode', 'kanban')  # kanban or list
+    if not group_by_field and view_mode == 'kanban':
+        group_by_field = 'department'
 
     employees = Employee.objects.filter(is_active=True).select_related('department_rel', 'manager')
     employees = apply_search(employees, domain, query, search_fields=['name', 'employee_code', 'email', 'job_title', 'department', 'branch'])
