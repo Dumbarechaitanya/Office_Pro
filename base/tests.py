@@ -164,6 +164,39 @@ class BatchActionsViewTests(SimpleTestCase):
         self.assertIn(b'imported successfully', response.content)
         mock_create.assert_called_once_with(username='imported_user', email='imported@test.com')
 
+    @patch('base.views.get_current_ir_user')
+    def test_batch_action_export_denied_for_non_admin_on_system_models(self, mock_get_user):
+        from base.views import batch_action
+        mock_user = SimpleNamespace(id=99, username='standard_user', is_active=True, is_admin=False)
+        mock_get_user.return_value = mock_user
+
+        request = self.factory.get('/batch-action/?action=export_csv&model_key=res.users&ids=1')
+        response = batch_action(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(b'Administrator role required', response.content)
+
+    @patch('base.views.get_current_ir_user')
+    def test_batch_action_import_denied_for_non_admin(self, mock_get_user):
+        from base.views import batch_action
+        mock_user = SimpleNamespace(id=99, username='standard_user', is_active=True, is_admin=False)
+        mock_get_user.return_value = mock_user
+
+        request = self.factory.post('/batch-action/', {'action': 'import_records', 'model_key': 'res.users'})
+        response = batch_action(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(b'Permission Denied', response.content)
+
+    @patch('base.views.get_current_ir_user')
+    def test_batch_action_unauthorized_model_denied(self, mock_get_user):
+        from base.views import batch_action
+        mock_user = SimpleNamespace(id=99, username='standard_user', is_active=True, is_admin=False)
+        mock_get_user.return_value = mock_user
+
+        request = self.factory.get('/batch-action/?action=export_csv&model_key=dangerous.model&ids=1')
+        response = batch_action(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(b'not permitted', response.content)
+
 
 class DebugModeMiddlewareTests(SimpleTestCase):
     def setUp(self):

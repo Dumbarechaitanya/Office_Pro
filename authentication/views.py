@@ -1,10 +1,12 @@
 import json
 from django.contrib import messages
 from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
 from django.db import models
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from base.models import ResUsers, ResUsersGroups
@@ -20,6 +22,8 @@ def login_view(request):
     """
     Handles user login using Django's authentication system and custom ResUsersBackend.
     Allows authenticating and switching users on POST or when ?switch=1 is provided.
+    Enforces password change if default temporary password is used.
+    Protects against open redirects.
     """
     error = None
 
@@ -34,7 +38,17 @@ def login_view(request):
             user = authenticate(request, username=identifier, password=password)
             if user and user.is_active:
                 login_user(request, user)
+
+                # Enforce password change if logging in with the default password '123'
+                is_default_password = (password == '123') or (bool(user.password_hash) and check_password('123', user.password_hash))
+                if is_default_password:
+                    request.session['force_password_change'] = True
+                    messages.warning(request, 'Your account is using a default temporary password (123). Please set a new password before accessing the system.')
+                    return redirect('change_password')
+
                 next_url = request.GET.get('next') or request.POST.get('next') or reverse('home')
+                if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+                    next_url = reverse('home')
                 return redirect(next_url)
             else:
                 error = 'Invalid username/email or password.'
@@ -43,6 +57,8 @@ def login_view(request):
         current_user = get_current_ir_user(request)
         if current_user and not request.GET.get('switch'):
             next_url = request.GET.get('next') or reverse('home')
+            if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+                next_url = reverse('home')
             return redirect(next_url)
 
     return render(request, 'authentication/login.html', {
@@ -118,8 +134,11 @@ def forgot_password_view(request):
                 if not ok:
                     error = err_msg
                     step = 'verify'
-                elif len(new_password) < 6:
-                    error = 'New password must be at least 6 characters long.'
+                elif len(new_password) < 8:
+                    error = 'New password must be at least 8 characters long.'
+                    step = 'verify'
+                elif new_password.lower() in ('123', 'admin', 'password', '12345678', 'admin123', 'admin@123'):
+                    error = 'Please choose a stronger password that is not a common default.'
                     step = 'verify'
                 elif new_password != confirm_password:
                     error = 'New passwords do not match.'
@@ -234,8 +253,12 @@ def change_password_view(request):
         new_password = request.POST.get('new_password', '').strip()
         confirm_password = request.POST.get('confirm_password', '').strip()
 
-        if len(new_password) < 6:
-            error = 'New password must be at least 6 characters long.'
+        if len(new_password) < 8:
+            error = 'New password must be at least 8 characters long.'
+        elif new_password.lower() in ('123', 'admin', 'password', '12345678', 'admin123', 'admin@123'):
+            error = 'Please choose a stronger password that is not a common default.'
+        elif new_password.lower() == user.username.lower():
+            error = 'New password cannot be the same as your username.'
         elif new_password != confirm_password:
             error = 'New passwords do not match.'
         elif method == 'current_password':
@@ -245,6 +268,7 @@ def change_password_view(request):
             else:
                 user.password_hash = hash_password(new_password)
                 user.save(update_fields=['password_hash', 'updated_at'])
+                request.session.pop('force_password_change', None)
                 login_user(request, user)
                 messages.success(request, 'Password updated successfully.')
                 return redirect('profile')
@@ -257,6 +281,7 @@ def change_password_view(request):
                 user.password_hash = hash_password(new_password)
                 user.save(update_fields=['password_hash', 'updated_at'])
                 clear_otp(request)
+                request.session.pop('force_password_change', None)
                 login_user(request, user)
                 messages.success(request, 'Password updated successfully via email OTP verification.')
                 return redirect('profile')

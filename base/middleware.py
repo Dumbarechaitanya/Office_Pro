@@ -141,7 +141,6 @@ class EnforceLoginMiddleware:
         '/reset-password',
         '/auth/',
         '/static/',
-        '/media/',
         '/favicon.ico',
         '/admin/',
     )
@@ -161,6 +160,21 @@ class EnforceLoginMiddleware:
                 return JsonResponse({'error': 'Authentication required. Please log in.'}, status=401)
             next_url = request.get_full_path()
             return HttpResponseRedirect(f"/login/?next={next_url}")
+
+        # Enforce password change if user is on default temporary password
+        if hasattr(request, 'session') and request.session.get('force_password_change'):
+            allowed_during_force = (
+                '/profile/password/',
+                '/logout',
+                '/auth/',
+                '/static/',
+                '/healthz',
+                '/ping',
+            )
+            if not any(path.startswith(prefix) for prefix in allowed_during_force):
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('accept', ''):
+                    return JsonResponse({'error': 'Password change required before accessing ERP features.'}, status=403)
+                return HttpResponseRedirect('/profile/password/')
 
         return self.get_response(request)
 

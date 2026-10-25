@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 from django.contrib import messages
 from django.db import IntegrityError
 from django.db.models import Q
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -437,6 +437,49 @@ def kanban_add_column(request):
     })
 
 
+BATCH_ADMIN_ONLY_MODELS = {
+    'res.users', 'res_users',
+    'res.groups',
+    'res.privilege',
+    'res.company',
+    'ir.mail_server',
+    'ir.config_parameter',
+    'ir.cron',
+    'ir.model',
+    'ir.model.fields',
+    'ir.ui.view',
+    'ir.ui.menu',
+    'ir.sequence',
+    'ir.model.access',
+    'ir.rule',
+    'ir.actions.act_window',
+    'ir.model.relation',
+    'report.paperformat',
+    'ir.actions.report',
+    'ir.logging',
+}
+
+BATCH_ALLOWED_BUSINESS_MODELS = {
+    'hr.employee', 'employee',
+    'hr.attendance', 'attendance',
+    'hr.leave', 'leave',
+    'hr.leave.allocation', 'leave.allocation',
+    'hr.leave.type', 'leave.type',
+    'hr.leave.mandatory.day',
+    'res.partner',
+    'mail.message',
+    'mail.activity',
+    'mail.channel',
+    'mail.activity.type',
+}
+
+SENSITIVE_EXPORT_FIELDS = {
+    'password_hash', 'password', 'smtp_pass', 'smtp_user_pass',
+    'token', 'secret', 'api_key', 'auth_token', 'private_key',
+    'otp', 'reset_token', 'secret_key'
+}
+
+
 def batch_action(request):
     """
     Unified batch action processor for all list views:
@@ -445,16 +488,30 @@ def batch_action(request):
     - Archive (is_active = False)
     - Unarchive (is_active = True)
     - Delete (with strict user role & model permission checks)
+    Enforces strict model allowlists and role-based access control.
     """
     current_user = get_current_ir_user(request)
-    if not current_user:
+    if not current_user or not getattr(current_user, 'is_active', False):
         return JsonResponse({'status': 'error', 'message': 'Authentication required.'}, status=401)
+
+    is_admin = is_admin_user(current_user)
 
     if request.method == 'GET':
         action = request.GET.get('action')
-        model_key = request.GET.get('model_key') or request.GET.get('model')
+        model_key = (request.GET.get('model_key') or request.GET.get('model') or '').strip().lower()
         raw_ids = request.GET.get('ids', '')
         ids = [int(i.strip()) for i in raw_ids.split(',') if i.strip().isdigit()]
+
+        if not model_key:
+            return HttpResponse('Missing model parameter.', status=400)
+
+        # 1. Authorization: Technical / administrative models require Admin
+        if model_key in BATCH_ADMIN_ONLY_MODELS and not is_admin:
+            return HttpResponseForbidden("Permission Denied: Administrator role required to export system models.")
+
+        # 2. Allowlist check for non-admins
+        if not is_admin and model_key not in BATCH_ALLOWED_BUSINESS_MODELS:
+            return HttpResponseForbidden(f"Permission Denied: Model '{model_key}' is not permitted for batch export.")
 
         model_cls = _resolve_model(model_key)
         if not model_cls:
@@ -462,7 +519,30 @@ def batch_action(request):
 
         records_qs = model_cls.objects.filter(id__in=ids) if ids else model_cls.objects.all()
 
-        fields = [f for f in model_cls._meta.fields if f.name != 'password_hash']
+        # 3. Role-based scoping for standard business models
+        if not is_admin:
+            if model_key in ('hr.employee', 'employee'):
+                if not is_hr_officer_or_admin(current_user):
+                    return HttpResponseForbidden("Permission Denied: HR Officer role required to export employee records.")
+            elif model_key in ('hr.attendance', 'attendance'):
+                if not is_attendance_officer_or_admin(current_user):
+                    emp = get_user_linked_employee(current_user)
+                    if not emp:
+                        return HttpResponseForbidden("Permission Denied: No linked employee profile found.")
+                    records_qs = records_qs.filter(employee=emp)
+            elif model_key in ('hr.leave', 'leave', 'hr.leave.allocation', 'leave.allocation'):
+                if not is_leave_officer_or_admin(current_user):
+                    emp = get_user_linked_employee(current_user)
+                    if not emp:
+                        return HttpResponseForbidden("Permission Denied: No linked employee profile found.")
+                    records_qs = records_qs.filter(employee=emp)
+
+        # 4. Strict field filter: completely remove any passwords, secrets, tokens, smtp credentials
+        fields = [
+            f for f in model_cls._meta.fields 
+            if f.name not in SENSITIVE_EXPORT_FIELDS 
+            and not any(s in f.name.lower() for s in ('password', 'smtp_pass', 'secret', 'token', 'private_key'))
+        ]
         headers = [f.verbose_name.title() if hasattr(f, 'verbose_name') else f.name.replace('_', ' ').title() for f in fields]
 
         if action == 'export_csv':
@@ -520,13 +600,43 @@ def batch_action(request):
 
     elif request.method == 'POST':
         action = request.POST.get('action')
-        model_key = request.POST.get('model_key') or request.POST.get('model')
+        model_key = (request.POST.get('model_key') or request.POST.get('model') or '').strip().lower()
+
+        if not model_key:
+            return JsonResponse({'status': 'error', 'message': 'Missing model parameter.'}, status=400)
+
+        # 1. Authorization: Technical models require Admin for ANY batch action
+        if model_key in BATCH_ADMIN_ONLY_MODELS and not is_admin:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Permission Denied: Administrator role required to perform batch actions on system models.'
+            }, status=403)
+
+        # 2. Allowlist check for non-admins
+        if not is_admin and model_key not in BATCH_ALLOWED_BUSINESS_MODELS:
+            return JsonResponse({
+                'status': 'error',
+                'message': f"Permission Denied: Model '{model_key}' is not allowed for batch actions."
+            }, status=403)
 
         model_cls = _resolve_model(model_key)
         if not model_cls:
             return JsonResponse({'status': 'error', 'message': f'Model "{model_key}" not recognized.'}, status=400)
 
         if action == 'import_records':
+            # Role check for import:
+            if model_key in ('hr.employee', 'employee'):
+                if not (is_admin or is_hr_officer_or_admin(current_user)):
+                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: HR Officer role required to import employees.'}, status=403)
+            elif model_key in ('hr.attendance', 'attendance'):
+                if not (is_admin or is_attendance_officer_or_admin(current_user)):
+                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: Attendance Officer role required to import attendance.'}, status=403)
+            elif model_key in ('hr.leave', 'leave', 'hr.leave.allocation', 'leave.allocation'):
+                if not (is_admin or is_leave_officer_or_admin(current_user)):
+                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: Time Off Officer role required to import leave records.'}, status=403)
+            elif not is_admin:
+                return JsonResponse({'status': 'error', 'message': 'Permission Denied: Administrator role required to import records.'}, status=403)
+
             import_file = request.FILES.get('import_file')
             if not import_file:
                 return JsonResponse({'status': 'error', 'message': 'Please choose a file to import.'}, status=400)
@@ -536,7 +646,13 @@ def batch_action(request):
             created_count = 0
 
             try:
-                valid_fields = {f.name: f for f in model_cls._meta.fields if f.name not in ('id', 'pk', 'password_hash')}
+                # Do NOT allow importing into sensitive or credential fields
+                valid_fields = {
+                    f.name: f for f in model_cls._meta.fields 
+                    if f.name not in ('id', 'pk') 
+                    and f.name not in SENSITIVE_EXPORT_FIELDS 
+                    and not any(s in f.name.lower() for s in ('password', 'is_superuser', 'is_admin'))
+                }
                 
                 if file_name.endswith('.csv'):
                     content = import_file.read()
@@ -655,28 +771,41 @@ def batch_action(request):
             except Exception as e:
                 return JsonResponse({'status': 'error', 'message': f'Failed to delete: {str(e)}'}, status=400)
 
-        elif action == 'archive':
+        elif action in ('archive', 'unarchive'):
+            # Enforce authorization for archiving
             if model_key in ('hr.employee', 'employee'):
-                from base.module_manager import archive_employee_safely
-                for eid in ids:
-                    archive_employee_safely(eid, current_user)
-            else:
-                qs = model_cls.objects.filter(id__in=ids)
-                if hasattr(model_cls, 'is_active'):
-                    qs.update(is_active=False)
-                elif hasattr(model_cls, 'active'):
-                    qs.update(active=False)
-            return JsonResponse({'status': 'success', 'message': f'{len(ids)} record(s) archived successfully.'})
+                if not (is_admin or is_hr_officer_or_admin(current_user)):
+                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: HR Officer role required to archive employees.'}, status=403)
+                if action == 'archive':
+                    from base.module_manager import archive_employee_safely
+                    for eid in ids:
+                        archive_employee_safely(eid, current_user)
+                else:
+                    Employee.objects.filter(id__in=ids).update(is_active=True)
+                return JsonResponse({'status': 'success', 'message': f'{len(ids)} employee(s) {action}d successfully.'})
+            elif model_key in ('hr.attendance', 'attendance'):
+                if not (is_admin or is_attendance_officer_or_admin(current_user)):
+                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: Attendance Officer role required.'}, status=403)
+            elif model_key in ('hr.leave', 'leave', 'hr.leave.allocation', 'leave.allocation'):
+                if not (is_admin or is_leave_officer_or_admin(current_user)):
+                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: Time Off Officer role required.'}, status=403)
+            elif not is_admin:
+                return JsonResponse({'status': 'error', 'message': 'Permission Denied: Administrator role required.'}, status=403)
 
-        elif action == 'unarchive':
             qs = model_cls.objects.filter(id__in=ids)
+            target_val = (action == 'unarchive')
             if hasattr(model_cls, 'is_active'):
-                qs.update(is_active=True)
+                qs.update(is_active=target_val)
             elif hasattr(model_cls, 'active'):
-                qs.update(active=True)
-            return JsonResponse({'status': 'success', 'message': f'{len(ids)} record(s) unarchived successfully.'})
+                qs.update(active=target_val)
+            return JsonResponse({'status': 'success', 'message': f'{len(ids)} record(s) {action}d successfully.'})
 
         elif action == 'duplicate':
+            if model_key in BATCH_ADMIN_ONLY_MODELS and not is_admin:
+                return JsonResponse({'status': 'error', 'message': 'Permission Denied: Administrator role required to duplicate system records.'}, status=403)
+            if model_key in ('hr.employee', 'employee') and not (is_admin or is_hr_officer_or_admin(current_user)):
+                return JsonResponse({'status': 'error', 'message': 'Permission Denied: HR Officer role required to duplicate employees.'}, status=403)
+
             duplicated_count = 0
             for obj in model_cls.objects.filter(id__in=ids):
                 obj.pk = None
@@ -2010,6 +2139,7 @@ def technical_cron_detail(request, cron_id):
     })
 
 
+@login_required_ir
 def relation_search(request):
     model_key = request.GET.get('model', '')
     query = request.GET.get('q', '').strip()
@@ -3007,7 +3137,7 @@ Your Login Credentials:
 - Email / Login: {user_obj.email}
 - Temporary Password: 123
 
-Note: This is a default temporary password. You may change this password at any time in your Profile page after logging in.
+Note: For your account security, this is a one-time temporary password. You will be required to set a new secure password upon your first login.
 
 Log in here: {login_url}
 
