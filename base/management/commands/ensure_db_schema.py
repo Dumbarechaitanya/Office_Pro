@@ -277,6 +277,18 @@ class Command(BaseCommand):
             "ALTER TABLE ir_sequence ADD COLUMN IF NOT EXISTS use_date_range BOOLEAN DEFAULT FALSE;",
             "ALTER TABLE ir_sequence ADD COLUMN IF NOT EXISTS step INTEGER DEFAULT 1;",
             "ALTER TABLE ir_sequence ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES res_company(id) ON DELETE SET NULL;",
+
+            # 13. res_groups constraint fix: drop legacy unique(name), enforce unique(privilege, name)
+            "ALTER TABLE res_groups DROP CONSTRAINT IF EXISTS res_groups_name_key;",
+            """
+            DO $$ BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'res_groups_privilege_name_key'
+                ) THEN
+                    ALTER TABLE res_groups ADD CONSTRAINT res_groups_privilege_name_key UNIQUE (privilege, name);
+                END IF;
+            END $$;
+            """,
         ]
 
         with connection.cursor() as cursor:

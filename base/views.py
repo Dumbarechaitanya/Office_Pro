@@ -3336,6 +3336,13 @@ def ensure_default_access_rights():
 
 def ensure_default_privileges():
     """Ensure standard privileges, group associations, and model access rights are populated."""
+    # Fast path: if privileges & primary groups already exist, avoid redundant queries on every request
+    try:
+        if ResPrivilege.objects.filter(is_active=True).count() >= 4 and ResGroups.objects.filter(is_active=True).count() >= 10:
+            return
+    except Exception:
+        pass
+
     for priv_name, priv_seq, groups_data in DEFAULT_PRIVILEGES_DATA:
         priv_obj, _ = ResPrivilege.objects.get_or_create(
             name=priv_name,
@@ -3348,42 +3355,54 @@ def ensure_default_privileges():
         for grp_name, grp_seq, grp_desc in groups_data:
             grp_obj = ResGroups.objects.filter(privilege=priv_name, name=grp_name).first()
             if not grp_obj:
-                ResGroups.objects.create(
-                    name=grp_name,
-                    privilege=priv_name,
-                    privilege_ref=priv_obj,
-                    description=grp_desc,
-                    sequence=grp_seq,
-                    is_active=True
-                )
+                try:
+                    ResGroups.objects.create(
+                        name=grp_name,
+                        privilege=priv_name,
+                        privilege_ref=priv_obj,
+                        description=grp_desc,
+                        sequence=grp_seq,
+                        is_active=True
+                    )
+                except Exception:
+                    pass
             else:
                 grp_obj.privilege_ref = priv_obj
                 grp_obj.description = grp_desc
                 grp_obj.sequence = grp_seq
-                grp_obj.save(update_fields=['privilege_ref', 'description', 'sequence'])
+                try:
+                    grp_obj.save(update_fields=['privilege_ref', 'description', 'sequence'])
+                except Exception:
+                    pass
 
     # Ensure standalone / primary Administrator and User groups also exist
     admin_grp = ResGroups.objects.filter(name='Administrator', privilege='General').first()
     if not admin_grp and not ResGroups.objects.filter(name='Administrator').exists():
-        ResGroups.objects.create(
-            name='Administrator',
-            privilege='General',
-            privilege_ref=None,
-            sequence=10,
-            description='Full System Administrator',
-            is_active=True
-        )
+        try:
+            ResGroups.objects.create(
+                name='Administrator',
+                privilege='General',
+                privilege_ref=None,
+                sequence=10,
+                description='Full System Administrator',
+                is_active=True
+            )
+        except Exception:
+            pass
 
     user_grp = ResGroups.objects.filter(name='User', privilege='General').first()
     if not user_grp and not ResGroups.objects.filter(name='User').exists():
-        ResGroups.objects.create(
-            name='User',
-            privilege='General',
-            privilege_ref=None,
-            sequence=20,
-            description='Internal User',
-            is_active=True
-        )
+        try:
+            ResGroups.objects.create(
+                name='User',
+                privilege='General',
+                privilege_ref=None,
+                sequence=20,
+                description='Internal User',
+                is_active=True
+            )
+        except Exception:
+            pass
 
     ensure_default_access_rights()
 
