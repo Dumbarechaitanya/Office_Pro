@@ -501,6 +501,21 @@
         dropdown.classList.remove('show');
       }
     });
+
+    // Active Tab Keep-Alive Heartbeat (Prevents Render free tier idle sleep while tab is open)
+    (function() {
+      var HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+      function sendHeartbeat() {
+        fetch('/healthz/', { method: 'GET', cache: 'no-store' })
+          .catch(function() {});
+      }
+      setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+          sendHeartbeat();
+        }
+      });
+    })();
   </script>
 </body>
 </html>

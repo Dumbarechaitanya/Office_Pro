@@ -100,6 +100,32 @@ MODEL_CLASS_MAP = {
 }
 
 
+def healthz_view(request):
+    """
+    Lightweight health check and keep-alive endpoint for Render.com.
+    Responds in <5ms without querying database (preserving Neon serverless compute quota).
+    Optional: ?check_db=1 performs a fast connection check.
+    """
+    data = {
+        'status': 'ok',
+        'service': 'nexuswave-officepro',
+        'timestamp': timezone.now().isoformat(),
+    }
+    if request.GET.get('check_db') == '1':
+        from django.db import connection
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+            data['database'] = 'connected'
+        except Exception as e:
+            data['database'] = f'error: {str(e)}'
+            return JsonResponse(data, status=503)
+
+    response = JsonResponse(data, status=200)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
+
+
 def user_can_delete_model(user, model_name):
     """
     Evaluates if user has delete permission (perm_unlink / can_delete) for a model.

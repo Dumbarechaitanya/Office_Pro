@@ -54,7 +54,7 @@ class DebugModeMiddleware:
                 # Skip AJAX, static files, media files, and API endpoints
                 is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('accept', '')
                 is_static_or_media = request.path.startswith(settings.STATIC_URL) or (settings.MEDIA_URL and request.path.startswith(settings.MEDIA_URL))
-                is_api_or_action = request.path in ('/batch-action/', '/technical/relation-search/', '/auth/send-otp/') or request.path.startswith('/auth/send-otp')
+                is_api_or_action = request.path in ('/batch-action/', '/technical/relation-search/', '/auth/send-otp/') or request.path.startswith('/auth/send-otp') or request.path.startswith('/healthz') or request.path.startswith('/ping')
 
                 if not is_ajax and not is_static_or_media and not is_api_or_action and 'debug' not in request.GET:
                     query = request.GET.copy()
@@ -133,6 +133,8 @@ class EnforceLoginMiddleware:
     Redirects all unauthenticated requests directly to the login screen (/login/).
     """
     EXEMPT_PREFIXES = (
+        '/healthz',
+        '/ping',
         '/login',
         '/logout',
         '/forgot-password',

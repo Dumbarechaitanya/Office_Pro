@@ -18,8 +18,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from base import views as base_views
 
 urlpatterns = [
+    path('healthz/', base_views.healthz_view, name='healthz'),
+    path('ping/', base_views.healthz_view, name='ping'),
     path('admin/', admin.site.urls),
     path('', include('authentication.urls')),
     path('', include('base.urls')),

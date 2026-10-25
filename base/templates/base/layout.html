@@ -552,6 +552,21 @@
         if (e.filename && e.filename.includes('layout.js')) return; // Ignore harmless layout clicks
         console.error('[Office Pro Diagnostic Interceptor]', e);
       });
+
+      // Active Tab Keep-Alive Heartbeat (Prevents Render free tier idle sleep while tab is open)
+      (function() {
+        var HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+        function sendHeartbeat() {
+          fetch('/healthz/', { method: 'GET', cache: 'no-store' })
+            .catch(function() {});
+        }
+        setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+        document.addEventListener('visibilitychange', function() {
+          if (document.visibilityState === 'visible') {
+            sendHeartbeat();
+          }
+        });
+      })();
     </script>
     {% block extra_js %}{% endblock %}
   </body>
