@@ -52,7 +52,7 @@ class Command(BaseCommand):
                 hashed += 1
 
         # 2. legacy implicit admins -> explicit group membership
-        admin_group = ResGroups.objects.filter(name__iexact='Administrator').first()
+        admin_group = ResGroups.objects.filter(name__iexact='Administrator', privilege__iexact='General').first() or ResGroups.objects.filter(name__iexact='Administrator').first()
         if admin_group is None and not dry:
             admin_group = ResGroups.objects.create(name='Administrator', privilege='General', is_active=True)
         legacy = [
