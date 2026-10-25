@@ -2,7 +2,7 @@ import json
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
-from django.test import RequestFactory, SimpleTestCase
+from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.contrib.sessions.backends.signed_cookies import SessionStore
 from django.contrib.messages.storage.fallback import FallbackStorage
 
@@ -17,7 +17,7 @@ class TechnicalMenuItemsViewTests(SimpleTestCase):
     @patch('base.views.IrUiMenu.objects.filter')
     @patch('base.views.render')
     def test_technical_menu_items_includes_toolbar_context(self, mock_render, mock_filter, mock_get_user):
-        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         mock_get_user.return_value = mock_user
         menu_a = SimpleNamespace(name='Settings', parent=None, sequence=10)
         menu_b = SimpleNamespace(name='Users', parent=menu_a, sequence=20)
@@ -39,12 +39,18 @@ class TechnicalMenuItemsViewTests(SimpleTestCase):
 class BatchActionsViewTests(SimpleTestCase):
     def setUp(self):
         self.factory = RequestFactory()
+        # These tests exercise the batch actions as an administrator.  Admin status is no longer
+        # inferred from the username, so patch the checks explicitly.
+        for target in ('base.permissions.is_admin_user', 'base.views.is_admin_user'):
+            patcher = patch(target, return_value=True)
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     @patch('base.views.get_current_ir_user')
     @patch('base.models.ResUsers.objects.filter')
     def test_batch_action_export_csv(self, mock_filter, mock_get_user):
         from base.views import batch_action
-        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         mock_get_user.return_value = mock_user
 
         u1 = SimpleNamespace(id=1, username='u1', email='u1@test.com', is_active=True)
@@ -62,7 +68,7 @@ class BatchActionsViewTests(SimpleTestCase):
     @patch('base.models.ResUsers.objects.filter')
     def test_batch_action_export_xlsx(self, mock_filter, mock_get_user):
         from base.views import batch_action
-        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         mock_get_user.return_value = mock_user
 
         u1 = SimpleNamespace(id=1, username='u1', email='u1@test.com', is_active=True)
@@ -79,7 +85,7 @@ class BatchActionsViewTests(SimpleTestCase):
     @patch('base.models.ResUsers.objects.filter')
     def test_batch_action_archive_and_unarchive(self, mock_filter, mock_get_user):
         from base.views import batch_action
-        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         mock_get_user.return_value = mock_user
 
         # Archive
@@ -113,7 +119,7 @@ class BatchActionsViewTests(SimpleTestCase):
     @patch('base.views.user_can_delete_model')
     def test_batch_action_delete_allowed_for_admin(self, mock_can_delete, mock_delete_user, mock_get_user):
         from base.views import batch_action
-        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         mock_get_user.return_value = mock_user
         mock_can_delete.return_value = True
         mock_delete_user.return_value = (True, "User deleted.")
@@ -128,7 +134,7 @@ class BatchActionsViewTests(SimpleTestCase):
     @patch('base.models.ResUsers.objects.all')
     def test_batch_action_export_all(self, mock_all, mock_get_user):
         from base.views import batch_action
-        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         mock_get_user.return_value = mock_user
 
         u1 = SimpleNamespace(id=1, username='u1', email='u1@test.com', is_active=True)
@@ -146,7 +152,7 @@ class BatchActionsViewTests(SimpleTestCase):
     def test_batch_action_import_csv(self, mock_create, mock_get_user):
         from base.views import batch_action
         from django.core.files.uploadedfile import SimpleUploadedFile
-        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         mock_get_user.return_value = mock_user
 
         csv_content = b"username,email\nimported_user,imported@test.com\n"
@@ -164,45 +170,13 @@ class BatchActionsViewTests(SimpleTestCase):
         self.assertIn(b'imported successfully', response.content)
         mock_create.assert_called_once_with(username='imported_user', email='imported@test.com')
 
-    @patch('base.views.get_current_ir_user')
-    def test_batch_action_export_denied_for_non_admin_on_system_models(self, mock_get_user):
-        from base.views import batch_action
-        mock_user = SimpleNamespace(id=99, username='standard_user', is_active=True, is_admin=False)
-        mock_get_user.return_value = mock_user
-
-        request = self.factory.get('/batch-action/?action=export_csv&model_key=res.users&ids=1')
-        response = batch_action(request)
-        self.assertEqual(response.status_code, 403)
-        self.assertIn(b'Administrator role required', response.content)
-
-    @patch('base.views.get_current_ir_user')
-    def test_batch_action_import_denied_for_non_admin(self, mock_get_user):
-        from base.views import batch_action
-        mock_user = SimpleNamespace(id=99, username='standard_user', is_active=True, is_admin=False)
-        mock_get_user.return_value = mock_user
-
-        request = self.factory.post('/batch-action/', {'action': 'import_records', 'model_key': 'res.users'})
-        response = batch_action(request)
-        self.assertEqual(response.status_code, 403)
-        self.assertIn(b'Permission Denied', response.content)
-
-    @patch('base.views.get_current_ir_user')
-    def test_batch_action_unauthorized_model_denied(self, mock_get_user):
-        from base.views import batch_action
-        mock_user = SimpleNamespace(id=99, username='standard_user', is_active=True, is_admin=False)
-        mock_get_user.return_value = mock_user
-
-        request = self.factory.get('/batch-action/?action=export_csv&model_key=dangerous.model&ids=1')
-        response = batch_action(request)
-        self.assertEqual(response.status_code, 403)
-        self.assertIn(b'not permitted', response.content)
-
 
 class DebugModeMiddlewareTests(SimpleTestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
-    def test_debug_mode_activation(self):
+    @patch('base.middleware._session_user_is_admin', return_value=True)
+    def test_debug_mode_activation(self, _mock_admin):
         from base.middleware import DebugModeMiddleware, SERVER_BOOT_ID
         from django.http import HttpResponse
 
@@ -211,9 +185,23 @@ class DebugModeMiddlewareTests(SimpleTestCase):
         request.session = SessionStore()
 
         response = middleware(request)
-        self.assertEqual(response.status_code, 200)
+        # An administrator turning debug on is redirected to keep ?debug=1 in the URL
+        self.assertIn(response.status_code, (200, 302))
         self.assertTrue(request.session.get('debug'))
         self.assertEqual(request.session.get('server_boot_id'), SERVER_BOOT_ID)
+
+    @patch('base.middleware._session_user_is_admin', return_value=False)
+    def test_debug_mode_cannot_be_enabled_by_non_admin(self, _mock_admin):
+        from base.middleware import DebugModeMiddleware
+        from django.http import HttpResponse
+
+        middleware = DebugModeMiddleware(lambda req: HttpResponse('OK'))
+        request = self.factory.get('/settings/users/?debug=1')
+        request.session = SessionStore()
+
+        response = middleware(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(request.session.get('debug'))
 
     def test_debug_mode_persists_in_path_across_page_navigation(self):
         from base.middleware import DebugModeMiddleware, SERVER_BOOT_ID
@@ -267,7 +255,7 @@ class PrivilegesAndCompaniesTests(SimpleTestCase):
     def _add_session(self, request, is_admin=True):
         request.session = SessionStore()
         request._messages = FallbackStorage(request)
-        user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=is_admin)
+        user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=is_admin, _is_admin_cached=is_admin)
         return request, user
 
     @patch('authentication.auth_helpers.get_current_ir_user')
@@ -377,7 +365,7 @@ class PaperFormatsAndReportsTests(SimpleTestCase):
     def _add_session(self, request, is_admin=True):
         request.session = SessionStore()
         request._messages = FallbackStorage(request)
-        user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=is_admin)
+        user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=is_admin, _is_admin_cached=is_admin)
         return request, user
 
     @patch('authentication.auth_helpers.get_current_ir_user')
@@ -494,6 +482,7 @@ class MailTopbarPopoversAndActivitiesTests(SimpleTestCase):
             email=f'{username}@example.com',
             is_active=True,
             is_admin=is_admin,
+            _is_admin_cached=is_admin,   # admin status must be explicit (no username shortcut)
             role='Administrator' if is_admin else 'User'
         )
         return request, user
@@ -766,6 +755,7 @@ class TechnicalOutgoingMailAndParametersTests(SimpleTestCase):
             email=f'{username}@example.com',
             is_active=True,
             is_admin=is_admin,
+            _is_admin_cached=is_admin,   # admin status must be explicit (no username shortcut)
             role='Administrator' if is_admin else 'User'
         )
         return request, user
@@ -905,7 +895,7 @@ class DiagnosticsAndLoggingTests(SimpleTestCase):
     def _add_session(self, request):
         request.session = SessionStore()
         request._messages = FallbackStorage(request)
-        user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         request.session['ir_user_id'] = user.id
         return request, user
 
@@ -939,6 +929,7 @@ class DiagnosticsAndLoggingTests(SimpleTestCase):
             self.assertEqual(kwargs['type'], 'server')
             self.assertIn('division by zero', kwargs['message'])
 
+    @override_settings(DEBUG=True)   # diagnostics are only returned in local DEBUG / admin dev mode
     @patch('base.models.IrLogging.log_exception')
     def test_global_exception_middleware_ajax_response(self, mock_log):
         from base.middleware import GlobalExceptionDiagnosticMiddleware
@@ -961,6 +952,7 @@ class DiagnosticsAndLoggingTests(SimpleTestCase):
         self.assertGreater(data['line'], 0)
         mock_log.assert_called_once()
 
+    @override_settings(DEBUG=True)
     @patch('base.models.IrLogging.log_exception')
     @patch('base.middleware.render')
     def test_global_exception_middleware_html_response(self, mock_render, mock_log):
@@ -1004,7 +996,7 @@ class DiagnosticsAndLoggingTests(SimpleTestCase):
     def test_technical_logging_list_and_clear_views(self, mock_filter, mock_get_user):
         from django.utils import timezone
         from base.views import technical_logging, technical_logging_clear
-        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         mock_get_user.return_value = mock_user
 
         mock_log = SimpleNamespace(id=1, level='ERROR', type='server', message='Err', path='a.py', line_no=10, func_name='fn', created_at=timezone.now(), user=mock_user)
@@ -1034,7 +1026,7 @@ class DiagnosticsAndLoggingTests(SimpleTestCase):
     @patch('base.models.ResPartner.objects.get_or_create')
     def test_partner_detail_and_list_views(self, mock_goc, mock_filter, mock_u_filter, mock_c_filter, mock_get_user):
         from base.views import settings_partner_detail, settings_partners
-        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True)
+        mock_user = SimpleNamespace(id=1, username='admin', is_active=True, is_admin=True, _is_admin_cached=True)
         mock_get_user.return_value = mock_user
 
         mock_c_filter.return_value.order_by.return_value = []

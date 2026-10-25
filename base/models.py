@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 
 
+from base.fields import EncryptedCharField
+
 class ResPrivilege(models.Model):
     _name = 'res.privilege'
     _description = 'Privileges'
@@ -852,7 +854,7 @@ class IrMailServer(models.Model):
     smtp_port = models.IntegerField(default=587, help_text="SMTP Port (e.g. 587 for STARTTLS, 465 for SSL, 25 for plain)")
     smtp_encryption = models.CharField(max_length=20, choices=ENCRYPTION_CHOICES, default='starttls')
     smtp_user = models.CharField(max_length=150, blank=True, null=True, help_text="Username/Email for SMTP authentication")
-    smtp_pass = models.CharField(max_length=255, blank=True, null=True, help_text="Password/App Password for SMTP authentication")
+    smtp_pass = EncryptedCharField(max_length=512, blank=True, null=True, help_text="Password/App Password for SMTP authentication (stored encrypted)")
     smtp_debug = models.BooleanField(default=False, help_text="Show full SMTP transcript in logs")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

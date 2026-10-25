@@ -206,6 +206,7 @@ class Command(BaseCommand):
             """,
             "ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS duration_days NUMERIC(5,2) DEFAULT 1.00;",
             "ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS refusal_reason TEXT;",
+            "ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS first_approved_by INTEGER REFERENCES employee(id) ON DELETE SET NULL;",
             "ALTER TABLE leave_request DROP CONSTRAINT IF EXISTS leave_request_status_check;",
             "ALTER TABLE leave_request ADD CONSTRAINT leave_request_status_check CHECK (status IN ('draft', 'confirm', 'validate', 'refuse', 'Pending', 'Approved', 'Rejected'));",
 

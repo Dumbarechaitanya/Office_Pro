@@ -1,7 +1,11 @@
+import logging
 from functools import wraps
+from urllib.parse import quote
 from django.shortcuts import redirect
 from django.contrib.auth import login as django_login, logout as django_logout
 from django.contrib.auth.hashers import make_password, check_password
+
+logger = logging.getLogger(__name__)
 
 
 def get_current_ir_user(request):
@@ -33,11 +37,20 @@ def login_user(request, user):
     except Exception:
         pass
 
+    logged_in = False
     try:
         django_login(request, user, backend='authentication.backends.ResUsersBackend')
+        logged_in = True   # django's login() already rotates the session key
     except Exception:
         # Fallback to session assignment if user model doesn't conform to standard auth backend
         pass
+
+    if not logged_in:
+        # Rotate the session key anyway (prevents session fixation).
+        try:
+            request.session.cycle_key()
+        except Exception:
+            logger.warning('Could not rotate session key on login', exc_info=True)
 
     request.session['user_id'] = user.id
     request.session.modified = True
@@ -65,34 +78,78 @@ def hash_password(raw_password):
     return make_password(raw_password)
 
 
+# Passwords that must never remain in use.  Anyone still using one is forced to change it
+# at next login (see base.middleware.ForcePasswordChangeMiddleware).
+KNOWN_WEAK_PASSWORDS = ('123', 'admin', 'admin123', 'Admin@123', 'password', '12345678')
+
+
 def verify_password(raw_password, password_hash):
     """
-    Verifies raw_password against password_hash using Django's check_password.
+    Verifies raw_password against a Django-hashed password_hash.
+
+    Plaintext comparison was removed on purpose: if a plaintext value is ever found in
+    the database, run `python manage.py harden_accounts` to hash it.
     """
     if not raw_password or not password_hash:
         return False
-    return check_password(raw_password, password_hash)
+    try:
+        return check_password(raw_password, password_hash)
+    except ValueError:
+        # Unknown / malformed hash format -> never authenticate.
+        return False
+
+
+def uses_known_weak_password(user):
+    """True if the account still uses a default/known-weak password (e.g. the old '123')."""
+    pw_hash = getattr(user, 'password_hash', '') or ''
+    if not pw_hash:
+        return False
+    return any(verify_password(weak, pw_hash) for weak in KNOWN_WEAK_PASSWORDS)
+
+
+def validate_new_password(raw_password, user=None):
+    """
+    Runs Django's AUTH_PASSWORD_VALIDATORS (length, common, numeric-only, similarity).
+    Returns an error string or None.
+    """
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+    try:
+        validate_password(raw_password, user=user)
+    except ValidationError as exc:
+        return ' '.join(exc.messages)
+    if raw_password in KNOWN_WEAK_PASSWORDS:
+        return 'This password is too easy to guess. Please choose a different one.'
+    return None
+
+
+def safe_next_url(request, default='/'):
+    """
+    Returns a redirect target taken from ?next= / POST next that is guaranteed to stay on
+    this site, otherwise `default`.  Prevents open-redirect attacks.
+    """
+    from django.utils.http import url_has_allowed_host_and_scheme
+    candidate = request.POST.get('next') or request.GET.get('next') or ''
+    if candidate and url_has_allowed_host_and_scheme(
+        candidate,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return candidate
+    return default
 
 
 def is_admin_user(user):
     """
     Checks if a ResUsers instance has the primary Administrator role.
-    Verifies group membership in 'Administrator' or 'Administration/Settings'.
     """
     if not user or not getattr(user, 'is_active', False):
         return False
     if hasattr(user, '_is_admin_cached'):
         return user._is_admin_cached
 
-    if getattr(user, 'is_superuser', False):
-        user._is_admin_cached = True
-        return True
-
-    # Support mock test objects that define is_admin as a boolean directly
-    if not isinstance(getattr(type(user), 'is_admin', None), property) and getattr(user, 'is_admin', False):
-        user._is_admin_cached = True
-        return True
-
+    # Admin status comes ONLY from group membership.  (Previously any user named
+    # 'admin'/'root'/'administrator' or with an e-mail starting 'admin@' was a super-admin.)
     try:
         from base.models import ResUsersGroups
         res = ResUsersGroups.objects.filter(
@@ -199,7 +256,7 @@ def login_required_ir(view_func):
     def _wrapped_view(request, *args, **kwargs):
         user = get_current_ir_user(request)
         if not user:
-            return redirect(f"/login/?next={request.path}")
+            return redirect(f"/login/?next={quote(request.get_full_path())}")
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
@@ -213,7 +270,7 @@ def admin_required_ir(view_func):
     def _wrapped_view(request, *args, **kwargs):
         user = get_current_ir_user(request)
         if not user:
-            return redirect(f"/login/?next={request.path}")
+            return redirect(f"/login/?next={quote(request.get_full_path())}")
         if not is_admin_user(user):
             from django.contrib import messages
             messages.error(request, "Access Restricted: This section is strictly reserved for System Administrators.")
@@ -236,6 +293,16 @@ def generate_otp(length=6):
     Generates a secure numeric One-Time Password (OTP) string of specified length.
     """
     return f"{secrets.randbelow(10**length):0{length}d}"
+
+
+def generate_temp_password(length=12):
+    """Random one-time temporary password (letters + digits, no look-alike characters)."""
+    alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    while True:
+        pwd = ''.join(secrets.choice(alphabet) for _ in range(length))
+        # guarantee a mix so it passes the validators
+        if any(c.islower() for c in pwd) and any(c.isupper() for c in pwd) and any(c.isdigit() for c in pwd):
+            return pwd
 
 
 def mask_email(email):
@@ -315,29 +382,32 @@ Office Pro Security Team
         return True
 
 
+OTP_MAX_ATTEMPTS = 5
+
+
 def store_otp(request, email, otp, purpose='reset', user_id=None, expiry_seconds=600):
     """
-    Stores OTP metadata securely in session.
+    Stores OTP metadata in the (server-side, signed) session.  Only a hash of the OTP is
+    kept, together with an attempt counter.
     """
     request.session['auth_otp'] = {
-        'otp': str(otp).strip(),
+        'otp_hash': make_password(str(otp).strip()),
         'email': email.lower().strip(),
         'purpose': purpose,
         'user_id': user_id,
         'expires_at': time.time() + expiry_seconds,
         'created_at': time.time(),
+        'attempts': 0,
     }
     request.session.modified = True
 
 
 def verify_otp(request, email, entered_otp, purpose='reset'):
     """
-    Verifies that the entered OTP matches the session OTP, is not expired, and matches the target email.
-    Enforces a strict maximum attempt limit (5 attempts) to prevent brute force attacks.
+    Verifies the entered OTP.  After OTP_MAX_ATTEMPTS wrong guesses the OTP is destroyed so a
+    new code must be requested (stops brute-forcing the 6-digit space).
     Returns (success: bool, error_message: str).
     """
-    import hmac
-
     otp_data = request.session.get('auth_otp')
     if not otp_data:
         return False, "No active OTP request found. Please request a new code."
@@ -352,21 +422,20 @@ def verify_otp(request, email, entered_otp, purpose='reset'):
         clear_otp(request)
         return False, "OTP code has expired. Please request a new code."
 
-    # Track attempts and enforce max 5 tries
-    attempts = otp_data.get('attempts', 0) + 1
-    otp_data['attempts'] = attempts
-    request.session.modified = True
-
-    if attempts > 5:
+    if otp_data.get('attempts', 0) >= OTP_MAX_ATTEMPTS:
         clear_otp(request)
-        return False, "Too many failed attempts. This OTP code has been invalidated for security. Please request a new code."
+        return False, "Too many incorrect attempts. Please request a new code."
 
-    stored_otp = str(otp_data.get('otp', '')).strip()
     clean_entered = str(entered_otp or '').strip()
-
-    if not clean_entered or not hmac.compare_digest(clean_entered, stored_otp):
-        remaining = max(0, 5 - attempts)
-        return False, f"Invalid OTP code. {remaining} attempt(s) remaining."
+    if not clean_entered or not check_password(clean_entered, otp_data.get('otp_hash', '')):
+        otp_data['attempts'] = otp_data.get('attempts', 0) + 1
+        request.session['auth_otp'] = otp_data
+        request.session.modified = True
+        if otp_data['attempts'] >= OTP_MAX_ATTEMPTS:
+            clear_otp(request)
+            return False, "Too many incorrect attempts. Please request a new code."
+        left = OTP_MAX_ATTEMPTS - otp_data['attempts']
+        return False, f"Invalid OTP code. {left} attempt(s) remaining."
 
     return True, ""
 

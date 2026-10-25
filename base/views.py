@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 from django.contrib import messages
 from django.db import IntegrityError
 from django.db.models import Q
-from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -51,7 +51,12 @@ from base.auth_helpers import (
     is_admin_user, admin_required_ir, has_privilege_role,
     is_hr_officer_or_admin, is_attendance_officer_or_admin,
     is_leave_officer_or_admin, get_user_linked_employee,
-    is_approving_manager
+    is_approving_manager, safe_next_url, validate_new_password,
+    generate_temp_password,
+)
+from base.permissions import (
+    can_batch, is_sensitive_field, spreadsheet_safe,
+    MAX_IMPORT_BYTES, MAX_IMPORT_ROWS,
 )
 from base.search_metadata import (
     get_search_metadata,
@@ -437,49 +442,6 @@ def kanban_add_column(request):
     })
 
 
-BATCH_ADMIN_ONLY_MODELS = {
-    'res.users', 'res_users',
-    'res.groups',
-    'res.privilege',
-    'res.company',
-    'ir.mail_server',
-    'ir.config_parameter',
-    'ir.cron',
-    'ir.model',
-    'ir.model.fields',
-    'ir.ui.view',
-    'ir.ui.menu',
-    'ir.sequence',
-    'ir.model.access',
-    'ir.rule',
-    'ir.actions.act_window',
-    'ir.model.relation',
-    'report.paperformat',
-    'ir.actions.report',
-    'ir.logging',
-}
-
-BATCH_ALLOWED_BUSINESS_MODELS = {
-    'hr.employee', 'employee',
-    'hr.attendance', 'attendance',
-    'hr.leave', 'leave',
-    'hr.leave.allocation', 'leave.allocation',
-    'hr.leave.type', 'leave.type',
-    'hr.leave.mandatory.day',
-    'res.partner',
-    'mail.message',
-    'mail.activity',
-    'mail.channel',
-    'mail.activity.type',
-}
-
-SENSITIVE_EXPORT_FIELDS = {
-    'password_hash', 'password', 'smtp_pass', 'smtp_user_pass',
-    'token', 'secret', 'api_key', 'auth_token', 'private_key',
-    'otp', 'reset_token', 'secret_key'
-}
-
-
 def batch_action(request):
     """
     Unified batch action processor for all list views:
@@ -488,61 +450,30 @@ def batch_action(request):
     - Archive (is_active = False)
     - Unarchive (is_active = True)
     - Delete (with strict user role & model permission checks)
-    Enforces strict model allowlists and role-based access control.
     """
     current_user = get_current_ir_user(request)
-    if not current_user or not getattr(current_user, 'is_active', False):
+    if not current_user:
         return JsonResponse({'status': 'error', 'message': 'Authentication required.'}, status=401)
-
-    is_admin = is_admin_user(current_user)
 
     if request.method == 'GET':
         action = request.GET.get('action')
-        model_key = (request.GET.get('model_key') or request.GET.get('model') or '').strip().lower()
+        model_key = request.GET.get('model_key') or request.GET.get('model')
         raw_ids = request.GET.get('ids', '')
         ids = [int(i.strip()) for i in raw_ids.split(',') if i.strip().isdigit()]
-
-        if not model_key:
-            return HttpResponse('Missing model parameter.', status=400)
-
-        # 1. Authorization: Technical / administrative models require Admin
-        if model_key in BATCH_ADMIN_ONLY_MODELS and not is_admin:
-            return HttpResponseForbidden("Permission Denied: Administrator role required to export system models.")
-
-        # 2. Allowlist check for non-admins
-        if not is_admin and model_key not in BATCH_ALLOWED_BUSINESS_MODELS:
-            return HttpResponseForbidden(f"Permission Denied: Model '{model_key}' is not permitted for batch export.")
 
         model_cls = _resolve_model(model_key)
         if not model_cls:
             return HttpResponse('Invalid model specified.', status=400)
 
+        if action not in ('export_csv', 'export_xlsx'):
+            return HttpResponse('Unknown action.', status=400)
+        if not can_batch(current_user, model_key, 'export'):
+            return HttpResponse('Permission Denied: you are not allowed to export this data.', status=403)
+
         records_qs = model_cls.objects.filter(id__in=ids) if ids else model_cls.objects.all()
 
-        # 3. Role-based scoping for standard business models
-        if not is_admin:
-            if model_key in ('hr.employee', 'employee'):
-                if not is_hr_officer_or_admin(current_user):
-                    return HttpResponseForbidden("Permission Denied: HR Officer role required to export employee records.")
-            elif model_key in ('hr.attendance', 'attendance'):
-                if not is_attendance_officer_or_admin(current_user):
-                    emp = get_user_linked_employee(current_user)
-                    if not emp:
-                        return HttpResponseForbidden("Permission Denied: No linked employee profile found.")
-                    records_qs = records_qs.filter(employee=emp)
-            elif model_key in ('hr.leave', 'leave', 'hr.leave.allocation', 'leave.allocation'):
-                if not is_leave_officer_or_admin(current_user):
-                    emp = get_user_linked_employee(current_user)
-                    if not emp:
-                        return HttpResponseForbidden("Permission Denied: No linked employee profile found.")
-                    records_qs = records_qs.filter(employee=emp)
-
-        # 4. Strict field filter: completely remove any passwords, secrets, tokens, smtp credentials
-        fields = [
-            f for f in model_cls._meta.fields 
-            if f.name not in SENSITIVE_EXPORT_FIELDS 
-            and not any(s in f.name.lower() for s in ('password', 'smtp_pass', 'secret', 'token', 'private_key'))
-        ]
+        # Never export password hashes, SMTP passwords, tokens, API keys, secrets ...
+        fields = [f for f in model_cls._meta.fields if not is_sensitive_field(f.name)]
         headers = [f.verbose_name.title() if hasattr(f, 'verbose_name') else f.name.replace('_', ' ').title() for f in fields]
 
         if action == 'export_csv':
@@ -555,7 +486,7 @@ def batch_action(request):
                 row = []
                 for f in fields:
                     val = getattr(rec, f.name, '')
-                    row.append(str(val) if val is not None else '')
+                    row.append(spreadsheet_safe(val))
                 writer.writerow(row)
             return response
 
@@ -579,7 +510,7 @@ def batch_action(request):
                 row = []
                 for f in fields:
                     val = getattr(rec, f.name, '')
-                    row.append(str(val) if val is not None else '')
+                    row.append(spreadsheet_safe(val))
                 ws.append(row)
 
             for col in ws.columns:
@@ -600,59 +531,32 @@ def batch_action(request):
 
     elif request.method == 'POST':
         action = request.POST.get('action')
-        model_key = (request.POST.get('model_key') or request.POST.get('model') or '').strip().lower()
-
-        if not model_key:
-            return JsonResponse({'status': 'error', 'message': 'Missing model parameter.'}, status=400)
-
-        # 1. Authorization: Technical models require Admin for ANY batch action
-        if model_key in BATCH_ADMIN_ONLY_MODELS and not is_admin:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Permission Denied: Administrator role required to perform batch actions on system models.'
-            }, status=403)
-
-        # 2. Allowlist check for non-admins
-        if not is_admin and model_key not in BATCH_ALLOWED_BUSINESS_MODELS:
-            return JsonResponse({
-                'status': 'error',
-                'message': f"Permission Denied: Model '{model_key}' is not allowed for batch actions."
-            }, status=403)
+        model_key = request.POST.get('model_key') or request.POST.get('model')
 
         model_cls = _resolve_model(model_key)
         if not model_cls:
             return JsonResponse({'status': 'error', 'message': f'Model "{model_key}" not recognized.'}, status=400)
 
-        if action == 'import_records':
-            # Role check for import:
-            if model_key in ('hr.employee', 'employee'):
-                if not (is_admin or is_hr_officer_or_admin(current_user)):
-                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: HR Officer role required to import employees.'}, status=403)
-            elif model_key in ('hr.attendance', 'attendance'):
-                if not (is_admin or is_attendance_officer_or_admin(current_user)):
-                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: Attendance Officer role required to import attendance.'}, status=403)
-            elif model_key in ('hr.leave', 'leave', 'hr.leave.allocation', 'leave.allocation'):
-                if not (is_admin or is_leave_officer_or_admin(current_user)):
-                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: Time Off Officer role required to import leave records.'}, status=403)
-            elif not is_admin:
-                return JsonResponse({'status': 'error', 'message': 'Permission Denied: Administrator role required to import records.'}, status=403)
+        _action_for_perm = {'import_records': 'import'}.get(action, action)
+        if not can_batch(current_user, model_key, _action_for_perm):
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Permission Denied: Your access level does not allow this action on this module.'
+            }, status=403)
 
+        if action == 'import_records':
             import_file = request.FILES.get('import_file')
             if not import_file:
                 return JsonResponse({'status': 'error', 'message': 'Please choose a file to import.'}, status=400)
+            if import_file.size > MAX_IMPORT_BYTES:
+                return JsonResponse({'status': 'error', 'message': 'Import file is too large (limit 5 MB).'}, status=400)
 
             file_name = import_file.name.lower()
             has_header = request.POST.get('has_header') in ('true', 'on', '1', True)
             created_count = 0
 
             try:
-                # Do NOT allow importing into sensitive or credential fields
-                valid_fields = {
-                    f.name: f for f in model_cls._meta.fields 
-                    if f.name not in ('id', 'pk') 
-                    and f.name not in SENSITIVE_EXPORT_FIELDS 
-                    and not any(s in f.name.lower() for s in ('password', 'is_superuser', 'is_admin'))
-                }
+                valid_fields = {f.name: f for f in model_cls._meta.fields if f.name not in ('id', 'pk') and not is_sensitive_field(f.name)}
                 
                 if file_name.endswith('.csv'):
                     content = import_file.read()
@@ -665,6 +569,8 @@ def batch_action(request):
                     rows = list(reader)
                     if not rows:
                         return JsonResponse({'status': 'error', 'message': 'The CSV file is empty.'}, status=400)
+                    if len(rows) > MAX_IMPORT_ROWS + 1:
+                        return JsonResponse({'status': 'error', 'message': f'Too many rows (limit {MAX_IMPORT_ROWS}).'}, status=400)
 
                     headers = [h.strip().lower().replace(' ', '_') for h in rows[0]] if has_header else []
                     data_rows = rows[1:] if has_header else rows
@@ -688,6 +594,8 @@ def batch_action(request):
                     rows = list(ws.iter_rows(values_only=True))
                     if not rows:
                         return JsonResponse({'status': 'error', 'message': 'The Excel file is empty.'}, status=400)
+                    if len(rows) > MAX_IMPORT_ROWS + 1:
+                        return JsonResponse({'status': 'error', 'message': f'Too many rows (limit {MAX_IMPORT_ROWS}).'}, status=400)
 
                     headers = [str(h).strip().lower().replace(' ', '_') for h in rows[0] if h is not None] if has_header else []
                     data_rows = rows[1:] if has_header else rows
@@ -719,7 +627,7 @@ def batch_action(request):
 
         if action == 'delete':
             # Check delete permission for user on this model
-            if not user_can_delete_model(current_user, model_key):
+            if not (can_batch(current_user, model_key, 'delete') and user_can_delete_model(current_user, model_key)):
                 return JsonResponse({
                     'status': 'error',
                     'message': 'Permission Denied: Your access level does not allow deleting records in this module.'
@@ -771,41 +679,30 @@ def batch_action(request):
             except Exception as e:
                 return JsonResponse({'status': 'error', 'message': f'Failed to delete: {str(e)}'}, status=400)
 
-        elif action in ('archive', 'unarchive'):
-            # Enforce authorization for archiving
+        elif action == 'archive':
             if model_key in ('hr.employee', 'employee'):
-                if not (is_admin or is_hr_officer_or_admin(current_user)):
-                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: HR Officer role required to archive employees.'}, status=403)
-                if action == 'archive':
-                    from base.module_manager import archive_employee_safely
-                    for eid in ids:
-                        archive_employee_safely(eid, current_user)
-                else:
-                    Employee.objects.filter(id__in=ids).update(is_active=True)
-                return JsonResponse({'status': 'success', 'message': f'{len(ids)} employee(s) {action}d successfully.'})
-            elif model_key in ('hr.attendance', 'attendance'):
-                if not (is_admin or is_attendance_officer_or_admin(current_user)):
-                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: Attendance Officer role required.'}, status=403)
-            elif model_key in ('hr.leave', 'leave', 'hr.leave.allocation', 'leave.allocation'):
-                if not (is_admin or is_leave_officer_or_admin(current_user)):
-                    return JsonResponse({'status': 'error', 'message': 'Permission Denied: Time Off Officer role required.'}, status=403)
-            elif not is_admin:
-                return JsonResponse({'status': 'error', 'message': 'Permission Denied: Administrator role required.'}, status=403)
+                from base.module_manager import archive_employee_safely
+                for eid in ids:
+                    archive_employee_safely(eid, current_user)
+            else:
+                if model_key in ('res.users', 'res_users'):
+                    ids = [i for i in ids if i != current_user.id]  # never lock yourself out
+                qs = model_cls.objects.filter(id__in=ids)
+                if hasattr(model_cls, 'is_active'):
+                    qs.update(is_active=False)
+                elif hasattr(model_cls, 'active'):
+                    qs.update(active=False)
+            return JsonResponse({'status': 'success', 'message': f'{len(ids)} record(s) archived successfully.'})
 
+        elif action == 'unarchive':
             qs = model_cls.objects.filter(id__in=ids)
-            target_val = (action == 'unarchive')
             if hasattr(model_cls, 'is_active'):
-                qs.update(is_active=target_val)
+                qs.update(is_active=True)
             elif hasattr(model_cls, 'active'):
-                qs.update(active=target_val)
-            return JsonResponse({'status': 'success', 'message': f'{len(ids)} record(s) {action}d successfully.'})
+                qs.update(active=True)
+            return JsonResponse({'status': 'success', 'message': f'{len(ids)} record(s) unarchived successfully.'})
 
         elif action == 'duplicate':
-            if model_key in BATCH_ADMIN_ONLY_MODELS and not is_admin:
-                return JsonResponse({'status': 'error', 'message': 'Permission Denied: Administrator role required to duplicate system records.'}, status=403)
-            if model_key in ('hr.employee', 'employee') and not (is_admin or is_hr_officer_or_admin(current_user)):
-                return JsonResponse({'status': 'error', 'message': 'Permission Denied: HR Officer role required to duplicate employees.'}, status=403)
-
             duplicated_count = 0
             for obj in model_cls.objects.filter(id__in=ids):
                 obj.pk = None
@@ -1583,7 +1480,7 @@ def settings_home(request):
                 'custom_wallpaper_url': custom_wallpaper_url,
             }
             messages.success(request, 'Theme settings updated successfully.')
-            next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or reverse('settings_home')
+            next_url = safe_next_url(request, reverse('settings_home'))
             if not is_admin_user(current_user):
                 next_url = reverse('home')
             return redirect(next_url)
@@ -2139,12 +2036,14 @@ def technical_cron_detail(request, cron_id):
     })
 
 
-@login_required_ir
 def relation_search(request):
     model_key = request.GET.get('model', '')
     query = request.GET.get('q', '').strip()
-    page = max(1, int(request.GET.get('page', 1) or 1))
-    page_size = max(10, min(100, int(request.GET.get('page_size', 80) or 80)))
+    try:
+        page = max(1, int(request.GET.get('page', 1) or 1))
+        page_size = max(10, min(100, int(request.GET.get('page_size', 80) or 80)))
+    except (TypeError, ValueError):
+        return JsonResponse({'results': [], 'pagination': {'more': False}}, status=400)
 
     if model_key == 'ir.model':
         qs = IrModel.objects.filter(is_active=True).exclude(
@@ -2879,7 +2778,16 @@ def settings_user_create(request):
                 'existing_user_id': existing_user.id,
             })
 
-        raw_pwd = request.POST.get('password', '').strip() or '123'
+        raw_pwd = request.POST.get('password', '').strip()
+        generated_pwd = False
+        if not raw_pwd:
+            raw_pwd = generate_temp_password()
+            generated_pwd = True
+        else:
+            _pw_err = validate_new_password(raw_pwd)
+            if _pw_err:
+                messages.error(request, _pw_err)
+                return redirect(request.path)
         try:
             user = ResUsers.objects.create(
                 username=username,
@@ -2930,7 +2838,10 @@ def settings_user_create(request):
             for g in default_user_groups:
                 ResUsersGroups.objects.get_or_create(user=user, group=g)
 
-        messages.success(request, f'User "{user.username}" created successfully with initial password.')
+        if generated_pwd:
+            # Shown once to the administrator; the user must change it at first login.
+            messages.info(request, f'Temporary password for {user.username}: {raw_pwd}  (shown only once - the user must change it at first login)')
+        messages.success(request, f'User "{user.username}" created successfully. The user must change the initial password at first login.')
         return redirect('settings_user_detail', user_id=user.id)
 
     return render(request, 'base/settings_user_create.html', {
@@ -3066,6 +2977,10 @@ def settings_user_detail(request, user_id):
         # Also update password if provided
         new_pwd = (request.POST.get('new_password') or request.POST.get('password') or '').strip()
         if new_pwd:
+            _pw_err = validate_new_password(new_pwd, user=user_obj)
+            if _pw_err:
+                messages.error(request, _pw_err)
+                return redirect('settings_user_detail', user_id=user_obj.id)
             user_obj.password_hash = hash_password(new_pwd)
             user_obj.save(update_fields=['password_hash', 'updated_at'])
 
@@ -3107,6 +3022,8 @@ def settings_user_change_password(request, user_id):
             messages.error(request, 'Password cannot be empty.')
         elif new_pwd != confirm_pwd:
             messages.error(request, 'New passwords do not match.')
+        elif validate_new_password(new_pwd, user=user_obj):
+            messages.error(request, validate_new_password(new_pwd, user=user_obj))
         else:
             user_obj.password_hash = hash_password(new_pwd)
             user_obj.save(update_fields=['password_hash', 'updated_at'])
@@ -3122,11 +3039,18 @@ def settings_user_send_invitation(request, user_id):
         messages.error(request, 'Cannot send invitation: user has no email address.')
         return redirect('settings_user_detail', user_id=user_obj.id)
 
+    # Generate a fresh random temporary password (the old code e-mailed a fixed "123").
+    # The user is forced to change it at first login (see login_view).
+    temp_password = generate_temp_password()
+    user_obj.password_hash = hash_password(temp_password)
+    user_obj.last_login = None
+    user_obj.save(update_fields=['password_hash', 'last_login', 'updated_at'])
+
     login_url = request.build_absolute_uri(reverse('login'))
     html_content = render_to_string('base/emails/user_invitation.html', {
         'user': user_obj,
         'login_url': login_url,
-        'default_password': '123',
+        'default_password': temp_password,
     })
 
     plain_message = f"""Hello {user_obj.name or user_obj.username},
@@ -3135,9 +3059,9 @@ You have been invited to access the Office Pro ERP platform.
 
 Your Login Credentials:
 - Email / Login: {user_obj.email}
-- Temporary Password: 123
+- Temporary Password: {temp_password}
 
-Note: For your account security, this is a one-time temporary password. You will be required to set a new secure password upon your first login.
+For your security you will be asked to choose a new password the first time you sign in.
 
 Log in here: {login_url}
 
@@ -3163,7 +3087,7 @@ Office Pro ERP Team
             record_id=user_obj.id,
             author=get_current_ir_user(request),
             message_type='notification',
-            body=f"Invitation email sent to <strong>{user_obj.email}</strong> with default login credentials."
+            body=f"Invitation email sent to <strong>{user_obj.email}</strong> with a temporary password."
         )
 
         messages.success(request, f'Invitation email successfully sent to {user_obj.email}.')
@@ -3181,7 +3105,7 @@ def settings_user_invitation_preview(request, user_id):
     return render(request, 'base/emails/user_invitation.html', {
         'user': user_obj,
         'login_url': login_url,
-        'default_password': '123',
+        'default_password': '(a random temporary password is generated when the invitation is sent)',
     })
 
 
@@ -5427,16 +5351,12 @@ def error_500_view(request):
     """Custom HTTP 500 Server Error view."""
     import sys
     exc_type, exc_obj, exc_tb = sys.exc_info()
+    from base.middleware import debug_details_allowed
+    is_debug = debug_details_allowed(request)
     diag = None
-    if exc_obj:
+    if exc_obj and is_debug:
+        # Stack traces / file paths only for local DEBUG or an administrator in developer mode.
         diag = extract_diagnostics_from_exception(exc_obj, request=request)
-
-    is_debug = False
-    if hasattr(request, 'session'):
-        is_debug = bool(request.session.get('debug', False))
-    if not is_debug:
-        from django.conf import settings
-        is_debug = getattr(settings, 'DEBUG', False)
 
     return render(request, 'base/500.html', {
         'diag': diag,

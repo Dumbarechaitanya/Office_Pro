@@ -8,6 +8,9 @@ class ResUsersBackend(BaseBackend):
     """
     Custom Django authentication backend that authenticates against ResUsers (res_users table).
     Supports logging in with either username or email.
+
+    SECURITY: only properly hashed passwords are accepted.  The old hardcoded 'admin'
+    password shortcuts and the plaintext-password fallback were removed.
     """
 
     def authenticate(self, request, username=None, password=None, **kwargs):
@@ -21,8 +24,15 @@ class ResUsersBackend(BaseBackend):
         ).select_related('company', 'employee').first()
 
         if user and user.password_hash:
-            if check_password(password, user.password_hash):
-                return user
+            try:
+                if check_password(password, user.password_hash):
+                    return user
+            except ValueError:
+                return None
+        else:
+            # Burn roughly the same time as a real check so response time does not reveal
+            # whether the account exists.
+            check_password(password, 'pbkdf2_sha256$1000000$dummy$' + 'x' * 43)
 
         return None
 

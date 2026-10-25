@@ -13,6 +13,10 @@ from authentication.auth_helpers import (
     is_leave_officer_or_admin,
     get_user_linked_employee,
     is_approving_manager,
+    safe_next_url,
+    validate_new_password,
+    uses_known_weak_password,
+    generate_temp_password,
 )
 
 __all__ = [
@@ -30,6 +34,10 @@ __all__ = [
     'is_leave_officer_or_admin',
     'get_user_linked_employee',
     'is_approving_manager',
+    'safe_next_url',
+    'validate_new_password',
+    'uses_known_weak_password',
+    'generate_temp_password',
 ]
 
 

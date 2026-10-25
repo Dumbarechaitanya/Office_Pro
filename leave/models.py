@@ -130,6 +130,14 @@ class LeaveRequest(models.Model):
         db_column='approved_by',
         related_name='approved_leaves'
     )
+    first_approved_by = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column='first_approved_by',
+        related_name='first_approved_leaves'
+    )
     refusal_reason = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -146,7 +154,14 @@ class LeaveRequest(models.Model):
         return f"{emp_name} - {type_name} ({self.start_date} to {self.end_date})"
 
     @property
+    def awaiting_final_approval(self):
+        """True when the first of two approval steps is done and the final step is pending."""
+        return self.status in ('confirm', 'Pending') and self.first_approved_by_id is not None
+
+    @property
     def status_label(self):
+        if self.awaiting_final_approval:
+            return 'Waiting Final Approval'
         return dict(self.STATUS_CHOICES).get(self.status, self.status)
 
 

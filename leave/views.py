@@ -8,6 +8,7 @@ from django.db.models import Q, Sum
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from base.auth_helpers import (
     get_current_ir_user,
@@ -16,7 +17,9 @@ from base.auth_helpers import (
     is_leave_officer_or_admin,
     get_user_linked_employee,
     is_approving_manager,
+    safe_next_url,
 )
+from leave import workflow
 from base.search_metadata import (
     apply_group_by,
     get_favorites,
@@ -335,46 +338,70 @@ def leave_management_requests(request):
     })
 
 
+@require_POST   # approvals change data -> never allow them through a GET link (CSRF)
 @leave_manager_or_officer_required
 def leave_request_action(request, request_id):
     """
-    1-Click Validate / Refuse action for Leave Requests.
-    Scoped to supervisees for managers, or all for officers.
+    Validate / Refuse a Leave Request.
+
+    * Only requests still waiting ('confirm') can be processed -- no re-approving a refused request.
+    * Nobody can approve/refuse their own request.
+    * Leave types with approval_type "By Approver and Officer" need TWO different approvers
+      (Level 1, then Level 2 / officer).  See leave/workflow.py for the exact rules.
     """
-    leave_req = get_object_or_404(LeaveRequest, id=request_id)
+    leave_req = get_object_or_404(LeaveRequest.objects.select_related('employee', 'leave_type'), id=request_id)
     current_user = get_current_ir_user(request)
     current_emp = get_user_linked_employee(current_user)
     is_officer = is_leave_officer_or_admin(current_user)
+    is_admin = is_admin_user(current_user)
+    employee = leave_req.employee
 
-    if not is_officer:
-        is_subordinate = current_emp and (
-            leave_req.employee.manager_id == current_emp.id or
-            leave_req.employee.leave_approver_l1_id == current_emp.id or
-            leave_req.employee.leave_approver_l2_id == current_emp.id
-        )
-        if not is_subordinate:
-            messages.error(request, "Permission Denied: You may only approve leave for employees under your supervision.")
-            return redirect('leave_management_requests')
+    emp_id = current_emp.id if current_emp else None
+    actor_is_l1 = bool(emp_id) and emp_id in (employee.manager_id, employee.leave_approver_l1_id)
+    actor_is_l2 = bool(emp_id) and employee.leave_approver_l2_id == emp_id
 
-    action = request.POST.get('action') or request.GET.get('action')
+    decision = workflow.decide(
+        action=request.POST.get('action'),
+        status=leave_req.status,
+        flow=workflow.normalize_approval_type(getattr(leave_req.leave_type, 'approval_type', '')),
+        first_approved=leave_req.first_approved_by_id is not None,
+        actor_is_self=bool(emp_id) and employee.id == emp_id,
+        actor_is_l1=actor_is_l1,
+        actor_is_l2=actor_is_l2,
+        actor_is_officer=is_officer,
+        actor_is_admin=is_admin,
+        actor_is_first_approver=bool(emp_id) and leave_req.first_approved_by_id == emp_id,
+    )
 
-    if action == 'validate':
+    wants_json = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json'
+
+    if decision.error:
+        if wants_json:
+            return JsonResponse({'status': 'error', 'message': decision.error}, status=403)
+        messages.error(request, decision.error)
+        return redirect(safe_next_url(request, reverse('leave_management_requests')))
+
+    if decision.stage == 'first':
+        leave_req.first_approved_by = current_emp
+        leave_req.save(update_fields=['first_approved_by', 'updated_at'])
+        messages.success(request, f"First-level approval recorded for {employee.name}. Waiting for final approval.")
+    elif decision.stage == 'final':
         leave_req.status = 'validate'
         leave_req.approved_by = current_emp
-        leave_req.save()
-        messages.success(request, f"Leave request for {leave_req.employee.name} approved.")
-    elif action == 'refuse':
-        refusal_reason = request.POST.get('refusal_reason', 'Operational workload')
+        leave_req.save(update_fields=['status', 'approved_by', 'updated_at'])
+        messages.success(request, f"Leave request for {employee.name} approved.")
+    elif decision.stage == 'refuse':
+        refusal_reason = (request.POST.get('refusal_reason') or 'Operational workload').strip()[:500]
         leave_req.status = 'refuse'
         leave_req.refusal_reason = refusal_reason
-        leave_req.save()
-        messages.warning(request, f"Leave request for {leave_req.employee.name} refused.")
+        leave_req.approved_by = current_emp
+        leave_req.save(update_fields=['status', 'refusal_reason', 'approved_by', 'updated_at'])
+        messages.warning(request, f"Leave request for {employee.name} refused.")
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+    if wants_json:
         return JsonResponse({'status': 'success', 'new_status': leave_req.status, 'status_label': leave_req.status_label})
 
-    next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or reverse('leave_management_requests')
-    return redirect(next_url)
+    return redirect(safe_next_url(request, reverse('leave_management_requests')))
 
 
 @login_required_ir
@@ -402,18 +429,64 @@ def leave_request_create(request):
         start_date_str = request.POST.get('start_date')
         end_date_str = request.POST.get('end_date')
         duration = request.POST.get('duration_days', '1.0')
-        reason = request.POST.get('reason', '').strip()
+        reason = request.POST.get('reason', '').strip()[:2000]
 
-        lt = get_object_or_404(LeaveType, id=leave_type_id)
+        lt = get_object_or_404(LeaveType, id=leave_type_id, is_active=True)
 
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            duration_days = Decimal(duration)
-        except Exception as e:
-            messages.error(request, f"Invalid date or duration: {e}")
+        except Exception:
+            messages.error(request, "Invalid start or end date.")
             return redirect('leave_request_create')
 
+        if end_date < start_date:
+            messages.error(request, "The end date cannot be before the start date.")
+            return redirect('leave_request_create')
+
+        # Server-side duration (the browser value is only used for a single half/full day).
+        holiday_dates = set()
+        for h in MandatoryDay.objects.filter(is_active=True, end_date__gte=start_date, start_date__lte=end_date):
+            d = max(h.start_date, start_date)
+            while d <= min(h.end_date, end_date):
+                holiday_dates.add(d)
+                d += timedelta(days=1)
+        duration_days, dur_error = workflow.resolve_duration(start_date, end_date, duration, holiday_dates)
+        if dur_error:
+            messages.error(request, dur_error)
+            return redirect('leave_request_create')
+
+        overlap_exists = LeaveRequest.objects.filter(
+            employee=emp, is_active=True,
+            status__in=['confirm', 'validate', 'Pending', 'Approved'],
+            start_date__lte=end_date, end_date__gte=start_date,
+        ).exists()
+
+        available_balance = None
+        if lt.requires_allocation:
+            allocated = LeaveAllocation.objects.filter(
+                employee=emp, leave_type=lt, status='validate', is_active=True
+            ).aggregate(t=Sum('allocated_days'))['t'] or Decimal('0.00')
+            used = LeaveRequest.objects.filter(
+                employee=emp, leave_type=lt, is_active=True,
+                status__in=['confirm', 'validate', 'Pending', 'Approved'],
+            ).aggregate(t=Sum('duration_days'))['t'] or Decimal('0.00')
+            available_balance = allocated - used
+
+        errors = workflow.validate_leave_request(
+            start_date, end_date, date.today(),
+            can_backdate=is_admin_user(current_user),
+            overlap_exists=overlap_exists,
+            requires_allocation=bool(lt.requires_allocation),
+            available_balance=available_balance,
+            duration=duration_days,
+        )
+        if errors:
+            for err in errors:
+                messages.error(request, err)
+            return redirect('leave_request_create')
+
+        flow = workflow.normalize_approval_type(lt.approval_type)
         LeaveRequest.objects.create(
             employee=emp,
             leave_type=lt,
@@ -421,7 +494,7 @@ def leave_request_create(request):
             end_date=end_date,
             duration_days=duration_days,
             reason=reason,
-            status='confirm'
+            status='validate' if flow == workflow.FLOW_NONE else 'confirm'
         )
         messages.success(request, f"Time off request submitted for {emp.name}.")
         if is_officer or is_manager:
@@ -494,13 +567,15 @@ def leave_management_allocations(request):
     })
 
 
+@require_POST
 @leave_manager_or_officer_required
 def leave_allocation_action(request, allocation_id):
     """
-    Validate or refuse an allocation.
+    Validate or refuse an allocation (POST only).  Only allocations still waiting ('confirm')
+    can be processed and nobody can approve an allocation granted to themselves.
     """
-    alloc = get_object_or_404(LeaveAllocation, id=allocation_id)
-    action = request.POST.get('action') or request.GET.get('action')
+    alloc = get_object_or_404(LeaveAllocation.objects.select_related('employee'), id=allocation_id)
+    action = request.POST.get('action')
     current_user = get_current_ir_user(request)
     current_emp = get_user_linked_employee(current_user)
     is_officer = is_leave_officer_or_admin(current_user)
@@ -515,14 +590,22 @@ def leave_allocation_action(request, allocation_id):
             messages.error(request, "Permission Denied: You may only manage allocations for your direct supervisees.")
             return redirect('leave_management_allocations')
 
+    if alloc.status not in workflow.PENDING_STATUSES:
+        messages.error(request, "This allocation has already been processed.")
+        return redirect('leave_management_allocations')
+    if current_emp and alloc.employee_id == current_emp.id:
+        messages.error(request, "You cannot approve or refuse an allocation granted to yourself.")
+        return redirect('leave_management_allocations')
+
     if action == 'validate':
         alloc.status = 'validate'
         alloc.approver = current_emp
-        alloc.save()
+        alloc.save(update_fields=['status', 'approver', 'updated_at'])
         messages.success(request, f"Allocation for {alloc.employee.name} approved.")
     elif action == 'refuse':
         alloc.status = 'refuse'
-        alloc.save()
+        alloc.approver = current_emp
+        alloc.save(update_fields=['status', 'approver', 'updated_at'])
         messages.warning(request, f"Allocation for {alloc.employee.name} refused.")
 
     return redirect('leave_management_allocations')
@@ -540,8 +623,15 @@ def leave_allocation_create(request):
         employee_id = request.POST.get('employee_id')
         leave_type_id = request.POST.get('leave_type_id')
         name = request.POST.get('name', 'Allocation')
-        allocated_days = Decimal(request.POST.get('allocated_days', '15.0'))
-        notes = request.POST.get('notes', '')
+        try:
+            allocated_days = Decimal(request.POST.get('allocated_days', '15.0'))
+        except Exception:
+            messages.error(request, "Allocated days must be a number.")
+            return redirect('leave_allocation_create')
+        if not (Decimal('0') < allocated_days <= Decimal('365')):
+            messages.error(request, "Allocated days must be between 0.01 and 365.")
+            return redirect('leave_allocation_create')
+        notes = request.POST.get('notes', '')[:2000]
 
         emp = get_object_or_404(Employee, id=employee_id)
         lt = get_object_or_404(LeaveType, id=leave_type_id)

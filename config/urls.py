@@ -35,8 +35,10 @@ urlpatterns = [
 from django.views.static import serve
 from django.urls import re_path
 
+# Static files are served by WhiteNoise (see MIDDLEWARE), so no extra /static/ route is needed.
+# Uploaded media is served only to signed-in users: EnforceLoginMiddleware no longer exempts
+# /media/.  (If you use Cloudinary, files are served from Cloudinary URLs instead.)
 urlpatterns += [
-    re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]
 

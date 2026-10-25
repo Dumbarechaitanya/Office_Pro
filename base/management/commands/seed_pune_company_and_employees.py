@@ -113,7 +113,13 @@ class Command(BaseCommand):
 
         admin_group, _ = ResGroups.objects.get_or_create(name='Administrator', defaults={'privilege': 'General', 'is_active': True})
         user_group, _ = ResGroups.objects.get_or_create(name='User', defaults={'privilege': 'General', 'is_active': True})
-        hashed_pwd = make_password('123')
+        # SECURITY: no more shared default password.  Set SEED_USER_PASSWORD, or a random one is
+        # generated and printed once.  Users must change it at first login.
+        import os
+        from authentication.auth_helpers import generate_temp_password
+        seed_password = os.environ.get('SEED_USER_PASSWORD') or generate_temp_password(14)
+        hashed_pwd = make_password(seed_password)
+        self.stdout.write(self.style.WARNING(f'Seed user password (shown once): {seed_password}'))
 
         created_employees = []
         for idx, (name, dept_name, job_title, gender, marital, blood, email, phone, pan, aadhaar, ctc, hourly, joined, addr) in enumerate(employee_profiles, start=1):

@@ -1,4 +1,5 @@
 import uuid
+from urllib.parse import quote
 from django.conf import settings
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
@@ -6,6 +7,29 @@ from base.models import extract_diagnostics_from_exception, IrLogging
 
 # In-memory unique ID generated on every server startup / reboot
 SERVER_BOOT_ID = uuid.uuid4().hex
+
+
+def _session_user_is_admin(request):
+    """True if the signed-in session user (looked up via the session) is an administrator."""
+    try:
+        from base.auth_helpers import get_current_ir_user, is_admin_user
+        user = get_current_ir_user(request)
+        return bool(user and is_admin_user(user))
+    except Exception:
+        return False
+
+
+def debug_details_allowed(request):
+    """
+    Stack traces / file paths may be shown only when settings.DEBUG is on (local development)
+    or when an administrator has explicitly enabled developer mode in their own session.
+    """
+    if getattr(settings, 'DEBUG', False):
+        return True
+    session = getattr(request, 'session', None)
+    if session is not None and session.get('debug') and _session_user_is_admin(request):
+        return True
+    return False
 
 
 class DebugModeMiddleware:
@@ -33,8 +57,11 @@ class DebugModeMiddleware:
             debug_param = request.GET.get('debug')
             if debug_param is not None:
                 if debug_param in ('1', 'true', 'assets', ''):
-                    request.session['debug'] = True
-                    request.session['server_boot_id'] = SERVER_BOOT_ID
+                    # SECURITY: developer mode exposes technical metadata and stack traces,
+                    # so only signed-in administrators may switch it on.
+                    if _session_user_is_admin(request):
+                        request.session['debug'] = True
+                        request.session['server_boot_id'] = SERVER_BOOT_ID
                 elif debug_param in ('0', 'false', 'no'):
                     request.session['debug'] = False
                     # Cleanly redirect to remove ?debug=0 from browser address bar
@@ -95,7 +122,17 @@ class GlobalExceptionDiagnosticMiddleware:
             request.path.startswith('/batch-action/')
         )
 
+        show_details = debug_details_allowed(request)
+
         if is_ajax:
+            if not show_details:
+                # Production: generic message only -- no file names, line numbers or traceback.
+                return JsonResponse({
+                    'success': False,
+                    'error': True,
+                    'message': 'An internal error occurred. Please contact your administrator.',
+                    'details': 'An internal error occurred. The error has been logged.',
+                }, status=500)
             return JsonResponse({
                 'success': False,
                 'error': True,
@@ -109,19 +146,13 @@ class GlobalExceptionDiagnosticMiddleware:
                 'hint': diag['hint'],
             }, status=500)
 
-        is_debug = False
-        if hasattr(request, 'session'):
-            is_debug = bool(request.session.get('debug', False))
-        if not is_debug:
-            is_debug = getattr(settings, 'DEBUG', False)
-
         return render(request, 'base/500.html', {
-            'exception': exception,
-            'diag': diag,
-            'is_debug': is_debug,
-            'request_url': request.build_absolute_uri() if hasattr(request, 'build_absolute_uri') else request.path,
+            'exception': exception if show_details else None,
+            'diag': diag if show_details else {},
+            'is_debug': show_details,
+            'request_url': request.build_absolute_uri() if (show_details and hasattr(request, 'build_absolute_uri')) else request.path,
             'request_method': request.method,
-            'request_user': getattr(request, 'user', None),
+            'request_user': getattr(request, 'user', None) if show_details else None,
         }, status=500)
 
 
@@ -159,22 +190,35 @@ class EnforceLoginMiddleware:
             if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('accept', ''):
                 return JsonResponse({'error': 'Authentication required. Please log in.'}, status=401)
             next_url = request.get_full_path()
-            return HttpResponseRedirect(f"/login/?next={next_url}")
-
-        # Enforce password change if user is on default temporary password
-        if hasattr(request, 'session') and request.session.get('force_password_change'):
-            allowed_during_force = (
-                '/profile/password/',
-                '/logout',
-                '/auth/',
-                '/static/',
-                '/healthz',
-                '/ping',
-            )
-            if not any(path.startswith(prefix) for prefix in allowed_during_force):
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('accept', ''):
-                    return JsonResponse({'error': 'Password change required before accessing ERP features.'}, status=403)
-                return HttpResponseRedirect('/profile/password/')
+            return HttpResponseRedirect(f"/login/?next={quote(next_url)}")
 
         return self.get_response(request)
 
+
+class ForcePasswordChangeMiddleware:
+    """
+    If the signed-in user still has a default password (flag set at login), every page except
+    the change-password page, logout and static files redirects to /profile/password/.
+    """
+    ALLOWED_PREFIXES = (
+        '/profile/password',
+        '/logout',
+        '/login',
+        '/auth/send-otp',
+        '/static/',
+        '/healthz',
+        '/ping',
+    )
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        session = getattr(request, 'session', None)
+        if session is not None and session.get('force_pw_change'):
+            path = request.path_info
+            if not any(path.startswith(p) for p in self.ALLOWED_PREFIXES):
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('accept', ''):
+                    return JsonResponse({'error': 'Password change required.'}, status=403)
+                return HttpResponseRedirect('/profile/password/')
+        return self.get_response(request)

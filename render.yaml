@@ -15,6 +15,10 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
+      # Generate once:  python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+      # Keep it safe - it decrypts the stored SMTP password.
+      - key: FIELD_ENCRYPTION_KEY
+        sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY

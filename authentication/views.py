@@ -1,12 +1,10 @@
 import json
 from django.contrib import messages
 from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import check_password
 from django.db import models
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from base.models import ResUsers, ResUsersGroups
@@ -14,16 +12,20 @@ from authentication.auth_helpers import (
     get_current_ir_user, login_user, logout_user,
     hash_password, verify_password, login_required_ir,
     generate_otp, send_otp_email, store_otp, verify_otp, clear_otp, mask_email,
-    get_user_linked_employee
+    get_user_linked_employee, safe_next_url, validate_new_password,
+    uses_known_weak_password,
 )
+from authentication import throttle
 
 
 def login_view(request):
     """
     Handles user login using Django's authentication system and custom ResUsersBackend.
     Allows authenticating and switching users on POST or when ?switch=1 is provided.
-    Enforces password change if default temporary password is used.
-    Protects against open redirects.
+
+    Security: failed attempts are throttled per username + IP, redirects after login are
+    restricted to this site, and accounts still using a default password are forced to
+    change it (ForcePasswordChangeMiddleware).
     """
     error = None
 
@@ -31,35 +33,32 @@ def login_view(request):
         identifier = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
 
-        if not identifier or not password:
+        locked, remaining = throttle.is_locked(request, identifier, scope='login')
+        if locked:
+            minutes = max(1, remaining // 60 + (1 if remaining % 60 else 0))
+            error = f'Too many failed sign-in attempts. Please try again in {minutes} minute(s).'
+        elif not identifier or not password:
             error = 'Please provide both username/email and password.'
         else:
             # Authenticate through Django's authentication framework
             user = authenticate(request, username=identifier, password=password)
             if user and user.is_active:
+                throttle.reset(request, identifier, scope='login')
+                first_login = user.last_login is None   # read BEFORE login_user() stamps it
                 login_user(request, user)
-
-                # Enforce password change if logging in with the default password '123'
-                is_default_password = (password == '123') or (bool(user.password_hash) and check_password('123', user.password_hash))
-                if is_default_password:
-                    request.session['force_password_change'] = True
-                    messages.warning(request, 'Your account is using a default temporary password (123). Please set a new password before accessing the system.')
+                if first_login or uses_known_weak_password(user):
+                    request.session['force_pw_change'] = True
+                    messages.warning(request, 'Please choose a new password to continue (temporary or default password detected).')
                     return redirect('change_password')
-
-                next_url = request.GET.get('next') or request.POST.get('next') or reverse('home')
-                if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
-                    next_url = reverse('home')
-                return redirect(next_url)
+                return redirect(safe_next_url(request, reverse('home')))
             else:
+                throttle.register_failure(request, identifier, scope='login')
                 error = 'Invalid username/email or password.'
     else:
         # If already logged in on GET, redirect directly unless user switch is requested
         current_user = get_current_ir_user(request)
         if current_user and not request.GET.get('switch'):
-            next_url = request.GET.get('next') or reverse('home')
-            if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
-                next_url = reverse('home')
-            return redirect(next_url)
+            return redirect(safe_next_url(request, reverse('home')))
 
     return render(request, 'authentication/login.html', {
         'error': error,
@@ -109,9 +108,10 @@ def forgot_password_view(request):
                     is_active=True
                 ).first()
 
-                if not user or not user.email:
-                    error = 'No active user account found matching this email or username.'
-                else:
+                # Same answer whether or not the account exists (no account enumeration),
+                # and at most one code per minute per identifier.
+                generic_info = 'If an account matches, a 6-digit verification code has been sent to its registered email address.'
+                if user and user.email and throttle.allow_once_per(request, identifier, 'otp-send', 60):
                     otp = generate_otp(6)
                     send_otp_email(user.email, otp, username=user.username, purpose='Password Reset')
                     store_otp(request, user.email, otp, purpose='reset', user_id=user.id)
@@ -119,6 +119,12 @@ def forgot_password_view(request):
                     masked = mask_email(target_email)
                     step = 'verify'
                     info = f'A 6-digit verification code has been sent to {masked}.'
+                elif user and user.email:
+                    error = 'Please wait a minute before requesting another code.'
+                else:
+                    # Show the verify step anyway so the response looks identical.
+                    step = 'request'
+                    info = generic_info
 
         elif action == 'verify_and_reset':
             otp = request.POST.get('otp', '').strip()
@@ -134,14 +140,11 @@ def forgot_password_view(request):
                 if not ok:
                     error = err_msg
                     step = 'verify'
-                elif len(new_password) < 8:
-                    error = 'New password must be at least 8 characters long.'
-                    step = 'verify'
-                elif new_password.lower() in ('123', 'admin', 'password', '12345678', 'admin123', 'admin@123'):
-                    error = 'Please choose a stronger password that is not a common default.'
-                    step = 'verify'
                 elif new_password != confirm_password:
                     error = 'New passwords do not match.'
+                    step = 'verify'
+                elif validate_new_password(new_password):
+                    error = validate_new_password(new_password)
                     step = 'verify'
                 else:
                     user_id = otp_data.get('user_id')
@@ -199,10 +202,17 @@ def send_otp_ajax(request):
             is_active=True
         ).first()
         if not target_user or not target_user.email:
-            return JsonResponse({'status': 'error', 'message': 'No account found with this email/username.'}, status=404)
+            # Identical response for unknown accounts -> no account enumeration.
+            return JsonResponse({
+                'status': 'success',
+                'message': 'If an account matches, a verification code has been sent.',
+            })
         target_email = target_user.email
         purpose_label = 'Password Reset'
         session_purpose = 'reset'
+
+    if not throttle.allow_once_per(request, target_email, 'otp-send', 60):
+        return JsonResponse({'status': 'error', 'message': 'Please wait a minute before requesting another code.'}, status=429)
 
     otp = generate_otp(6)
     send_otp_email(target_email, otp, username=target_user.username, purpose=purpose_label)
@@ -253,22 +263,24 @@ def change_password_view(request):
         new_password = request.POST.get('new_password', '').strip()
         confirm_password = request.POST.get('confirm_password', '').strip()
 
-        if len(new_password) < 8:
-            error = 'New password must be at least 8 characters long.'
-        elif new_password.lower() in ('123', 'admin', 'password', '12345678', 'admin123', 'admin@123'):
-            error = 'Please choose a stronger password that is not a common default.'
-        elif new_password.lower() == user.username.lower():
-            error = 'New password cannot be the same as your username.'
+        pw_error = validate_new_password(new_password, user=user)
+        if pw_error:
+            error = pw_error
         elif new_password != confirm_password:
             error = 'New passwords do not match.'
         elif method == 'current_password':
             current_password = request.POST.get('current_password', '').strip()
-            if not verify_password(current_password, user.password_hash):
+            locked, _remaining = throttle.is_locked(request, str(user.id), scope='chgpw')
+            if locked:
+                error = 'Too many incorrect attempts. Please try again later.'
+            elif not verify_password(current_password, user.password_hash):
+                throttle.register_failure(request, str(user.id), scope='chgpw')
                 error = 'Current password is incorrect.'
             else:
+                throttle.reset(request, str(user.id), scope='chgpw')
                 user.password_hash = hash_password(new_password)
                 user.save(update_fields=['password_hash', 'updated_at'])
-                request.session.pop('force_password_change', None)
+                request.session.pop('force_pw_change', None)
                 login_user(request, user)
                 messages.success(request, 'Password updated successfully.')
                 return redirect('profile')
@@ -281,7 +293,7 @@ def change_password_view(request):
                 user.password_hash = hash_password(new_password)
                 user.save(update_fields=['password_hash', 'updated_at'])
                 clear_otp(request)
-                request.session.pop('force_password_change', None)
+                request.session.pop('force_pw_change', None)
                 login_user(request, user)
                 messages.success(request, 'Password updated successfully via email OTP verification.')
                 return redirect('profile')
