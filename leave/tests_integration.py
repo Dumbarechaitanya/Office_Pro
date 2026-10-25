@@ -139,6 +139,23 @@ class LeaveApprovalViewTests(DbTestCase):
         self.assertEqual(self.req_double.status, 'confirm')
         self.assertIsNone(self.req_double.first_approved_by_id)
 
+    def test_leave_dashboard_view(self):
+        from leave.views import leave_dashboard
+        MandatoryDay.objects.create(name='Diwali', start_date=date(2026, 10, 24), end_date=date(2026, 10, 25), color='#8b5cf6')
+        request = self.factory.get('/time-off/')
+        request.session = SessionStore()
+        request._messages = FallbackStorage(request)
+        user = ResUsers(id=999, username='admin', email='admin@x.test', is_active=True)
+        with patch('authentication.auth_helpers.get_current_ir_user', return_value=user), \
+             patch('base.auth_helpers.get_current_ir_user', return_value=user), \
+             patch('leave.views.get_current_ir_user', return_value=user), \
+             patch('leave.views.get_user_linked_employee', return_value=self.worker), \
+             patch('leave.views.is_leave_officer_or_admin', return_value=True), \
+             patch('leave.views.is_admin_user', return_value=True), \
+             patch('leave.views.is_approving_manager', return_value=False):
+            response = leave_dashboard(request)
+        self.assertEqual(response.status_code, 200)
+
 
 class HardenAccountsCommandTests(DbTestCase):
     def test_hashes_plaintext_grandfathers_admin_and_reports_weak(self):

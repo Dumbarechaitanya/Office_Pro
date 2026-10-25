@@ -212,12 +212,15 @@ def employee_detail(request, emp_id):
         emp.permanent_pincode = request.POST.get('permanent_pincode', emp.permanent_pincode)
 
         # Identification & Statutory
-        emp.pan_number = request.POST.get('pan_number', emp.pan_number).strip().upper()
-        emp.aadhaar_number = request.POST.get('aadhaar_number', emp.aadhaar_number).strip()
-        emp.passport_number = request.POST.get('passport_number', emp.passport_number).strip()
-        emp.uan_number = request.POST.get('uan_number', emp.uan_number).strip()
-        emp.pf_number = request.POST.get('pf_number', emp.pf_number).strip()
-        emp.esic_number = request.POST.get('esic_number', emp.esic_number).strip()
+        def _clean_field(val):
+            return str(val).strip() if val is not None else ''
+
+        emp.pan_number = _clean_field(request.POST.get('pan_number', emp.pan_number)).upper() or None
+        emp.aadhaar_number = _clean_field(request.POST.get('aadhaar_number', emp.aadhaar_number)) or None
+        emp.passport_number = _clean_field(request.POST.get('passport_number', emp.passport_number)) or None
+        emp.uan_number = _clean_field(request.POST.get('uan_number', emp.uan_number)) or None
+        emp.pf_number = _clean_field(request.POST.get('pf_number', emp.pf_number)) or None
+        emp.esic_number = _clean_field(request.POST.get('esic_number', emp.esic_number)) or None
 
         # Approver Matrices (Configurable per Employee - README 4.1)
         ts_appr = request.POST.get('timesheet_approver_id')

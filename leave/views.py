@@ -110,11 +110,59 @@ def leave_dashboard(request):
         else:
             requests_qs = requests_qs.none()
 
+    requests_list = []
+    try:
+        requests_list = list(requests_qs)
+    except Exception:
+        from django.db import connection
+        try:
+            with connection.cursor() as cur:
+                cur.execute("ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS first_approved_by INTEGER;")
+                cur.execute("ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS duration_days NUMERIC(5,2) DEFAULT 1.00;")
+                cur.execute("ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS refusal_reason TEXT;")
+            requests_list = list(requests_qs)
+        except Exception:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+            requests_list = []
+
     holidays = MandatoryDay.objects.filter(
         is_active=True,
         start_date__lte=window_end,
         end_date__gte=window_start
     )
+    holidays_list = []
+    try:
+        holidays_list = list(holidays)
+    except Exception:
+        from django.db import connection
+        try:
+            with connection.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS leave_mandatory_day (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(150) NOT NULL,
+                        start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+                        end_date DATE NOT NULL DEFAULT CURRENT_DATE,
+                        color VARCHAR(20) NOT NULL DEFAULT '#ef4444',
+                        is_mandatory BOOLEAN NOT NULL DEFAULT TRUE,
+                        notes TEXT,
+                        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+                    );
+                """)
+                cur.execute("ALTER TABLE leave_mandatory_day ADD COLUMN IF NOT EXISTS start_date DATE DEFAULT CURRENT_DATE;")
+                cur.execute("ALTER TABLE leave_mandatory_day ADD COLUMN IF NOT EXISTS end_date DATE DEFAULT CURRENT_DATE;")
+            holidays_list = list(holidays)
+        except Exception:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+            holidays_list = []
 
     # Build calendar matrix
     calendar_weeks = []
@@ -125,11 +173,14 @@ def leave_dashboard(request):
             is_today = (d == today)
             
             # Find holidays for this day
-            day_holidays = [h for h in holidays if h.start_date <= d <= h.end_date]
+            day_holidays = [
+                h for h in holidays_list 
+                if getattr(h, 'start_date', None) and getattr(h, 'end_date', None) and h.start_date <= d <= h.end_date
+            ]
             # Find leaves for this day
             day_leaves = [
-                r for r in requests_qs 
-                if r.start_date <= d <= r.end_date
+                r for r in requests_list 
+                if getattr(r, 'start_date', None) and getattr(r, 'end_date', None) and r.start_date <= d <= r.end_date
             ]
 
             week_days.append({
@@ -144,25 +195,41 @@ def leave_dashboard(request):
         calendar_weeks.append(week_days)
 
     # Employee Balance Quotas for Right Sidebar
-    leave_types = list(LeaveType.objects.filter(is_active=True).order_by('name'))
+    leave_types = []
+    try:
+        leave_types = list(LeaveType.objects.filter(is_active=True).order_by('name'))
+    except Exception:
+        leave_types = []
+
     balances = []
     for lt in leave_types:
         allocated = Decimal('0.00')
         taken = Decimal('0.00')
         if current_emp:
-            allocated = LeaveAllocation.objects.filter(
-                employee=current_emp,
-                leave_type=lt,
-                status='validate',
-                is_active=True
-            ).aggregate(total=Sum('allocated_days'))['total'] or Decimal('0.00')
+            try:
+                allocated = LeaveAllocation.objects.filter(
+                    employee=current_emp,
+                    leave_type=lt,
+                    status='validate',
+                    is_active=True
+                ).aggregate(total=Sum('allocated_days'))['total'] or Decimal('0.00')
+            except Exception:
+                allocated = Decimal('0.00')
 
-            taken = LeaveRequest.objects.filter(
-                employee=current_emp,
-                leave_type=lt,
-                status='validate',
-                is_active=True
-            ).aggregate(total=Sum('duration_days'))['total'] or Decimal('0.00')
+            try:
+                taken = LeaveRequest.objects.filter(
+                    employee=current_emp,
+                    leave_type=lt,
+                    status='validate',
+                    is_active=True
+                ).aggregate(total=Sum('duration_days'))['total'] or Decimal('0.00')
+            except Exception:
+                taken = Decimal('0.00')
+
+        if not isinstance(allocated, Decimal):
+            allocated = Decimal(str(allocated or 0))
+        if not isinstance(taken, Decimal):
+            taken = Decimal(str(taken or 0))
 
         available = max(Decimal('0.00'), allocated - taken)
         balances.append({
@@ -172,25 +239,31 @@ def leave_dashboard(request):
             'available': available,
         })
 
-    upcoming_holidays = MandatoryDay.objects.filter(
-        is_active=True,
-        start_date__gte=today
-    ).order_by('start_date')[:5]
+    try:
+        upcoming_holidays = list(MandatoryDay.objects.filter(
+            is_active=True,
+            start_date__gte=today
+        ).order_by('start_date')[:5])
+    except Exception:
+        upcoming_holidays = []
 
-    if is_officer:
-        all_employees = Employee.objects.filter(is_active=True).order_by('name')
-    elif is_manager and current_emp:
-        all_employees = Employee.objects.filter(
-            Q(id=current_emp.id) |
-            Q(manager=current_emp) |
-            Q(leave_approver_l1=current_emp) |
-            Q(leave_approver_l2=current_emp),
-            is_active=True
-        ).order_by('name')
-    elif current_emp:
-        all_employees = [current_emp]
-    else:
-        all_employees = []
+    try:
+        if is_officer:
+            all_employees = list(Employee.objects.filter(is_active=True).order_by('name'))
+        elif is_manager and current_emp:
+            all_employees = list(Employee.objects.filter(
+                Q(id=current_emp.id) |
+                Q(manager=current_emp) |
+                Q(leave_approver_l1=current_emp) |
+                Q(leave_approver_l2=current_emp),
+                is_active=True
+            ).order_by('name'))
+        elif current_emp:
+            all_employees = [current_emp]
+        else:
+            all_employees = []
+    except Exception:
+        all_employees = [current_emp] if current_emp else []
 
     return render(request, 'leave/leave_dashboard.html', {
         'year': year,

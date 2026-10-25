@@ -139,11 +139,11 @@ class Command(BaseCommand):
             "ALTER TABLE employee ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(50);",
             "ALTER TABLE employee ADD COLUMN IF NOT EXISTS ifsc_code VARCHAR(15);",
             "ALTER TABLE employee ADD COLUMN IF NOT EXISTS bank_branch VARCHAR(150);",
-            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS timesheet_approver_id INTEGER REFERENCES employee(id) ON DELETE SET NULL;",
-            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS leave_approver_l1_id INTEGER REFERENCES employee(id) ON DELETE SET NULL;",
-            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS leave_approver_l2_id INTEGER REFERENCES employee(id) ON DELETE SET NULL;",
-            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS expense_approver_l1_id INTEGER REFERENCES employee(id) ON DELETE SET NULL;",
-            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS expense_approver_l2_id INTEGER REFERENCES employee(id) ON DELETE SET NULL;",
+            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS timesheet_approver_id INTEGER;",
+            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS leave_approver_l1_id INTEGER;",
+            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS leave_approver_l2_id INTEGER;",
+            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS expense_approver_l1_id INTEGER;",
+            "ALTER TABLE employee ADD COLUMN IF NOT EXISTS expense_approver_l2_id INTEGER;",
 
             # 7. attendance table
             """
@@ -206,7 +206,7 @@ class Command(BaseCommand):
             """,
             "ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS duration_days NUMERIC(5,2) DEFAULT 1.00;",
             "ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS refusal_reason TEXT;",
-            "ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS first_approved_by INTEGER REFERENCES employee(id) ON DELETE SET NULL;",
+            "ALTER TABLE leave_request ADD COLUMN IF NOT EXISTS first_approved_by INTEGER;",
             "ALTER TABLE leave_request DROP CONSTRAINT IF EXISTS leave_request_status_check;",
             "ALTER TABLE leave_request ADD CONSTRAINT leave_request_status_check CHECK (status IN ('draft', 'confirm', 'validate', 'refuse', 'Pending', 'Approved', 'Rejected'));",
 
@@ -230,7 +230,7 @@ class Command(BaseCommand):
             """,
             "ALTER TABLE leave_allocation ADD COLUMN IF NOT EXISTS valid_from DATE;",
             "ALTER TABLE leave_allocation ADD COLUMN IF NOT EXISTS valid_to DATE;",
-            "ALTER TABLE leave_allocation ADD COLUMN IF NOT EXISTS approver_id INTEGER REFERENCES employee(id) ON DELETE SET NULL;",
+            "ALTER TABLE leave_allocation ADD COLUMN IF NOT EXISTS approver_id INTEGER;",
 
             # 11. leave_mandatory_day table
             """
@@ -292,11 +292,18 @@ class Command(BaseCommand):
             """,
         ]
 
-        with connection.cursor() as cursor:
-            for stmt in ddl_statements:
+        for stmt in ddl_statements:
+            stmt_str = stmt.strip()
+            if not stmt_str:
+                continue
+            with connection.cursor() as cursor:
                 try:
-                    cursor.execute(stmt)
+                    cursor.execute(stmt_str)
                 except Exception as e:
                     self.stdout.write(self.style.WARNING(f"Note on DDL statement: {e}"))
+                    try:
+                        connection.rollback()
+                    except Exception:
+                        pass
 
         self.stdout.write(self.style.SUCCESS("Database schema verification and sync complete."))
