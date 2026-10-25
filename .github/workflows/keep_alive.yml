@@ -13,7 +13,7 @@ jobs:
       - name: Ping Office Pro Render Service
         run: |
           echo "Pinging Office Pro on Render to keep web container active..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 "https://nexuswave-officepro.onrender.com/healthz/")
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 "https://nexuswave-officepro.onrender.com/healthz/?check_db=1")
           echo "HTTP response status: $STATUS"
           if [ "$STATUS" -eq 200 ] || [ "$STATUS" -eq 301 ] || [ "$STATUS" -eq 302 ]; then
             echo "Keep-alive ping successful. Server is awake."

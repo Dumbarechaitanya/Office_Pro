@@ -11,11 +11,28 @@ logger = logging.getLogger(__name__)
 
 PROTECTED_MODULES = {'base', 'ir', 'res'}
 
-def get_installed_modules():
+import time
+
+_INSTALLED_MODULES_CACHE = None
+_INSTALLED_MODULES_CACHE_TIME = 0
+
+
+def invalidate_installed_modules_cache():
+    global _INSTALLED_MODULES_CACHE, _INSTALLED_MODULES_CACHE_TIME
+    _INSTALLED_MODULES_CACHE = None
+    _INSTALLED_MODULES_CACHE_TIME = 0
+
+
+def get_installed_modules(force_refresh=False):
     """
     Returns a set of technical names of all currently active/installed modules.
-    Always includes core 'base'.
+    Always includes core 'base'. Caches result for 60 seconds to avoid DB hits on every request.
     """
+    global _INSTALLED_MODULES_CACHE, _INSTALLED_MODULES_CACHE_TIME
+    now = time.time()
+    if not force_refresh and _INSTALLED_MODULES_CACHE is not None and (now - _INSTALLED_MODULES_CACHE_TIME) < 60:
+        return _INSTALLED_MODULES_CACHE
+
     try:
         from base.models import IrModule
         installed = set(
@@ -23,6 +40,8 @@ def get_installed_modules():
             .values_list('name', flat=True)
         )
         installed.add('base')
+        _INSTALLED_MODULES_CACHE = installed
+        _INSTALLED_MODULES_CACHE_TIME = now
         return installed
     except Exception as e:
         logger.warning(f"Error querying IrModule: {e}")
@@ -76,6 +95,7 @@ def install_module(technical_name, user=None):
             # Activate matching menus
             IrUiMenu.objects.filter(name__icontains=mod_data['name']).update(is_active=True)
 
+        invalidate_installed_modules_cache()
         return True, f"Module '{mod_data['name']}' ({technical_name}) was successfully installed."
     except Exception as e:
         logger.exception(f"Failed to install module {technical_name}: {e}")
@@ -120,6 +140,7 @@ def uninstall_module(technical_name, user=None):
             if mod_data:
                 IrUiMenu.objects.filter(name__icontains=mod_data['name']).update(is_active=False)
 
+        invalidate_installed_modules_cache()
         return True, f"Module '{mod_display_name}' has been safely uninstalled. Associated menus have been removed."
     except Exception as e:
         logger.exception(f"Failed to uninstall module {technical_name}: {e}")

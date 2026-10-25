@@ -12,18 +12,28 @@ def get_current_ir_user(request):
     """
     Resolves the current authenticated user from request.user or request.session['user_id'].
     Returns an active ResUsers instance or None if not logged in.
+    Caches the lookup on the request object to avoid duplicate queries within the same request lifecycle.
     """
+    if request is None:
+        return None
+    if hasattr(request, '_cached_ir_user'):
+        return request._cached_ir_user
+
     if hasattr(request, 'user') and getattr(request.user, 'is_authenticated', False):
         from base.models import ResUsers
         if isinstance(request.user, ResUsers):
+            request._cached_ir_user = request.user
             return request.user
 
     user_id = request.session.get('user_id') if hasattr(request, 'session') else None
     if not user_id:
+        request._cached_ir_user = None
         return None
 
     from base.models import ResUsers
-    return ResUsers.objects.filter(id=user_id, is_active=True).select_related('company', 'employee').first()
+    user = ResUsers.objects.filter(id=user_id, is_active=True).select_related('company', 'employee').first()
+    request._cached_ir_user = user
+    return user
 
 
 def login_user(request, user):
@@ -209,41 +219,52 @@ def is_leave_officer_or_admin(user):
 def get_user_linked_employee(user):
     """
     Resolves the Employee record associated with the user.
+    Caches result on the user instance to avoid duplicate DB queries.
     """
     if not user:
         return None
+    if hasattr(user, '_linked_emp_cached'):
+        return user._linked_emp_cached
     if getattr(user, 'employee', None):
+        user._linked_emp_cached = user.employee
         return user.employee
+    emp = None
     try:
         from employee.models import Employee
         if getattr(user, 'email', None):
             emp = Employee.objects.filter(email__iexact=user.email, is_active=True).first()
-            if emp:
-                return emp
-        if getattr(user, 'username', None):
+        if not emp and getattr(user, 'username', None):
             emp = Employee.objects.filter(name__iexact=user.username, is_active=True).first()
-            if emp:
-                return emp
     except Exception:
         pass
-    return None
+    user._linked_emp_cached = emp
+    return emp
 
 
 def is_approving_manager(user):
     """
     Checks if the user is a reporting manager or designated approver for any employee.
+    Caches result on the user instance.
     """
+    if not user:
+        return False
+    if hasattr(user, '_is_mgr_cached'):
+        return user._is_mgr_cached
     emp = get_user_linked_employee(user)
     if not emp:
+        user._is_mgr_cached = False
         return False
     try:
         from django.db.models import Q
         from employee.models import Employee
-        return Employee.objects.filter(
+        res = Employee.objects.filter(
             Q(manager=emp) | Q(leave_approver_l1=emp) | Q(leave_approver_l2=emp) | Q(timesheet_approver=emp),
             is_active=True
         ).exists()
+        user._is_mgr_cached = res
+        return res
     except Exception:
+        user._is_mgr_cached = False
         return False
 
 
