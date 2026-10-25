@@ -4,6 +4,7 @@ import json
 from datetime import date, datetime, timedelta
 
 from django.contrib import messages
+from django.db import IntegrityError
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -2709,6 +2710,8 @@ def settings_user_create(request):
         email = request.POST.get('email', '').strip()
         username = request.POST.get('username', '').strip() or email
         name = request.POST.get('name', '').strip() or username
+        work_phone = request.POST.get('work_phone', '').strip()
+        role_level = request.POST.get('role_level', 'user')
 
         if not email:
             messages.error(request, 'Email Address is mandatory.')
@@ -2717,17 +2720,59 @@ def settings_user_create(request):
                 'employees': employees,
                 'all_groups': all_groups,
                 'privileges_list': privileges_list,
+                'name': name,
+                'email': email,
+                'work_phone': work_phone,
+                'role_level': role_level,
+                'error_message': 'Email Address is mandatory.',
+            })
+
+        # Check for duplicate user by username or email
+        existing_user = ResUsers.objects.filter(
+            Q(username__iexact=username) | Q(email__iexact=email)
+        ).first()
+
+        if existing_user:
+            conflict_field = 'email' if existing_user.email.lower() == email.lower() else 'username'
+            error_msg = f'A user with this {conflict_field} ("{getattr(existing_user, conflict_field)}") already exists in the system.'
+            messages.error(request, error_msg)
+            return render(request, 'base/settings_user_create.html', {
+                'companies': companies,
+                'employees': employees,
+                'all_groups': all_groups,
+                'privileges_list': privileges_list,
+                'name': name,
+                'email': email,
+                'work_phone': work_phone,
+                'role_level': role_level,
+                'error_message': error_msg,
+                'existing_user_id': existing_user.id,
             })
 
         raw_pwd = request.POST.get('password', '').strip() or '123'
-        user = ResUsers.objects.create(
-            username=username,
-            email=email,
-            password_hash=hash_password(raw_pwd),
-            company_id=request.POST.get('company') or None,
-            employee_id=request.POST.get('employee') or None,
-            is_active=request.POST.get('is_active') == 'on' if 'is_active' in request.POST else True,
-        )
+        try:
+            user = ResUsers.objects.create(
+                username=username,
+                email=email,
+                password_hash=hash_password(raw_pwd),
+                company_id=request.POST.get('company') or None,
+                employee_id=request.POST.get('employee') or None,
+                is_active=request.POST.get('is_active') == 'on' if 'is_active' in request.POST else True,
+            )
+        except IntegrityError:
+            error_msg = f'Cannot create user: a user with username "{username}" or email "{email}" already exists.'
+            messages.error(request, error_msg)
+            return render(request, 'base/settings_user_create.html', {
+                'companies': companies,
+                'employees': employees,
+                'all_groups': all_groups,
+                'privileges_list': privileges_list,
+                'name': name,
+                'email': email,
+                'work_phone': work_phone,
+                'role_level': role_level,
+                'error_message': error_msg,
+            })
 
         role_level = request.POST.get('role_level', 'user')
         admin_group = ResGroups.objects.filter(name='Administrator').first()
@@ -2825,6 +2870,18 @@ def settings_user_detail(request, user_id):
         email = request.POST.get('email', '').strip()
         username = request.POST.get('username', '').strip() or name
 
+        if username or email:
+            conflict_q = Q()
+            if username:
+                conflict_q |= Q(username__iexact=username)
+            if email:
+                conflict_q |= Q(email__iexact=email)
+            conflict = ResUsers.objects.filter(conflict_q).exclude(id=user_obj.id).first()
+            if conflict:
+                conflict_field = 'email' if email and conflict.email.lower() == email.lower() else 'username'
+                messages.error(request, f'Cannot update user: {conflict_field} is already taken by another user ("{getattr(conflict, conflict_field)}").')
+                return redirect('settings_user_detail', user_id=user_obj.id)
+
         if username:
             user_obj.username = username
             if user_obj.employee:
@@ -2848,7 +2905,11 @@ def settings_user_detail(request, user_id):
             user_obj.employee_id = request.POST.get('employee')
         if 'is_active' in request.POST:
             user_obj.is_active = request.POST.get('is_active') == 'on'
-        user_obj.save()
+        try:
+            user_obj.save()
+        except IntegrityError:
+            messages.error(request, 'Cannot update user: a user with this username or email already exists.')
+            return redirect('settings_user_detail', user_id=user_obj.id)
 
         # Role Level (Administrator vs User)
         role_level = request.POST.get('role_level', 'user')
