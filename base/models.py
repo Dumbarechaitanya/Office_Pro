@@ -299,8 +299,12 @@ class ResUsers(models.Model):
 
     @property
     def is_admin(self):
+        if hasattr(self, '_is_admin_cached'):
+            return self._is_admin_cached
         from authentication.auth_helpers import is_admin_user
-        return is_admin_user(self)
+        res = is_admin_user(self)
+        self._is_admin_cached = res
+        return res
 
     @property
     def name(self):

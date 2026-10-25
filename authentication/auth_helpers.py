@@ -85,14 +85,18 @@ def is_admin_user(user):
     """
     if not user or not getattr(user, 'is_active', False):
         return False
+    if hasattr(user, '_is_admin_cached'):
+        return user._is_admin_cached
+
     # Built-in admin usernames or email always have admin role
     uname = getattr(user, 'username', '').lower()
     uemail = getattr(user, 'email', '').lower()
     if uname in ('admin', 'administrator', 'root') or uemail.startswith('admin@'):
+        user._is_admin_cached = True
         return True
     try:
         from base.models import ResUsersGroups
-        return ResUsersGroups.objects.filter(
+        res = ResUsersGroups.objects.filter(
             user=user,
             group__name__iexact='Administrator',
             is_active=True
@@ -102,6 +106,8 @@ def is_admin_user(user):
             group__name__iexact='Settings',
             is_active=True
         ).exists()
+        user._is_admin_cached = res
+        return res
     except Exception:
         return False
 

@@ -2643,7 +2643,27 @@ def settings_users(request):
     users_qs = apply_search(users_qs, domain, query, search_fields=['username', 'email'])
     users_qs = users_qs.order_by('username')
 
-    groups = apply_group_by(users_qs, group_by_field) if group_by_field else None
+    # Batch-load all admin user IDs in one query to eliminate N+1 latency across remote database
+    admin_user_ids = set(
+        ResUsersGroups.objects.filter(
+            is_active=True,
+            group__is_active=True
+        ).filter(
+            Q(group__name__iexact='Administrator') |
+            Q(group__privilege__iexact='Administration', group__name__iexact='Settings')
+        ).values_list('user_id', flat=True)
+    )
+
+    users_list = list(users_qs)
+    for u in users_list:
+        uname = (u.username or '').lower()
+        uemail = (u.email or '').lower()
+        if uname in ('admin', 'administrator', 'root') or uemail.startswith('admin@') or u.id in admin_user_ids:
+            u._is_admin_cached = True
+        else:
+            u._is_admin_cached = False
+
+    groups = apply_group_by(users_list, group_by_field) if group_by_field else None
     favorites = get_favorites(request, model_key='res.users')
 
     columns = [
@@ -2655,14 +2675,13 @@ def settings_users(request):
         {'name': 'is_active', 'label': 'Status'},
     ]
 
-
     view_mode = request.GET.get('view_mode', 'list')
 
     return render(request, 'base/settings_users.html', {
-        'users_list': None if groups else users_qs,
+        'users_list': None if groups else users_list,
         'groups': groups,
         'columns': columns,
-        'total_count': users_qs.count(),
+        'total_count': len(users_list),
         'create_url': reverse('settings_user_create'),
         'filterable_fields': filterable_fields,
         'groupable_fields': groupable_fields,
