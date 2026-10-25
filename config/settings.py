@@ -179,7 +179,7 @@ STORAGES = {
     },
 }
 
-WHITENOISE_USE_FINDERS = DEBUG
+WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
 
 # Cloudinary Media Storage (Smart Fallback)
