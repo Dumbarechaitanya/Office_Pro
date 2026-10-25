@@ -166,12 +166,20 @@ def attendance_list(request):
     groups = apply_group_by(records, group_by_field) if group_by_field else None
     favorites = get_favorites(request, model_key='hr.attendance')
 
+    quick_filters = [
+        {'id': 'today', 'label': 'Present Today', 'count': len(today_attendances)},
+        {'id': 'absent', 'label': 'Absent Today', 'count': len(absent_records)},
+        {'id': 'all', 'label': 'Full Today Roster', 'count': len(today_attendances) + len(absent_records)},
+        {'id': 'history', 'label': 'All History', 'count': None},
+    ]
+
     return render(request, 'attendance/attendance_list.html', {
         'attendances': records,
         'groups': groups,
         'total_count': len(records),
         'search_q': search_q,
         'filter_mode': filter_mode,
+        'quick_filters': quick_filters,
         'today_count': len(today_attendances),
         'absent_count': len(absent_records),
         'current_user': current_user,

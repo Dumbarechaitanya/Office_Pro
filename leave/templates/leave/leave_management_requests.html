@@ -5,42 +5,6 @@
 <!-- Base Universal List Toolbar with Search Panel, Filter/Group-by/Favorites, Pager & Cog Actions -->
 {% include 'base/_list_toolbar.html' with title="Time Off" create_url=create_url search_model_key="hr.leave" %}
 
-<div style="padding: 12px 20px; background: #fafbfc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-  <!-- Quick Status Filter Pills -->
-  <div style="display: flex; align-items: center; gap: 8px;">
-    <span style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Filter:</span>
-    <a href="{% url 'leave_management_requests' %}?filter=all&view_mode={{ view_mode }}" 
-       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; {% if filter_mode == 'all' or not filter_mode %}background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(15,23,42,0.06);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
-      All ({{ total_count }})
-    </a>
-    <a href="{% url 'leave_management_requests' %}?filter=to_approve&view_mode={{ view_mode }}" 
-       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; {% if filter_mode == 'to_approve' %}background: #fef3c7; color: #b45309; border: 1px solid #fde68a; box-shadow: 0 1px 2px rgba(180,83,9,0.1);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
-      <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
-      To Approve ({{ to_approve_count }})
-    </a>
-    <a href="{% url 'leave_management_requests' %}?filter=approved&view_mode={{ view_mode }}" 
-       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; {% if filter_mode == 'approved' %}background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; box-shadow: 0 1px 2px rgba(21,128,61,0.1);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
-      <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
-      Approved ({{ approved_count }})
-    </a>
-    <a href="{% url 'leave_management_requests' %}?filter=refused&view_mode={{ view_mode }}" 
-       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; {% if filter_mode == 'refused' %}background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; box-shadow: 0 1px 2px rgba(185,28,28,0.1);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
-      Refused
-    </a>
-  </div>
-
-  <!-- View Mode Switcher -->
-  <div style="display: flex; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; background: #fff;">
-    <a href="?view_mode=kanban{% if filter_mode %}&filter={{ filter_mode }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}{% if active_group_by %}&group_by={{ active_group_by }}{% endif %}" 
-       style="padding: 6px 12px; font-size: 13px; text-decoration: none; {% if view_mode == 'kanban' %}background: #eff6ff; color: #1d4ed8; font-weight: 700;{% else %}color: #64748b;{% endif %}" title="Kanban Cards">
-      &#9638; Kanban
-    </a>
-    <a href="?view_mode=list{% if filter_mode %}&filter={{ filter_mode }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}{% if active_group_by %}&group_by={{ active_group_by }}{% endif %}" 
-       style="padding: 6px 12px; font-size: 13px; text-decoration: none; border-left: 1px solid #e2e8f0; {% if view_mode == 'list' %}background: #eff6ff; color: #1d4ed8; font-weight: 700;{% else %}color: #64748b;{% endif %}" title="List Table">
-      &#9776; List
-    </a>
-  </div>
-</div>
 
 <div style="padding: 20px;">
 
@@ -53,17 +17,30 @@
       <div class="op-kanban-board" data-model="hr.leave" data-group-by="{{ active_group_by|default:'status' }}" style="display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; padding-bottom: 24px; min-height: calc(100vh - 200px);">
         {% for grp in groups %}
           <div class="op-kanban-column" data-group-field="{{ active_group_by|default:'status' }}" data-group-value="{{ grp.raw_val|default:grp.key|default:grp.label }}" data-group-label="{{ grp.label }}" style="width: 310px; min-width: 310px; flex-shrink: 0; display: flex; flex-direction: column;">
-            <!-- Column Header -->
-            <div class="op-kanban-column-header" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 10px 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px;">
+            <!-- Column Header (Title + Count + Actions) -->
+            <div class="op-kanban-column-header" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 10px 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px; position: relative;">
               <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
                 <span>{{ grp.label }}</span>
                 <span class="op-column-count" style="color: #64748b; font-weight: 600; margin-left: 4px;">({{ grp.count }})</span>
               </div>
-              {% if create_url %}
-              <a href="{{ create_url }}" class="op-column-plus-btn" style="text-decoration: none; color: #64748b; font-size: 20px; font-weight: 400; line-height: 1; padding: 0 4px;" title="New request">&#43;</a>
-              {% else %}
-              <span style="color: #94a3b8; font-size: 18px; line-height: 1;">&#43;</span>
-              {% endif %}
+              <div class="op-column-header-actions" style="display: flex; align-items: center; gap: 4px; position: relative;">
+                {% if create_url %}
+                <a href="{{ create_url }}" class="op-column-plus-btn" style="text-decoration: none; color: #64748b; font-size: 18px; font-weight: 400; line-height: 1; padding: 2px 5px; border-radius: 4px;" title="New request">&#43;</a>
+                {% else %}
+                <span style="color: #94a3b8; font-size: 18px; line-height: 1; padding: 2px 4px;">&#43;</span>
+                {% endif %}
+                <button type="button" class="op-column-gear-btn" title="Column Options" onclick="toggleColumnMenu(event, this)">⚙</button>
+                <div class="op-column-menu" style="display: none;">
+                  <button type="button" class="op-column-menu-item" onclick="foldKanbanColumn(this)">⇥ Fold Column</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Folded Column Body View -->
+            <div class="op-column-folded-view" style="display: none;" onclick="unfoldKanbanColumn(this.closest('.op-kanban-column'))" title="Click to unfold">
+              <span class="op-column-folded-badge">({{ grp.count }})</span>
+              <span class="op-column-folded-title">{{ grp.label }}</span>
+              <span class="op-column-folded-icon">▸</span>
             </div>
 
             <!-- Column Cards Stack -->
@@ -163,6 +140,20 @@
             </div>
           </div>
         {% endfor %}
+
+        <!-- Inline Add Column Panel -->
+        <div class="op-kanban-add-column-panel" data-model="hr.leave" data-group-by="{{ active_group_by|default:'status' }}" style="width: 310px; min-width: 310px; flex-shrink: 0;">
+          <button type="button" class="op-add-column-trigger-btn" onclick="showInlineAddColumn(this)" style="width: 100%; padding: 14px 16px; border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; color: #64748b; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease;">
+            <span style="font-size: 18px; line-height: 1;">＋</span> Add Column
+          </button>
+          <div class="op-add-column-form" style="display: none; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+            <input type="text" class="op-add-column-input" placeholder="Column title..." onkeydown="handleColumnInputKey(event, this)" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; outline: none; box-sizing: border-box;">
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+              <button type="button" class="op-btn-add-col" onclick="confirmAddColumn(this)" style="padding: 6px 14px; background: #0284c7; color: #fff; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">Add</button>
+              <button type="button" class="op-btn-cancel-col" onclick="cancelAddColumn(this)" style="padding: 6px 10px; background: transparent; color: #64748b; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">✕</button>
+            </div>
+          </div>
+        </div>
       </div>
     {% else %}
       <!-- Plain Kanban Grid -->

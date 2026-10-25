@@ -74,11 +74,23 @@ def employee_list(request):
     if not group_by_field and view_mode == 'kanban':
         group_by_field = 'department'
 
-    employees = Employee.objects.filter(is_active=True).select_related('department_rel', 'manager')
+    filter_mode = request.GET.get('filter', '')
+    if filter_mode == 'inactive':
+        employees = Employee.objects.filter(is_active=False).select_related('department_rel', 'manager')
+    elif filter_mode == 'active':
+        employees = Employee.objects.filter(is_active=True).select_related('department_rel', 'manager')
+    else:
+        employees = Employee.objects.filter(is_active=True).select_related('department_rel', 'manager')
+
     employees = apply_search(employees, domain, query, search_fields=['name', 'employee_code', 'email', 'job_title', 'department', 'branch'])
 
     groups = apply_group_by(employees, group_by_field) if group_by_field else None
     favorites = get_favorites(request, model_key='hr.employee')
+
+    quick_filters = [
+        {'id': 'active', 'label': 'Active Employees'},
+        {'id': 'inactive', 'label': 'Inactive Employees'},
+    ]
 
     columns = [
         {'name': 'employee_code', 'label': 'Code'},
@@ -107,6 +119,8 @@ def employee_list(request):
         'favorites': favorites,
         'columns': columns,
         'view_mode': view_mode,
+        'filter_mode': filter_mode,
+        'quick_filters': quick_filters,
         'current_user': current_user,
         'is_admin': is_admin,
         'is_hr': is_hr,

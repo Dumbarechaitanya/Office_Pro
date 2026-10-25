@@ -1,4 +1,4 @@
-﻿{% load static %}
+{% load static %}
 <script>
   window.OP_FILTER_OPERATORS = {{ operators_by_type_json|default:"{}"|safe }};
 </script>
@@ -6,21 +6,126 @@
 <div class="op-search-panel"
      data-model-key="{{ search_model_key }}"
      data-current-domain='{{ current_domain|default:"[]" }}'
-     data-current-group-by="{{ active_group_by }}">
+     data-current-group-by="{{ active_group_by|default:'' }}"
+     data-filter-mode="{{ filter_mode|default:'' }}">
   {% csrf_token %}
 
   <div class="op-cp-searchview">
-    <form method="get" class="op-searchview">
+    <form method="get" class="op-searchview" onsubmit="return handleSearchSubmit(event, this)">
+      <!-- Preserved parameters on free search -->
+      {% if request.GET.view_mode %}<input type="hidden" name="view_mode" value="{{ request.GET.view_mode }}">{% endif %}
+      {% if filter_mode %}<input type="hidden" name="filter" value="{{ filter_mode }}">{% endif %}
+      {% if active_group_by %}<input type="hidden" name="group_by" value="{{ active_group_by }}">{% endif %}
+      {% if request.GET.domain %}<input type="hidden" name="domain" value="{{ request.GET.domain }}">{% endif %}
+
       <span class="op-search-icon">&#128269;</span>
-      <input type="search" name="q" class="op-searchview-input" placeholder="Search..." value="{{ request.GET.q }}" />
+
+      <!-- In-Search-Box Facet Chips (Rendered inside the search box) -->
+      <div class="op-searchview-facets">
+        <!-- 1. Quick Filter Facet -->
+        {% if search_model_key == 'hr.attendance' %}
+          {% if filter_mode == 'absent' %}
+            <div class="op-searchview-facet op-facet-type-filter" data-facet="filter">
+              <span class="op-facet-label">Filter:</span>
+              <span class="op-facet-value">Absent Today</span>
+              <button type="button" class="op-facet-remove" data-facet="filter" title="Remove filter">&times;</button>
+            </div>
+          {% elif filter_mode == 'all' %}
+            <div class="op-searchview-facet op-facet-type-filter" data-facet="filter">
+              <span class="op-facet-label">Filter:</span>
+              <span class="op-facet-value">Full Today Roster</span>
+              <button type="button" class="op-facet-remove" data-facet="filter" title="Remove filter">&times;</button>
+            </div>
+          {% elif filter_mode == 'history' %}
+            <div class="op-searchview-facet op-facet-type-filter" data-facet="filter">
+              <span class="op-facet-label">Filter:</span>
+              <span class="op-facet-value">All History</span>
+              <button type="button" class="op-facet-remove" data-facet="filter" title="Remove filter">&times;</button>
+            </div>
+          {% else %}
+            <!-- Default Attendance is Today -->
+            <div class="op-searchview-facet op-facet-type-filter" data-facet="filter">
+              <span class="op-facet-label">Filter:</span>
+              <span class="op-facet-value">Present Today</span>
+              <button type="button" class="op-facet-remove" data-facet="filter" title="Remove filter">&times;</button>
+            </div>
+          {% endif %}
+        {% elif filter_mode and filter_mode != 'all' %}
+          <div class="op-searchview-facet op-facet-type-filter" data-facet="filter">
+            <span class="op-facet-label">Filter:</span>
+            <span class="op-facet-value">
+              {% if search_model_key == 'hr.leave' %}
+                {% if filter_mode == 'to_approve' %}To Approve
+                {% elif filter_mode == 'approved' %}Approved
+                {% elif filter_mode == 'refused' %}Refused
+                {% else %}{{ filter_mode|title }}
+                {% endif %}
+              {% elif search_model_key == 'hr.employee' %}
+                {% if filter_mode == 'active' %}Active Employees
+                {% elif filter_mode == 'inactive' %}Inactive Employees
+                {% else %}{{ filter_mode|title }}
+                {% endif %}
+              {% else %}
+                {{ filter_mode|title }}
+              {% endif %}
+            </span>
+            <button type="button" class="op-facet-remove" data-facet="filter" title="Remove filter">&times;</button>
+          </div>
+        {% endif %}
+
+        <!-- 2. Active Group By Facet -->
+        {% if active_group_by %}
+          <div class="op-searchview-facet op-facet-type-group" data-facet="group_by">
+            <span class="op-facet-label">Group By:</span>
+            <span class="op-facet-value">{{ active_group_by|title }}</span>
+            <button type="button" class="op-facet-remove" data-facet="group_by" title="Remove grouping">&times;</button>
+          </div>
+        {% endif %}
+
+        <!-- 3. Free Text Search Query Facet -->
+        {% if request.GET.q %}
+          <div class="op-searchview-facet op-facet-type-query" data-facet="q">
+            <span class="op-facet-label">Search:</span>
+            <span class="op-facet-value">{{ request.GET.q }}</span>
+            <button type="button" class="op-facet-remove" data-facet="q" title="Clear query">&times;</button>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Real Input Field for search -->
+      <input type="search"
+             name="q"
+             class="op-searchview-input"
+             placeholder="{% if not filter_mode and not active_group_by and not request.GET.q %}Search...{% endif %}"
+             value=""
+             autocomplete="off" />
     </form>
     <button type="button" class="op-searchview-toggle" title="Toggle Search Panel" aria-expanded="false">&#9662;</button>
   </div>
 
   <div id="op-search-popover" class="op-search-popover">
 
+    <!-- Column 1: Filters -->
     <div class="op-popover-col op-filter-menu">
       <div class="op-popover-header"><span class="op-header-icon op-icon-filter">&#9873;</span><h5>Filters</h5></div>
+      
+      <!-- Quick Preset Filter Options -->
+      {% if quick_filters %}
+        <div class="op-quick-filters-list">
+          {% for qf in quick_filters %}
+            <a href="#" class="op-quick-filter-opt {% if filter_mode == qf.id or not filter_mode and qf.id == 'today' and search_model_key == 'hr.attendance' %}active{% endif %}" data-filter-id="{{ qf.id }}">
+              <span class="op-check-indicator">{% if filter_mode == qf.id or not filter_mode and qf.id == 'today' and search_model_key == 'hr.attendance' %}&#10003; {% endif %}</span>
+              <span class="op-filter-opt-label">{{ qf.label }}</span>
+              {% if qf.count is not None %}
+                <span class="op-filter-count-badge">({{ qf.count }})</span>
+              {% endif %}
+            </a>
+          {% endfor %}
+        </div>
+        <div class="op-divider"></div>
+      {% endif %}
+
+      <!-- Custom Filter Builder -->
       {% if filterable_fields %}
         <div class="op-custom-filter-builder">
           <select class="op-filter-field">
@@ -33,14 +138,18 @@
         </div>
         <span class="op-menu-item op-add-custom-filter" role="menuitem" tabindex="0">Custom Filter...</span>
       {% else %}
-        <span class="op-empty-hint">No filterable fields found. Run sync_ir_models first.</span>
+        <span class="op-empty-hint">No filterable fields found.</span>
       {% endif %}
     </div>
 
+    <!-- Column 2: Group By -->
     <div class="op-popover-col op-groupby-menu">
       <div class="op-popover-header"><span class="op-header-icon op-icon-group">&#8942;</span><h5>Group By</h5></div>
       {% for f in groupable_fields %}
-        <a href="#" class="op-groupby-option {% if active_group_by == f.name %}active{% endif %}" data-field="{{ f.name }}">{{ f.label }}</a>
+        <a href="#" class="op-groupby-option {% if active_group_by == f.name %}active{% endif %}" data-field="{{ f.name }}">
+          <span class="op-check-indicator">{% if active_group_by == f.name %}&#10003; {% endif %}</span>
+          <span>{{ f.label }}</span>
+        </a>
       {% empty %}
         <span class="op-empty-hint">No quick group-by fields</span>
       {% endfor %}
@@ -55,6 +164,7 @@
       {% endif %}
     </div>
 
+    <!-- Column 3: Favorites -->
     <div class="op-popover-col op-favorite-menu">
       <div class="op-popover-header"><span class="op-header-icon op-icon-star">&#9733;</span><h5>Favorites</h5></div>
       {% for fav in favorites %}

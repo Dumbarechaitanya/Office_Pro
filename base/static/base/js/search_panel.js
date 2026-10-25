@@ -1,4 +1,4 @@
-// search_panel.js -- single toggle opens a 3-column popover: Filters | Group By | Favorites
+// search_panel.js -- Odoo-style In-Search-Box Facet Badges, Filters | Group By | Favorites Popover
 
 function opGetCookie(name) {
   const match = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
@@ -18,11 +18,23 @@ function opBuildUrl(params) {
   return url.toString();
 }
 
+function handleSearchSubmit(event, form) {
+  const input = form.querySelector('.op-searchview-input');
+  if (!input) return true;
+  const val = input.value.trim();
+  if (!val) {
+    // If input is empty, don't clear facets or navigate with empty q
+    event.preventDefault();
+    return false;
+  }
+  return true;
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const panel = document.querySelector(".op-search-panel");
   if (!panel) return;
 
-  const modelKey = panel.dataset.modelKey;
+  const modelKey = panel.dataset.modelKey || "";
   let currentDomain = [];
   try {
     currentDomain = JSON.parse(panel.dataset.currentDomain || "[]");
@@ -30,8 +42,98 @@ document.addEventListener("DOMContentLoaded", function () {
     currentDomain = [];
   }
   const currentGroupBy = panel.dataset.currentGroupBy || "";
+  const filterMode = panel.dataset.filterMode || "";
 
-  // --- single toggle opens/closes the whole popover ---
+  const facetsContainer = panel.querySelector(".op-searchview-facets");
+  const searchInput = panel.querySelector(".op-searchview-input");
+
+  // --- Render Dynamic Domain Filter Facets into Search Box ---
+  if (facetsContainer && currentDomain && currentDomain.length > 0) {
+    currentDomain.forEach(function (cond, idx) {
+      if (Array.isArray(cond) && cond.length >= 3) {
+        const fieldName = cond[0].replace(/__/g, ' ').replace(/\./g, ' ');
+        const op = cond[1];
+        const val = cond[2];
+
+        const facetEl = document.createElement("div");
+        facetEl.className = "op-searchview-facet op-facet-type-domain";
+        facetEl.dataset.facet = "domain";
+        facetEl.dataset.domainIndex = String(idx);
+        facetEl.innerHTML = `
+          <span class="op-facet-label">${fieldName}:</span>
+          <span class="op-facet-value">${val}</span>
+          <button type="button" class="op-facet-remove" data-facet="domain" data-domain-index="${idx}" title="Remove filter">&times;</button>
+        `;
+        facetsContainer.appendChild(facetEl);
+      }
+    });
+  }
+
+  // Update input placeholder based on facets presence
+  function updatePlaceholder() {
+    if (!searchInput) return;
+    const hasFacets = facetsContainer && facetsContainer.children.length > 0;
+    if (hasFacets) {
+      searchInput.setAttribute("placeholder", "");
+    } else {
+      searchInput.setAttribute("placeholder", "Search...");
+    }
+  }
+  updatePlaceholder();
+
+  // --- Handle Facet Removal (Clicking 'x' cross on any chip inside search box) ---
+  panel.addEventListener("click", function (e) {
+    const removeBtn = e.target.closest(".op-facet-remove");
+    if (!removeBtn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const facetType = removeBtn.dataset.facet;
+    const url = new URL(window.location.href);
+
+    if (facetType === "filter") {
+      url.searchParams.delete("filter");
+      // For attendance, clearing default today switches to all history
+      if (modelKey === "hr.attendance" && (filterMode === "today" || !filterMode)) {
+        url.searchParams.set("filter", "history");
+      }
+    } else if (facetType === "group_by") {
+      url.searchParams.delete("group_by");
+    } else if (facetType === "q") {
+      url.searchParams.delete("q");
+    } else if (facetType === "domain") {
+      const idx = parseInt(removeBtn.dataset.domainIndex, 10);
+      if (!isNaN(idx) && currentDomain[idx] !== undefined) {
+        currentDomain.splice(idx, 1);
+        if (currentDomain.length > 0) {
+          url.searchParams.set("domain", JSON.stringify(currentDomain));
+        } else {
+          url.searchParams.delete("domain");
+        }
+      }
+    }
+
+    window.location.href = url.toString();
+  });
+
+  // --- Keyboard Backspace on Empty Search Input (Removes last active facet) ---
+  if (searchInput) {
+    searchInput.addEventListener("keydown", function (e) {
+      if (e.key === "Backspace" && searchInput.value === "") {
+        const facets = facetsContainer ? facetsContainer.querySelectorAll(".op-searchview-facet") : [];
+        if (facets.length > 0) {
+          const lastFacet = facets[facets.length - 1];
+          const removeBtn = lastFacet.querySelector(".op-facet-remove");
+          if (removeBtn) {
+            removeBtn.click();
+          }
+        }
+      }
+    });
+  }
+
+  // --- Popover Toggle: opens/closes the whole 3-column menu ---
   const toggleBtn = panel.querySelector(".op-searchview-toggle");
   const popover = panel.querySelector("#op-search-popover");
   if (toggleBtn && popover) {
@@ -52,7 +154,28 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- custom filter builder ---
+  // --- Quick Presets Filter in Popover ---
+  panel.querySelectorAll(".op-quick-filter-opt").forEach(function (opt) {
+    opt.addEventListener("click", function (e) {
+      e.preventDefault();
+      const filterId = this.dataset.filterId;
+      const url = new URL(window.location.href);
+      const activeFilter = url.searchParams.get("filter") || (modelKey === "hr.attendance" ? "today" : "");
+
+      if (activeFilter === filterId) {
+        // Toggle off
+        url.searchParams.delete("filter");
+        if (modelKey === "hr.attendance") {
+          url.searchParams.set("filter", "all");
+        }
+      } else {
+        url.searchParams.set("filter", filterId);
+      }
+      window.location.href = url.toString();
+    });
+  });
+
+  // --- Custom Filter Builder ---
   const fieldSelect = panel.querySelector(".op-filter-field");
   const opSelect = panel.querySelector(".op-filter-operator");
   const OPERATORS = window.OP_FILTER_OPERATORS || {};
@@ -61,7 +184,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!fieldSelect || !opSelect) return;
     const selected = fieldSelect.selectedOptions[0];
     const type = selected ? selected.dataset.type : null;
-    const ops = OPERATORS[type] || [["=", "is"]];
+    const ops = OPERATORS[type] || [["=", "is equal to"], ["ilike", "contains"]];
     opSelect.innerHTML = ops
       .map(function (o) {
         return '<option value="' + o[0] + '">' + o[1] + "</option>";
@@ -76,11 +199,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const addFilterTrigger = panel.querySelector(".op-add-custom-filter");
   if (addFilterTrigger) {
     addFilterTrigger.addEventListener("click", function () {
-      const value = panel.querySelector(".op-filter-value").value;
+      const valInput = panel.querySelector(".op-filter-value");
+      const value = valInput ? valInput.value.trim() : "";
       if (value === "") return;
       let parsedValue = value;
-      if (value === "true") parsedValue = true;
-      else if (value === "false") parsedValue = false;
+      if (value.toLowerCase() === "true") parsedValue = true;
+      else if (value.toLowerCase() === "false") parsedValue = false;
       currentDomain.push([fieldSelect.value, opSelect.value, parsedValue]);
       window.location.href = opBuildUrl({
         domain: JSON.stringify(currentDomain),
@@ -89,19 +213,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- group by: quick options ---
+  // --- Group By: Quick Options ---
   panel.querySelectorAll(".op-groupby-option").forEach(function (a) {
     a.addEventListener("click", function (e) {
       e.preventDefault();
-      const field = this.classList.contains("active") ? "" : this.dataset.field;
-      window.location.href = opBuildUrl({
-        group_by: field,
-        domain: JSON.stringify(currentDomain),
-      });
+      const field = this.dataset.field;
+      const url = new URL(window.location.href);
+      const activeGroup = url.searchParams.get("group_by") || currentGroupBy;
+      if (activeGroup === field) {
+        url.searchParams.delete("group_by");
+      } else {
+        url.searchParams.set("group_by", field);
+      }
+      window.location.href = url.toString();
     });
   });
 
-  // --- group by: custom select ---
+  // --- Group By: Custom Select ---
   const customGroupSelect = panel.querySelector(".op-custom-group-select");
   if (customGroupSelect) {
     customGroupSelect.addEventListener("change", function () {
@@ -113,7 +241,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- favorites: load ---
+  // --- Favorites: Load ---
   panel.querySelectorAll(".op-load-favorite").forEach(function (a) {
     a.addEventListener("click", function (e) {
       e.preventDefault();
@@ -124,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // --- favorites: accordion toggle for "Save current search" ---
+  // --- Favorites: Accordion Toggle for "Save current search" ---
   const favToggle = panel.querySelector(".op-add-favorite");
   const favForm = panel.querySelector(".op-favorite-form");
   if (favToggle && favForm) {
@@ -135,7 +263,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- favorites: save ---
+  // --- Favorites: Save ---
   const saveBtn = panel.querySelector(".op-save-favorite-btn");
   if (saveBtn) {
     saveBtn.addEventListener("click", function () {
@@ -167,7 +295,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- favorites: set default / delete ---
+  // --- Favorites: Set Default / Delete ---
   panel.querySelectorAll(".op-set-default-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {
       fetch("/technical/filters/" + this.dataset.id + "/set-default/", {

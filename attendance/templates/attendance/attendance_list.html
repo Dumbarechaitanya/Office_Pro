@@ -4,42 +4,6 @@
 {% block content %}
 <!-- Base Universal List Toolbar with Search Panel, Filter/Group-by/Favorites, Pager & Cog Actions -->
 {% include 'base/_list_toolbar.html' with title="Attendances" create_url=create_url search_model_key="hr.attendance" %}
-
-<div style="padding: 12px 20px; background: #fafbfc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-  <!-- Quick Roster Filter Pills -->
-  <div style="display: flex; align-items: center; gap: 8px;">
-    <span style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Filter:</span>
-    <a href="{% url 'attendance_list' %}?filter=today{% if request.GET.group_by %}&group_by={{ request.GET.group_by }}{% endif %}" 
-       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; {% if filter_mode == 'today' or not filter_mode %}background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; box-shadow: 0 1px 2px rgba(29,78,216,0.1);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
-      <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
-      Present Today ({{ today_count }})
-    </a>
-    <a href="{% url 'attendance_list' %}?filter=absent{% if request.GET.group_by %}&group_by={{ request.GET.group_by }}{% endif %}" 
-       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; {% if filter_mode == 'absent' %}background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; box-shadow: 0 1px 2px rgba(220,38,38,0.1);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
-      <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
-      Absent Today ({{ absent_count }})
-    </a>
-    <a href="{% url 'attendance_list' %}?filter=all{% if request.GET.group_by %}&group_by={{ request.GET.group_by }}{% endif %}" 
-       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; {% if filter_mode == 'all' %}background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(15,23,42,0.06);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
-      <span style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
-      Full Today Roster
-    </a>
-    <a href="{% url 'attendance_list' %}?filter=history{% if request.GET.group_by %}&group_by={{ request.GET.group_by }}{% endif %}" 
-       style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; {% if filter_mode == 'history' %}background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; box-shadow: 0 1px 2px rgba(2,132,199,0.1);{% else %}background: #fff; color: #64748b; border: 1px solid #cbd5e1;{% endif %}">
-      <span style="font-size: 12px;">&#128197;</span>
-      All History
-    </a>
-  </div>
-
-  <!-- Active Group By indicator (if any) -->
-  {% if active_group_by %}
-  <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 4px; border: 1px solid #bae6fd;">
-    <span>Grouped by: <strong>{{ active_group_by }}</strong></span>
-    <a href="?{% if filter_mode %}filter={{ filter_mode }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}" style="text-decoration: none; color: #0284c7; font-weight: bold; margin-left: 4px;" title="Clear grouping">&times;</a>
-  </div>
-  {% endif %}
-</div>
-
 <style>
 .att-table tr.op-clickable-row {
   cursor: pointer;

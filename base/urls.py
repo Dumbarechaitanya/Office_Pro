@@ -14,6 +14,7 @@ urlpatterns = [
     path('settings/general/', views.settings_home, name='settings_general'),
     path('batch-action/', views.batch_action, name='batch_action'),
     path('api/kanban-move/', views.kanban_move_card, name='kanban_move_card'),
+    path('api/kanban-add-column/', views.kanban_add_column, name='kanban_add_column'),
 
 
     # Settings > Users & Companies

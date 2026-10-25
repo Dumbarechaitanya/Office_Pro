@@ -368,6 +368,74 @@ def kanban_move_card(request):
     return JsonResponse({'success': False, 'error': f'Unsupported model or field ({model_key}.{field_name}).'}, status=400)
 
 
+@require_POST
+@login_required_ir
+def kanban_add_column(request):
+    """
+    Creates a new column/stage (e.g. Department for Employee, or custom stage)
+    directly inline from the Kanban board without going to configuration forms.
+    """
+    try:
+        data = json.loads(request.body.decode('utf-8')) if request.body else request.POST
+    except Exception:
+        data = request.POST
+
+    model_key = data.get('model_key') or data.get('model')
+    group_field = data.get('group_by') or data.get('group_field') or 'department'
+    title = (data.get('title') or '').strip()
+
+    if not title:
+        return JsonResponse({'success': False, 'error': 'Column title cannot be empty.'}, status=400)
+
+    current_user = get_current_ir_user(request)
+
+    # 1. Employee Department column creation
+    if model_key in ('hr.employee', 'employee', 'Employee') and group_field in ('department', 'department_rel'):
+        if not (is_admin_user(current_user) or is_hr_officer_or_admin(current_user)):
+            return JsonResponse({'success': False, 'error': 'Permission denied: HR Officer role required to create departments.'}, status=403)
+        if Department is None:
+            return JsonResponse({'success': False, 'error': 'Department model unavailable.'}, status=500)
+
+        dept = Department.objects.filter(name__iexact=title).first()
+        if not dept:
+            dept = Department.objects.create(name=title, is_active=True)
+
+        return JsonResponse({
+            'success': True,
+            'message': f"Department '{dept.name}' added.",
+            'column_id': dept.id,
+            'title': dept.name,
+            'raw_val': dept.name,
+        })
+
+    # 2. Leave Type column creation
+    elif model_key in ('hr.leave', 'leave', 'LeaveRequest') and group_field in ('leave_type', 'leave_type_id'):
+        if not (is_admin_user(current_user) or is_leave_officer_or_admin(current_user)):
+            return JsonResponse({'success': False, 'error': 'Permission denied: Leave Officer role required.'}, status=403)
+        if LeaveType is None:
+            return JsonResponse({'success': False, 'error': 'LeaveType model unavailable.'}, status=500)
+
+        lt = LeaveType.objects.filter(name__iexact=title).first()
+        if not lt:
+            lt = LeaveType.objects.create(name=title, code=title[:10].upper(), is_active=True)
+
+        return JsonResponse({
+            'success': True,
+            'message': f"Leave Type '{lt.name}' added.",
+            'column_id': lt.id,
+            'title': lt.name,
+            'raw_val': lt.name,
+        })
+
+    # Generic column fallback
+    return JsonResponse({
+        'success': True,
+        'message': f"Column '{title}' added.",
+        'title': title,
+        'raw_val': title,
+    })
+
+
 def batch_action(request):
     """
     Unified batch action processor for all list views:

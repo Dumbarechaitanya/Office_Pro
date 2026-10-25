@@ -5,17 +5,30 @@
     <div class="op-kanban-board" style="display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; padding-bottom: 24px; min-height: calc(100vh - 200px);">
       {% for group in groups %}
         <div class="op-kanban-column" style="width: 290px; min-width: 290px; flex-shrink: 0; display: flex; flex-direction: column;">
-          <!-- Column Header -->
-          <div class="op-kanban-column-header" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 10px 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px;">
+          <!-- Column Header (Title + Count + Actions) -->
+          <div class="op-kanban-column-header" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 10px 4px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px; position: relative;">
             <div style="font-size: 14px; font-weight: 700; color: #0f172a;">
               <span>{{ group.label }}</span>
-              <span style="color: #64748b; font-weight: 600; margin-left: 4px;">({{ group.count }})</span>
+              <span class="op-column-count" style="color: #64748b; font-weight: 600; margin-left: 4px;">({{ group.count }})</span>
             </div>
-            {% if create_url %}
-              <a href="{{ create_url }}" class="op-column-plus-btn" style="text-decoration: none; color: #64748b; font-size: 20px; font-weight: 400; line-height: 1; padding: 0 4px;" title="Add record">&#43;</a>
-            {% else %}
-              <span style="color: #94a3b8; font-size: 18px; line-height: 1;">&#43;</span>
-            {% endif %}
+            <div class="op-column-header-actions" style="display: flex; align-items: center; gap: 4px; position: relative;">
+              {% if create_url %}
+                <a href="{{ create_url }}" class="op-column-plus-btn" style="text-decoration: none; color: #64748b; font-size: 18px; font-weight: 400; line-height: 1; padding: 2px 5px; border-radius: 4px;" title="Add record">&#43;</a>
+              {% else %}
+                <span style="color: #94a3b8; font-size: 18px; line-height: 1; padding: 2px 4px;">&#43;</span>
+              {% endif %}
+              <button type="button" class="op-column-gear-btn" title="Column Options" onclick="toggleColumnMenu(event, this)">⚙</button>
+              <div class="op-column-menu" style="display: none;">
+                <button type="button" class="op-column-menu-item" onclick="foldKanbanColumn(this)">⇥ Fold Column</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Folded Column Body View -->
+          <div class="op-column-folded-view" style="display: none;" onclick="unfoldKanbanColumn(this.closest('.op-kanban-column'))" title="Click to unfold">
+            <span class="op-column-folded-badge">({{ group.count }})</span>
+            <span class="op-column-folded-title">{{ group.label }}</span>
+            <span class="op-column-folded-icon">▸</span>
           </div>
 
           <!-- Column Cards Stack -->
@@ -49,6 +62,20 @@
           </div>
         </div>
       {% endfor %}
+
+      <!-- Inline Add Column Panel -->
+      <div class="op-kanban-add-column-panel" data-model="{{ search_model_key|default:'res.users' }}" data-group-by="{{ active_group_by|default:'role' }}" style="width: 290px; min-width: 290px; flex-shrink: 0;">
+        <button type="button" class="op-add-column-trigger-btn" onclick="showInlineAddColumn(this)" style="width: 100%; padding: 14px 16px; border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; color: #64748b; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease;">
+          <span style="font-size: 18px; line-height: 1;">＋</span> Add Column
+        </button>
+        <div class="op-add-column-form" style="display: none; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+          <input type="text" class="op-add-column-input" placeholder="Column title..." onkeydown="handleColumnInputKey(event, this)" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; outline: none; box-sizing: border-box;">
+          <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <button type="button" class="op-btn-add-col" onclick="confirmAddColumn(this)" style="padding: 6px 14px; background: #0284c7; color: #fff; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">Add</button>
+            <button type="button" class="op-btn-cancel-col" onclick="cancelAddColumn(this)" style="padding: 6px 10px; background: transparent; color: #64748b; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">✕</button>
+          </div>
+        </div>
+      </div>
     </div>
   {% else %}
     <div class="op-kanban-grid">
@@ -86,3 +113,4 @@
     </div>
   {% endif %}
 </div>
+<script src="{% static 'base/js/kanban_drag_drop.js' %}"></script>

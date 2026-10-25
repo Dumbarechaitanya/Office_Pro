@@ -302,6 +302,13 @@ def leave_management_requests(request):
     ]
     favorites = get_favorites(request, model_key='hr.leave')
 
+    quick_filters = [
+        {'id': 'all', 'label': 'All Requests', 'count': len(records)},
+        {'id': 'to_approve', 'label': 'To Approve', 'count': to_approve_count},
+        {'id': 'approved', 'label': 'Approved', 'count': approved_count},
+        {'id': 'refused', 'label': 'Refused', 'count': None},
+    ]
+
     return render(request, 'leave/leave_management_requests.html', {
         'requests': records,
         'groups': groups,
@@ -310,6 +317,7 @@ def leave_management_requests(request):
         'approved_count': approved_count,
         'view_mode': view_mode,
         'filter_mode': filter_mode,
+        'quick_filters': quick_filters,
         'search_q': search_q,
         'active_group_by': group_by_field,
         'search_model_key': 'hr.leave',
