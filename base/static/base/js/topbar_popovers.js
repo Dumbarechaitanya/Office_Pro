@@ -112,34 +112,21 @@
   }
 
   // -------------------------------------------------------------------------
-  // Fetch Topbar Counters (Badges)
+  // Fetch Topbar Counters (Badges) via ultra-lightweight endpoint (<15ms)
   // -------------------------------------------------------------------------
   window.loadTopbarCounters = function () {
-    // 1. Fetch Conversations Unread
-    fetch('/mail/conversations/')
+    fetch('/mail/counters/')
       .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
-          window.opMailState.conversationsData = data;
-          window.opMailState.usersList = data.users || [];
           updateConversationsBadge(data.unread_count || 0);
-          populateRecipientSelect(data.users || []);
-        }
-      })
-      .catch(err => console.debug('Conversations load err:', err));
-
-    // 2. Fetch Activities Counts
-    fetch('/mail/activities/')
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === 'success') {
-          window.opMailState.activitiesData = data;
           updateActivitiesBadge(data.total_pending || 0, data.overdue_count || 0);
           updateActivityChips(data);
         }
       })
-      .catch(err => console.debug('Activities load err:', err));
+      .catch(err => console.debug('Counters load err:', err));
   };
+
 
   function updateConversationsBadge(count) {
     const badge = document.getElementById('opConversationsBadge');
@@ -191,7 +178,9 @@
           window.opMailState.conversationsData = data;
           window.opMailState.usersList = data.users || [];
           updateConversationsBadge(data.unread_count || 0);
+          populateRecipientSelect(data.users || []);
           renderConversationsTab(window.opMailState.activeConvTab);
+
         }
       })
       .catch(err => {

@@ -48,6 +48,7 @@ urlpatterns = [
     path('settings/contacts/<int:partner_id>/', views.settings_partner_detail, name='settings_partner_detail'),
 
     # Chatter / Popovers & Activities
+    path('mail/counters/', views.mail_topbar_counters, name='mail_topbar_counters'),
     path('mail/post-message/', views.mail_post_message, name='mail_post_message'),
     path('mail/conversations/', views.mail_conversations, name='mail_conversations'),
     path('mail/direct-message/send/', views.mail_send_direct_message, name='mail_send_direct_message'),

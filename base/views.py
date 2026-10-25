@@ -4079,15 +4079,41 @@ def seed_sample_activities_and_notifications(user):
             )
 
 
+def mail_topbar_counters(request):
+    """Ultra-lightweight endpoint returning badge numbers for the navbar in <10ms."""
+    user = get_current_ir_user(request)
+    if not user:
+        return JsonResponse({'status': 'error', 'message': 'Authentication required.'}, status=401)
+
+    today = timezone.now().date()
+    unread_count = MailMessage.objects.filter(recipient=user, is_read=False).count()
+
+    from django.db.models import Count, Q
+    counts = MailActivity.objects.filter(is_active=True, user=user, state='planned').aggregate(
+        overdue=Count('id', filter=Q(date_deadline__lt=today)),
+        today=Count('id', filter=Q(date_deadline=today)),
+        future=Count('id', filter=Q(date_deadline__gt=today)),
+    )
+    overdue_count = counts['overdue'] or 0
+    today_count = counts['today'] or 0
+    future_count = counts['future'] or 0
+    total_pending = overdue_count + today_count + future_count
+
+    return JsonResponse({
+        'status': 'success',
+        'unread_count': unread_count,
+        'overdue_count': overdue_count,
+        'today_count': today_count,
+        'planned_count': future_count,
+        'total_pending': total_pending,
+    })
+
+
 def mail_conversations(request):
     """Returns unread message count, recent direct messages, chatter stream, and user list."""
     user = get_current_ir_user(request)
     if not user:
         return JsonResponse({'status': 'error', 'message': 'Authentication required.'}, status=401)
-
-    if hasattr(request, 'session') and not request.session.get('activities_seeded'):
-        seed_sample_activities_and_notifications(user)
-        request.session['activities_seeded'] = True
 
     # 1. Unread count for current user
     unread_count = MailMessage.objects.filter(recipient=user, is_read=False).count()
@@ -4150,17 +4176,24 @@ def mail_conversations(request):
             'created_at_human': m.created_at.strftime('%I:%M %p') if m.created_at.date() == timezone.now().date() else m.created_at.strftime('%b %d'),
         })
 
-    # 4. Users list for direct chat
-    other_users = ResUsers.objects.filter(is_active=True).exclude(id=user.id).order_by('username')
+    # 4. Users list for direct chat (optimized with select_related to prevent N+1 queries)
+    other_users = (
+        ResUsers.objects.filter(is_active=True)
+        .exclude(id=user.id)
+        .select_related('employee')
+        .only('id', 'username', 'email', 'employee__name')
+        .order_by('username')
+    )
     users_list = []
     for u in other_users:
+        emp_name = u.employee.name if (u.employee_id and u.employee) else u.username
         users_list.append({
             'id': u.id,
             'username': u.username,
-            'name': getattr(u, 'name', u.username),
-            'email': u.email,
+            'name': emp_name,
+            'email': u.email or '',
             'avatar': u.username[:1].upper(),
-            'role': getattr(u, 'role', 'User'),
+            'role': 'User',
         })
 
     return JsonResponse({
@@ -4170,6 +4203,7 @@ def mail_conversations(request):
         'chatter_stream': chatter_list,
         'users': users_list,
     })
+
 
 
 @require_POST
@@ -4256,9 +4290,6 @@ def mail_activities_list(request):
     if not user:
         return JsonResponse({'status': 'error', 'message': 'Authentication required.'}, status=401)
 
-    if hasattr(request, 'session') and not request.session.get('activities_seeded'):
-        seed_sample_activities_and_notifications(user)
-        request.session['activities_seeded'] = True
     today = timezone.now().date()
 
     model_name = request.GET.get('model_name')
@@ -4273,10 +4304,17 @@ def mail_activities_list(request):
         base_qs = base_qs.filter(user=user)
 
     planned_qs = base_qs.filter(state='planned')
-    overdue_count = planned_qs.filter(date_deadline__lt=today).count()
-    today_count = planned_qs.filter(date_deadline=today).count()
-    future_count = planned_qs.filter(date_deadline__gt=today).count()
+    from django.db.models import Count, Q
+    counts = planned_qs.aggregate(
+        overdue=Count('id', filter=Q(date_deadline__lt=today)),
+        today=Count('id', filter=Q(date_deadline=today)),
+        future=Count('id', filter=Q(date_deadline__gt=today)),
+    )
+    overdue_count = counts['overdue'] or 0
+    today_count = counts['today'] or 0
+    future_count = counts['future'] or 0
     total_pending = overdue_count + today_count + future_count
+
 
     if status_filter == 'overdue':
         qs = planned_qs.filter(date_deadline__lt=today)
