@@ -39,12 +39,18 @@
   // -------------------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', function () {
     initTopbarPopovers();
-    loadTopbarCounters();
-    loadActivityTypes();
 
-    // Poll counters every 45 seconds
-    setInterval(loadTopbarCounters, 45000);
+    // Defer non-critical background polling by 1.5s so user navigation & asset loading is unhindered
+    setTimeout(loadTopbarCounters, 1500);
+
+    // Poll counters every 90 seconds while tab is active
+    setInterval(function() {
+      if (document.visibilityState === 'visible') {
+        loadTopbarCounters();
+      }
+    }, 90000);
   });
+
 
   function initTopbarPopovers() {
     const convBtn = document.getElementById('opConversationsBtn');
@@ -508,8 +514,13 @@
     closeAllPopovers();
     modal.style.display = 'flex';
 
-    populateActivityTypeSelect();
+    if (!window.opMailState.activityTypes || !window.opMailState.activityTypes.length) {
+      loadActivityTypes();
+    } else {
+      populateActivityTypeSelect();
+    }
     populateAssigneeSelect();
+
 
     // Default target model/id/name
     document.getElementById('opActResModel').value = modelName || 'general';

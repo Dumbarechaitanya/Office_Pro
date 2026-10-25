@@ -4085,7 +4085,9 @@ def mail_conversations(request):
     if not user:
         return JsonResponse({'status': 'error', 'message': 'Authentication required.'}, status=401)
 
-    seed_sample_activities_and_notifications(user)
+    if hasattr(request, 'session') and not request.session.get('activities_seeded'):
+        seed_sample_activities_and_notifications(user)
+        request.session['activities_seeded'] = True
 
     # 1. Unread count for current user
     unread_count = MailMessage.objects.filter(recipient=user, is_read=False).count()
@@ -4254,7 +4256,9 @@ def mail_activities_list(request):
     if not user:
         return JsonResponse({'status': 'error', 'message': 'Authentication required.'}, status=401)
 
-    seed_sample_activities_and_notifications(user)
+    if hasattr(request, 'session') and not request.session.get('activities_seeded'):
+        seed_sample_activities_and_notifications(user)
+        request.session['activities_seeded'] = True
     today = timezone.now().date()
 
     model_name = request.GET.get('model_name')

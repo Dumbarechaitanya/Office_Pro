@@ -48,6 +48,7 @@ def employee_list(request):
         {'name': 'name', 'label': 'Employee Name', 'field_type': 'VARCHAR', 'operators': [['ilike', 'contains'], ['=', 'is equal to']]},
         {'name': 'employee_code', 'label': 'Code', 'field_type': 'VARCHAR', 'operators': [['ilike', 'contains'], ['=', 'is equal to']]},
         {'name': 'department', 'label': 'Department', 'field_type': 'VARCHAR', 'operators': [['ilike', 'contains'], ['=', 'is equal to']]},
+        {'name': 'manager', 'label': 'Manager', 'field_type': 'FK', 'operators': [['=', 'is'], ['!=', 'is not']]},
         {'name': 'job_title', 'label': 'Job Position', 'field_type': 'VARCHAR', 'operators': [['ilike', 'contains'], ['=', 'is equal to']]},
         {'name': 'branch', 'label': 'Branch', 'field_type': 'VARCHAR', 'operators': [['ilike', 'contains'], ['=', 'is equal to']]},
         {'name': 'employment_type', 'label': 'Employment Type', 'field_type': 'VARCHAR', 'operators': [['ilike', 'contains'], ['=', 'is equal to']]},
@@ -57,6 +58,7 @@ def employee_list(request):
 
     default_groupable = [
         {'name': 'department', 'label': 'Department'},
+        {'name': 'manager', 'label': 'Manager'},
         {'name': 'job_title', 'label': 'Job Position'},
         {'name': 'branch', 'label': 'Branch'},
         {'name': 'employment_type', 'label': 'Employment Type'},

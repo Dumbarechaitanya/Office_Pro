@@ -125,10 +125,22 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
+        conn_max_age=int(os.environ.get('CONN_MAX_AGE', 60)),
         conn_health_checks=True,
     )
 }
+
+# Low-level TCP keepalives and connect_timeout (prevents 120s stalls on sleeping or suspended serverless compute)
+DATABASES['default'].setdefault('OPTIONS', {})
+if 'sqlite' not in DATABASES['default'].get('ENGINE', ''):
+    DATABASES['default']['OPTIONS'].update({
+        'connect_timeout': 5,
+        'keepalives': 1,
+        'keepalives_idle': 15,
+        'keepalives_interval': 5,
+        'keepalives_count': 3,
+    })
+
 
 # AUTH_USER_MODEL = 'base.User'
 

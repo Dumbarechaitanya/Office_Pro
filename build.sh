@@ -23,3 +23,6 @@ python manage.py seed_ir_views
 
 # Security: hash any plaintext passwords, keep legacy admins as explicit admins, report weak passwords
 python manage.py harden_accounts
+
+# Assign department managers and reporting hierarchies
+python manage.py assign_department_managers

@@ -553,11 +553,11 @@
         console.error('[Office Pro Diagnostic Interceptor]', e);
       });
 
-      // Active Tab Keep-Alive Heartbeat (Prevents Render free tier idle sleep while tab is open)
+      // Active Tab Keep-Alive Heartbeat (Prevents Render and Neon Serverless Postgres idle sleep while tab is open)
       (function() {
-        var HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+        var HEARTBEAT_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes (well before Neon's 5m suspend)
         function sendHeartbeat() {
-          fetch('/healthz/', { method: 'GET', cache: 'no-store' })
+          fetch('/healthz/?check_db=1', { method: 'GET', cache: 'no-store' })
             .catch(function() {});
         }
         setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
@@ -567,6 +567,7 @@
           }
         });
       })();
+
     </script>
     {% block extra_js %}{% endblock %}
   </body>
