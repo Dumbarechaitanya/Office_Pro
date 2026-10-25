@@ -1,0 +1,211 @@
+{% extends "leave/leave_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #f8fafc; min-height: calc(100vh - 60px); padding-bottom: 40px;">
+
+  <!-- Form Control Bar -->
+  <div class="leave-control-bar" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 20;">
+    <!-- Left Navigation & Actions -->
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      {% if is_officer %}
+      <a href="{% url 'leave_allocation_create' %}" style="background: #2563eb; color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+        <span>&#43;</span> New
+      </a>
+      {% endif %}
+
+      <!-- Breadcrumbs -->
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+        {% if is_officer or is_manager %}
+        <a href="{% url 'leave_management_allocations' %}" style="color: #64748b; text-decoration: none; font-weight: 500;">Allocations</a>
+        {% else %}
+        <a href="{% url 'my_allocations' %}" style="color: #64748b; text-decoration: none; font-weight: 500;">My Allocations</a>
+        {% endif %}
+        <span style="color: #cbd5e1;">/</span>
+        <span style="color: #0f172a; font-weight: 700;">{{ alloc.name }}</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; align-items: center; gap: 8px; margin-left: 8px;">
+        {% if can_approve %}
+          <form method="POST" action="{% url 'leave_allocation_action' alloc.id %}" style="display: inline; margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="validate">
+            <button type="submit" style="padding: 6px 16px; background: #10b981; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <span>&#10003;</span> Validate
+            </button>
+          </form>
+          <form method="POST" action="{% url 'leave_allocation_action' alloc.id %}" style="display: inline; margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="refuse">
+            <button type="submit" style="padding: 6px 14px; background: #ffffff; border: 1px solid #fecaca; color: #dc2626; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">
+              <span>&#10005;</span> Refuse
+            </button>
+          </form>
+        {% endif %}
+
+        {% if is_officer or is_admin %}
+          <button type="submit" form="allocForm" style="padding: 6px 16px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <span>&#10004;</span> Save
+          </button>
+        {% endif %}
+
+        <a href="{% if is_officer or is_manager %}{% url 'leave_management_allocations' %}{% else %}{% url 'my_allocations' %}{% endif %}" style="padding: 6px 14px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; font-size: 13px; font-weight: 600; text-decoration: none;">
+          Discard
+        </a>
+      </div>
+    </div>
+
+    <!-- Right: Status Pipeline & Pager -->
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div style="display: inline-flex; align-items: center; background: #f1f5f9; border-radius: 6px; padding: 2px; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700;">
+        <span style="padding: 4px 10px; border-radius: 4px; {% if alloc.status == 'confirm' %}background: #f59e0b; color: #fff;{% else %}color: #64748b;{% endif %}">
+          To Approve
+        </span>
+        <span style="color: #cbd5e1; padding: 0 2px;">&rsaquo;</span>
+        {% if alloc.status == 'refuse' %}
+          <span style="padding: 4px 10px; border-radius: 4px; background: #ef4444; color: #fff;">
+            Refused
+          </span>
+        {% else %}
+          <span style="padding: 4px 10px; border-radius: 4px; {% if alloc.status == 'validate' %}background: #10b981; color: #fff;{% else %}color: #64748b;{% endif %}">
+            Approved
+          </span>
+        {% endif %}
+      </div>
+
+      {% if total_count > 1 %}
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #64748b;">
+        <span>{{ current_index }} / {{ total_count }}</span>
+        <div style="display: inline-flex; gap: 2px;">
+          {% if prev_id %}
+            <a href="{% url 'leave_allocation_detail' prev_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; text-decoration: none; font-size: 13px;">&lt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid #e2e8f0; border-radius: 4px; color: #cbd5e1; font-size: 13px;">&lt;</span>
+          {% endif %}
+          {% if next_id %}
+            <a href="{% url 'leave_allocation_detail' next_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; text-decoration: none; font-size: 13px;">&gt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid #e2e8f0; border-radius: 4px; color: #cbd5e1; font-size: 13px;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Sheet Container -->
+  <div style="max-width: 880px; margin: 24px auto; padding: 0 20px;">
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+
+      <!-- Employee Header Banner -->
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 52px; height: 52px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: #fff; background-color: {{ alloc.employee.avatar_color|default:'#2563eb' }}; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
+            {{ alloc.employee.name|slice:":1"|upper }}
+          </div>
+          <div>
+            <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
+              {{ alloc.name }}
+            </h2>
+            <div style="font-size: 13px; color: #64748b; display: flex; align-items: center; gap: 10px;">
+              <span><strong>Employee:</strong> {{ alloc.employee.name }} ({{ alloc.employee.employee_code|default:"—" }})</span>
+              <span>&bull;</span>
+              <span><strong>Department:</strong> {{ alloc.employee.department.name|default:"General" }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: right;">
+          <span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; color: #fff; background: {{ alloc.leave_type.color|default:'#10b981' }};">
+            {{ alloc.leave_type.name }}
+          </span>
+          <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 6px;">
+            {{ alloc.allocated_days }} Days
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Form -->
+      <form id="allocForm" method="POST">
+        {% csrf_token %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+          <div>
+            <div style="margin-bottom: 18px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Description *</label>
+              {% if is_officer or is_admin %}
+                <input type="text" name="name" value="{{ alloc.name }}" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+              {% else %}
+                <div style="padding: 9px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 600;">{{ alloc.name }}</div>
+              {% endif %}
+            </div>
+
+            <div style="margin-bottom: 18px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Time Off Type</label>
+              <div style="padding: 9px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 600; color: #1e293b;">
+                {{ alloc.leave_type.name }} ({{ alloc.leave_type.code }})
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Allocated Days</label>
+              {% if is_officer or is_admin %}
+                <input type="number" step="0.5" name="allocated_days" value="{{ alloc.allocated_days }}" style="width: 100%; max-width: 180px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" required>
+              {% else %}
+                <div style="padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                  {{ alloc.allocated_days }} Days
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div>
+            <div style="margin-bottom: 18px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Status</label>
+              <div style="padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                {% if alloc.status == 'confirm' %}
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
+                  <span style="color: #b45309;">To Approve</span>
+                {% elif alloc.status == 'validate' %}
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                  <span style="color: #15803d;">Approved</span>
+                {% elif alloc.status == 'refuse' %}
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+                  <span style="color: #b91c1c;">Refused</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div style="margin-bottom: 18px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Approver</label>
+              <div style="padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #334155;">
+                {{ alloc.approver.name|default:"Pending Review" }}
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Granted On</label>
+              <div style="padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12.5px; color: #64748b;">
+                {{ alloc.created_at|date:"d M Y, g:i A"|default:"—" }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Notes / Grant Basis</label>
+          {% if is_officer or is_admin %}
+            <textarea name="notes" rows="3" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: inherit;">{{ alloc.notes }}</textarea>
+          {% else %}
+            <div style="padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #334155; min-height: 60px;">
+              {{ alloc.notes|default:"No notes provided." }}
+            </div>
+          {% endif %}
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -39,7 +39,7 @@
     </thead>
     <tbody>
       {% for a in actions_list %}
-        <tr>
+        <tr class="op-clickable-row" data-href="{% url 'technical_action_detail' a.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
           <td>
             <a href="{% url 'technical_action_detail' a.id %}" style="text-decoration: none; color: inherit; font-weight: 500; display: block;">{{ a.name }}</a>
           </td>

@@ -17,9 +17,11 @@ python manage.py createcachetable
 # Convert static asset files to static root
 python manage.py collectstatic --no-input
 
-# Sync dynamic model registries & seed UI views
+# Sync dynamic model registries & seed UI views, actions, sequences, cron, and leave data
 python manage.py sync_ir_models
+python manage.py seed_technical_defaults
 python manage.py seed_ir_views
+python manage.py seed_leave_data
 
 # Security: hash any plaintext passwords, keep legacy admins as explicit admins, report weak passwords
 python manage.py harden_accounts

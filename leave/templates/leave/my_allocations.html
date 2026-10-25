@@ -26,7 +26,7 @@
       </thead>
       <tbody>
         {% for a in allocations %}
-          <tr>
+          <tr class="op-clickable-row" data-href="{% url 'leave_allocation_detail' a.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
             <td><strong>{{ a.name }}</strong></td>
             <td>
               <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; color: #fff; background: {{ a.leave_type.color|default:'#10b981' }};">

@@ -649,6 +649,20 @@ class IrUiView(models.Model):
     _name = 'ir.ui.view'
     _description = 'UI Views'
 
+    VIEW_TYPE_CHOICES = [
+        ('list', 'List'),
+        ('form', 'Form'),
+        ('kanban', 'Kanban'),
+        ('grid', 'Grid'),
+        ('pivot', 'Pivot'),
+        ('graph', 'Graph'),
+        ('calendar', 'Calendar'),
+        ('activity', 'Activity'),
+        ('search', 'Search'),
+        ('qweb', 'QWeb'),
+        ('hierarchy', 'Hierarchy'),
+    ]
+
     name = models.CharField(max_length=150)
     view_type = models.CharField(max_length=20, default='list')
     model = models.ForeignKey(IrModel, on_delete=models.DO_NOTHING, db_column='model_id',

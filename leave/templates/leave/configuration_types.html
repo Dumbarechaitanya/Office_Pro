@@ -21,8 +21,8 @@
       </thead>
       <tbody>
         {% for t in types %}
-          <tr>
-            <td><input type="checkbox" class="op-row-select-checkbox" value="{{ t.id }}" onchange="handleRowSelect(this, event)"></td>
+          <tr class="op-clickable-row" data-href="{% url 'leave_type_detail' t.id %}" onclick="if (!event.target.closest('.op-select-col')) window.location.href = this.dataset.href;" style="cursor: pointer;">
+            <td class="op-select-col" onclick="event.stopPropagation()"><input type="checkbox" class="op-row-select-checkbox" value="{{ t.id }}" onchange="handleRowSelect(this, event)"></td>
             <td>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 14px; height: 14px; border-radius: 4px; background: {{ t.color }};"></span>

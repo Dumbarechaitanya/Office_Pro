@@ -893,3 +893,257 @@ def mandatory_day_create(request):
     return render(request, 'leave/mandatory_day_form.html', {
         'current_user': current_user,
     })
+
+
+@login_required_ir
+def leave_request_detail(request, request_id):
+    """
+    Form view for a single Time Off Request.
+    Allows viewing details, modifying (if authorized), and approving/refusing directly from the form.
+    """
+    current_user = get_current_ir_user(request)
+    current_emp = get_user_linked_employee(current_user)
+    is_officer = is_leave_officer_or_admin(current_user)
+    is_admin = is_admin_user(current_user)
+    is_manager = is_approving_manager(current_user)
+
+    leave_req = get_object_or_404(
+        LeaveRequest.objects.select_related('employee', 'leave_type', 'approved_by', 'first_approved_by'),
+        id=request_id
+    )
+
+    emp_id = current_emp.id if current_emp else None
+    is_owner = bool(emp_id) and leave_req.employee_id == emp_id
+    is_approver_l1 = bool(emp_id) and emp_id in (leave_req.employee.manager_id, leave_req.employee.leave_approver_l1_id)
+    is_approver_l2 = bool(emp_id) and leave_req.employee.leave_approver_l2_id == emp_id
+
+    if not (is_officer or is_admin or is_approver_l1 or is_approver_l2 or is_owner):
+        messages.error(request, "Permission Denied: You do not have access to view this time off request.")
+        return redirect('leave_dashboard')
+
+    can_approve = False
+    if leave_req.status in ('confirm', 'Pending') and not is_owner:
+        if is_officer or is_admin or is_approver_l1 or is_approver_l2:
+            can_approve = True
+
+    if request.method == 'POST':
+        if is_officer or is_admin or (is_owner and leave_req.status in ('confirm', 'Pending')):
+            start_date_str = request.POST.get('start_date')
+            end_date_str = request.POST.get('end_date')
+            reason = request.POST.get('reason', '').strip()[:2000]
+            leave_type_id = request.POST.get('leave_type_id')
+
+            if leave_type_id:
+                lt = get_object_or_404(LeaveType, id=leave_type_id, is_active=True)
+                leave_req.leave_type = lt
+
+            if start_date_str and end_date_str:
+                try:
+                    s_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                    e_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                    if e_date >= s_date:
+                        leave_req.start_date = s_date
+                        leave_req.end_date = e_date
+                        dur = request.POST.get('duration_days')
+                        if dur:
+                            leave_req.duration_days = Decimal(dur)
+                        else:
+                            leave_req.duration_days = Decimal((e_date - s_date).days + 1)
+                except Exception:
+                    pass
+
+            leave_req.reason = reason
+            leave_req.save()
+            messages.success(request, "Time off request updated successfully.")
+            return redirect('leave_request_detail', request_id=leave_req.id)
+
+    all_req_ids = list(LeaveRequest.objects.filter(is_active=True).order_by('-start_date').values_list('id', flat=True))
+    current_index = all_req_ids.index(leave_req.id) + 1 if leave_req.id in all_req_ids else 1
+    total_count = len(all_req_ids)
+    prev_id = all_req_ids[current_index - 2] if current_index > 1 else None
+    next_id = all_req_ids[current_index] if current_index < total_count else None
+
+    return render(request, 'leave/leave_request_detail.html', {
+        'req': leave_req,
+        'leave_req': leave_req,
+        'leave_types': LeaveType.objects.filter(is_active=True).order_by('name'),
+        'current_emp': current_emp,
+        'current_user': current_user,
+        'is_officer': is_officer,
+        'is_manager': is_manager,
+        'is_officer_or_manager': is_officer or is_manager,
+        'can_approve': can_approve,
+        'is_owner': is_owner,
+        'prev_id': prev_id,
+        'next_id': next_id,
+        'current_index': current_index,
+        'total_count': total_count,
+    })
+
+
+@login_required_ir
+def leave_allocation_detail(request, allocation_id):
+    """
+    Form view for a single Leave Allocation.
+    """
+    current_user = get_current_ir_user(request)
+    current_emp = get_user_linked_employee(current_user)
+    is_officer = is_leave_officer_or_admin(current_user)
+    is_admin = is_admin_user(current_user)
+    is_manager = is_approving_manager(current_user)
+
+    alloc = get_object_or_404(
+        LeaveAllocation.objects.select_related('employee', 'leave_type', 'approver'),
+        id=allocation_id
+    )
+
+    emp_id = current_emp.id if current_emp else None
+    is_owner = bool(emp_id) and alloc.employee_id == emp_id
+    is_subordinate = bool(emp_id) and (
+        alloc.employee.manager_id == emp_id or
+        alloc.employee.leave_approver_l1_id == emp_id or
+        alloc.employee.leave_approver_l2_id == emp_id
+    )
+
+    if not (is_officer or is_admin or is_subordinate or is_owner):
+        messages.error(request, "Permission Denied: You do not have access to view this allocation.")
+        return redirect('leave_dashboard')
+
+    can_approve = False
+    if alloc.status in ('confirm', 'Pending') and not is_owner and (is_officer or is_admin or is_subordinate):
+        can_approve = True
+
+    if request.method == 'POST' and (is_officer or is_admin):
+        name = request.POST.get('name', alloc.name).strip()
+        allocated_days = request.POST.get('allocated_days')
+        notes = request.POST.get('notes', alloc.notes)
+        if name:
+            alloc.name = name
+        if allocated_days:
+            try:
+                alloc.allocated_days = Decimal(allocated_days)
+            except Exception:
+                pass
+        alloc.notes = notes
+        alloc.save()
+        messages.success(request, "Allocation updated successfully.")
+        return redirect('leave_allocation_detail', allocation_id=alloc.id)
+
+    all_alloc_ids = list(LeaveAllocation.objects.filter(is_active=True).order_by('-created_at').values_list('id', flat=True))
+    current_index = all_alloc_ids.index(alloc.id) + 1 if alloc.id in all_alloc_ids else 1
+    total_count = len(all_alloc_ids)
+    prev_id = all_alloc_ids[current_index - 2] if current_index > 1 else None
+    next_id = all_alloc_ids[current_index] if current_index < total_count else None
+
+    return render(request, 'leave/leave_allocation_detail.html', {
+        'alloc': alloc,
+        'current_emp': current_emp,
+        'current_user': current_user,
+        'is_officer': is_officer,
+        'is_manager': is_manager,
+        'is_officer_or_manager': is_officer or is_manager,
+        'can_approve': can_approve,
+        'is_owner': is_owner,
+        'prev_id': prev_id,
+        'next_id': next_id,
+        'current_index': current_index,
+        'total_count': total_count,
+    })
+
+
+@leave_officer_required
+def leave_type_detail(request, type_id):
+    """
+    Form view for a single Time Off Type.
+    """
+    current_user = get_current_ir_user(request)
+    leave_type = get_object_or_404(LeaveType, id=type_id)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip()
+        color = request.POST.get('color', leave_type.color)
+        take_time_off_in = request.POST.get('take_time_off_in', leave_type.take_time_off_in)
+        requires_allocation = request.POST.get('requires_allocation') == 'on'
+        approval_type = request.POST.get('approval_type', leave_type.approval_type)
+        max_days = int(request.POST.get('max_days_per_year', leave_type.max_days_per_year or 15))
+        is_active = request.POST.get('is_active') == 'on'
+
+        if name:
+            leave_type.name = name
+            leave_type.code = code or leave_type.code
+            leave_type.color = color
+            leave_type.take_time_off_in = take_time_off_in
+            leave_type.requires_allocation = requires_allocation
+            leave_type.approval_type = approval_type
+            leave_type.max_days_per_year = max_days
+            leave_type.is_active = is_active
+            leave_type.save()
+            messages.success(request, f"Time off type '{name}' updated.")
+            return redirect('leave_type_detail', type_id=leave_type.id)
+
+    all_ids = list(LeaveType.objects.order_by('name').values_list('id', flat=True))
+    current_index = all_ids.index(leave_type.id) + 1 if leave_type.id in all_ids else 1
+    total_count = len(all_ids)
+    prev_id = all_ids[current_index - 2] if current_index > 1 else None
+    next_id = all_ids[current_index] if current_index < total_count else None
+
+    return render(request, 'leave/leave_type_detail.html', {
+        'type': leave_type,
+        'current_user': current_user,
+        'prev_id': prev_id,
+        'next_id': next_id,
+        'current_index': current_index,
+        'total_count': total_count,
+    })
+
+
+@leave_officer_required
+def mandatory_day_detail(request, day_id):
+    """
+    Form view for a Public Holiday / Mandatory Day.
+    """
+    current_user = get_current_ir_user(request)
+    day = get_object_or_404(MandatoryDay, id=day_id)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        start_date_str = request.POST.get('start_date')
+        end_date_str = request.POST.get('end_date')
+        color = request.POST.get('color', day.color)
+        is_mandatory = request.POST.get('is_mandatory') == 'on'
+        notes = request.POST.get('notes', '')
+        is_active = request.POST.get('is_active') == 'on'
+
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            if name:
+                day.name = name
+                day.start_date = start_date
+                day.end_date = end_date
+                day.color = color
+                day.is_mandatory = is_mandatory
+                day.notes = notes
+                day.is_active = is_active
+                day.save()
+                messages.success(request, f"Public Holiday '{name}' updated.")
+                return redirect('leave_mandatory_day_detail', day_id=day.id)
+        except Exception as e:
+            messages.error(request, f"Failed to update holiday: {e}")
+
+    all_ids = list(MandatoryDay.objects.order_by('start_date').values_list('id', flat=True))
+    current_index = all_ids.index(day.id) + 1 if day.id in all_ids else 1
+    total_count = len(all_ids)
+    prev_id = all_ids[current_index - 2] if current_index > 1 else None
+    next_id = all_ids[current_index] if current_index < total_count else None
+
+    return render(request, 'leave/mandatory_day_detail.html', {
+        'day': day,
+        'current_user': current_user,
+        'prev_id': prev_id,
+        'next_id': next_id,
+        'current_index': current_index,
+        'total_count': total_count,
+    })
+

@@ -520,7 +520,8 @@ class MailTopbarPopoversAndActivitiesTests(SimpleTestCase):
         mock_msg_exclude.return_value.select_related.return_value.order_by.return_value = [cmsg]
 
         # users list
-        u2 = SimpleNamespace(id=2, username='marcdemo', name='Marc Demo', email='marc@demo.com', role='User', is_active=True)
+        u2 = SimpleNamespace(id=2, username='marcdemo', name='Marc Demo', email='marc@demo.com', role='User', is_active=True, employee_id=None, employee=None)
+        mock_users_filter.return_value.exclude.return_value.select_related.return_value.only.return_value.order_by.return_value = [u2]
         mock_users_filter.return_value.exclude.return_value.order_by.return_value = [u2]
 
         response = mail_conversations(request)

@@ -202,3 +202,97 @@ class MailServerEncryptionDbTests(DbTestCase):
             cur.execute('SELECT smtp_pass FROM ir_mail_server WHERE id = %s', [server.id])
             self.assertTrue(cur.fetchone()[0].startswith('enc1:'))
         self.assertEqual(IrMailServer.objects.get(id=server.id).smtp_pass, 'legacy-plain')
+
+
+class TechnicalDefaultsAndLeaveFormTests(DbTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.admin_user = ResUsers.objects.create(username='tech_admin', email='tech_admin@test.com', is_active=True)
+        self.admin_user._is_admin_cached = True
+        admin_group, _ = ResGroups.objects.get_or_create(name='Administrator', defaults={'privilege': 'Administration'})
+        ResUsersGroups.objects.get_or_create(user=self.admin_user, group=admin_group, defaults={'is_active': True})
+
+        self.admin_emp = Employee.objects.create(name='Tech Admin', email='tech_admin@test.com', employee_code='E99', date_joined=date(2024, 1, 1), is_active=True)
+        self.admin_user.employee = self.admin_emp
+        self.admin_user.save(update_fields=['employee'])
+        self.leave_type = LeaveType.objects.create(name='Test PTO', code='TPTO', color='#10b981', requires_allocation=False)
+        self.leave_req = LeaveRequest.objects.create(
+            employee=self.admin_emp,
+            leave_type=self.leave_type,
+            start_date=date.today(),
+            end_date=date.today(),
+            duration_days=1.0,
+            status='confirm'
+        )
+        self.alloc = LeaveAllocation.objects.create(
+            name='Test 2026 Alloc',
+            employee=self.admin_emp,
+            leave_type=self.leave_type,
+            allocated_days=10.0,
+            status='confirm'
+        )
+        self.mand_day = MandatoryDay.objects.create(
+            name='Test Holiday',
+            start_date=date.today(),
+            end_date=date.today(),
+            color='#8b5cf6'
+        )
+
+    def _attach_request_session(self, request, user):
+        request.session = SessionStore()
+        request.session['user_id'] = user.id
+        request.user = user
+        request._cached_ir_user = user
+        request._messages = FallbackStorage(request)
+        user._is_admin_cached = True
+
+    def test_seed_technical_defaults_command(self):
+        out = StringIO()
+        call_command('seed_technical_defaults', stdout=out)
+        self.assertIn('Successfully seeded Technical Defaults', out.getvalue())
+        from base.models import IrActions, IrSequence, IrCron
+        self.assertGreater(IrActions.objects.count(), 10)
+        self.assertGreater(IrSequence.objects.count(), 5)
+        self.assertGreater(IrCron.objects.count(), 3)
+
+    def test_leave_request_detail_view(self):
+        from leave.views import leave_request_detail
+        request = self.factory.get(f'/time-off/request/{self.leave_req.id}/')
+        self._attach_request_session(request, self.admin_user)
+        response = leave_request_detail(request, request_id=self.leave_req.id)
+        self.assertEqual(response.status_code, 200)
+
+    def test_leave_allocation_detail_view(self):
+        from leave.views import leave_allocation_detail
+        request = self.factory.get(f'/time-off/allocation/{self.alloc.id}/')
+        self._attach_request_session(request, self.admin_user)
+        response = leave_allocation_detail(request, allocation_id=self.alloc.id)
+        self.assertEqual(response.status_code, 200)
+
+    def test_leave_type_detail_view(self):
+        from leave.views import leave_type_detail
+        request = self.factory.get(f'/time-off/configuration/types/{self.leave_type.id}/')
+        self._attach_request_session(request, self.admin_user)
+        response = leave_type_detail(request, type_id=self.leave_type.id)
+        self.assertEqual(response.status_code, 200)
+
+    def test_mandatory_day_detail_view(self):
+        from leave.views import mandatory_day_detail
+        request = self.factory.get(f'/time-off/configuration/mandatory-days/{self.mand_day.id}/')
+        self._attach_request_session(request, self.admin_user)
+        response = mandatory_day_detail(request, day_id=self.mand_day.id)
+        self.assertEqual(response.status_code, 200)
+
+    def test_technical_views_render_without_crash(self):
+        from base.views import technical_views, technical_actions, technical_sequences, technical_cron
+        for view_fn, path in [
+            (technical_views, '/settings/technical/views/'),
+            (technical_actions, '/settings/technical/actions/'),
+            (technical_sequences, '/settings/technical/sequences/'),
+            (technical_cron, '/settings/technical/cron/'),
+        ]:
+            request = self.factory.get(path)
+            self._attach_request_session(request, self.admin_user)
+            resp = view_fn(request)
+            self.assertEqual(resp.status_code, 200)
+

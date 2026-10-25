@@ -69,7 +69,10 @@
 
             <!-- Public Holidays -->
             {% for h in day.holidays %}
-              <div style="font-size: 10.5px; font-weight: 700; color: #6b21a8; background: #f3e8ff; border-left: 3px solid {{ h.color }}; padding: 2px 6px; border-radius: 3px; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ h.name }}">
+              <div style="font-size: 10.5px; font-weight: 700; color: #6b21a8; background: #f3e8ff; border-left: 3px solid {{ h.color }}; padding: 2px 6px; border-radius: 3px; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;" 
+                   data-href="{% url 'leave_mandatory_day_detail' h.id %}"
+                   onclick="window.location.href = this.dataset.href;"
+                   title="{{ h.name }}">
                 &#9733; {{ h.name }}
               </div>
             {% endfor %}
@@ -77,7 +80,9 @@
             <!-- Leave Requests Plotted -->
             {% for req in day.leaves %}
               <div class="leave-event-pill" 
-                   style="background: {{ req.leave_type.color }}18; color: {{ req.leave_type.color }}; border-left: 3px solid {{ req.leave_type.color }};" 
+                   data-href="{% url 'leave_request_detail' req.id %}"
+                   onclick="window.location.href = this.dataset.href;"
+                   style="background: {{ req.leave_type.color }}18; color: {{ req.leave_type.color }}; border-left: 3px solid {{ req.leave_type.color }}; cursor: pointer;" 
                    title="{{ req.employee.name }} ({{ req.leave_type.name }}) - {{ req.status_label }}">
                 <div style="width: 14px; height: 14px; border-radius: 50%; background: {{ req.leave_type.color }}; color: #fff; font-size: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">
                   {{ req.employee.name|slice:":1"|upper }}
@@ -146,7 +151,9 @@
 
       <div style="display: flex; flex-direction: column; gap: 10px;">
         {% for h in upcoming_holidays %}
-          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: #faf5ff; border: 1px solid #f3e8ff; border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: #faf5ff; border: 1px solid #f3e8ff; border-radius: 6px; cursor: pointer;"
+               data-href="{% url 'leave_mandatory_day_detail' h.id %}"
+               onclick="window.location.href = this.dataset.href;">
             <div style="background: {{ h.color }}; color: #fff; width: 36px; height: 36px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800;">
               <span style="font-size: 9px; text-transform: uppercase; line-height: 1;">{{ h.start_date|date:"M" }}</span>
               <span style="font-size: 13px; line-height: 1.1;">{{ h.start_date|date:"d" }}</span>

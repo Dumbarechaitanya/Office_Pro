@@ -1,0 +1,271 @@
+{% extends "leave/leave_base.html" %}
+{% load static %}
+
+{% block content %}
+<div style="background: #f8fafc; min-height: calc(100vh - 60px); padding-bottom: 40px;">
+
+  <!-- Form Control Bar matching Odoo 16/17 ERP Parity -->
+  <div class="leave-control-bar" style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 20;">
+    <!-- Left Navigation & Actions -->
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      {% if is_officer or is_manager %}
+      <a href="{% url 'leave_request_create' %}" style="background: #2563eb; color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+        <span>&#43;</span> New
+      </a>
+      {% endif %}
+
+      <!-- Breadcrumbs -->
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+        {% if is_officer or is_manager %}
+        <a href="{% url 'leave_management_requests' %}" style="color: #64748b; text-decoration: none; font-weight: 500;">Time Off Requests</a>
+        {% else %}
+        <a href="{% url 'my_time_off' %}" style="color: #64748b; text-decoration: none; font-weight: 500;">My Time Off</a>
+        {% endif %}
+        <span style="color: #cbd5e1;">/</span>
+        <span style="color: #0f172a; font-weight: 700;">{{ req.employee.name }}</span>
+        <span style="color: #64748b; font-size: 13px;">({{ req.leave_type.name }})</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; align-items: center; gap: 8px; margin-left: 8px;">
+        {% if can_approve %}
+          <form method="POST" action="{% url 'leave_request_action' req.id %}" style="display: inline; margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="validate">
+            <button type="submit" style="padding: 6px 16px; background: #10b981; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(16,185,129,0.2);">
+              <span>&#10003;</span> Validate
+            </button>
+          </form>
+          <form method="POST" action="{% url 'leave_request_action' req.id %}" style="display: inline; margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="refuse">
+            <button type="submit" style="padding: 6px 14px; background: #ffffff; border: 1px solid #fecaca; color: #dc2626; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">
+              <span>&#10005;</span> Refuse
+            </button>
+          </form>
+        {% endif %}
+
+        {% if is_officer or is_admin or is_owner and req.status == 'confirm' %}
+          <button type="submit" form="leaveRequestForm" style="padding: 6px 16px; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <span>&#10004;</span> Save
+          </button>
+        {% endif %}
+
+        {% if is_officer or is_manager %}
+        <a href="{% url 'leave_management_requests' %}" style="padding: 6px 14px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; font-size: 13px; font-weight: 600; text-decoration: none;">
+          Discard
+        </a>
+        {% else %}
+        <a href="{% url 'my_time_off' %}" style="padding: 6px 14px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; font-size: 13px; font-weight: 600; text-decoration: none;">
+          Discard
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right: Status Pipeline & Pager -->
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <!-- Odoo-Style Status Flow Pipeline -->
+      <div style="display: inline-flex; align-items: center; background: #f1f5f9; border-radius: 6px; padding: 2px; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700;">
+        <span style="padding: 4px 10px; border-radius: 4px; {% if req.status == 'draft' %}background: #2563eb; color: #fff;{% else %}color: #64748b;{% endif %}">
+          Draft
+        </span>
+        <span style="color: #cbd5e1; padding: 0 2px;">&rsaquo;</span>
+        <span style="padding: 4px 10px; border-radius: 4px; {% if req.status == 'confirm' or req.status == 'Pending' %}background: #f59e0b; color: #fff;{% else %}color: #64748b;{% endif %}">
+          To Approve
+        </span>
+        <span style="color: #cbd5e1; padding: 0 2px;">&rsaquo;</span>
+        {% if req.status == 'refuse' or req.status == 'Rejected' %}
+          <span style="padding: 4px 10px; border-radius: 4px; background: #ef4444; color: #fff;">
+            Refused
+          </span>
+        {% else %}
+          <span style="padding: 4px 10px; border-radius: 4px; {% if req.status == 'validate' or req.status == 'Approved' %}background: #10b981; color: #fff;{% else %}color: #64748b;{% endif %}">
+            Approved
+          </span>
+        {% endif %}
+      </div>
+
+      <!-- Record Pager -->
+      {% if total_count > 1 %}
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #64748b;">
+        <span>{{ current_index }} / {{ total_count }}</span>
+        <div style="display: inline-flex; gap: 2px;">
+          {% if prev_id %}
+            <a href="{% url 'leave_request_detail' prev_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; text-decoration: none; font-size: 13px;">&lt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid #e2e8f0; border-radius: 4px; color: #cbd5e1; font-size: 13px;">&lt;</span>
+          {% endif %}
+          {% if next_id %}
+            <a href="{% url 'leave_request_detail' next_id %}" style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; text-decoration: none; font-size: 13px;">&gt;</a>
+          {% else %}
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid #e2e8f0; border-radius: 4px; color: #cbd5e1; font-size: 13px;">&gt;</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Sheet Container -->
+  <div style="max-width: 880px; margin: 24px auto; padding: 0 20px;">
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative;">
+
+      <!-- Employee Header Header Banner -->
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 52px; height: 52px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: #fff; background-color: {{ req.employee.avatar_color|default:'#2563eb' }}; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
+            {{ req.employee.name|slice:":1"|upper }}
+          </div>
+          <div>
+            <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
+              {{ req.employee.name }}
+            </h2>
+            <div style="font-size: 13px; color: #64748b; display: flex; align-items: center; gap: 10px;">
+              <span><strong>Code:</strong> {{ req.employee.employee_code|default:"—" }}</span>
+              <span>&bull;</span>
+              <span><strong>Department:</strong> {{ req.employee.department.name|default:"General" }}</span>
+              <span>&bull;</span>
+              <span><strong>Role:</strong> {{ req.employee.job_title|default:"Staff" }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: right;">
+          <span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; color: #fff; background: {{ req.leave_type.color|default:'#10b981' }};">
+            {{ req.leave_type.name }}
+          </span>
+          <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 6px;">
+            {{ req.duration_days }} Day{% if req.duration_days > 1 %}s{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Form -->
+      <form id="leaveRequestForm" method="POST">
+        {% csrf_token %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+          <!-- Left Column -->
+          <div>
+            <div style="margin-bottom: 18px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Time Off Type</label>
+              {% if is_officer or is_admin %}
+                <select name="leave_type_id" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff;">
+                  {% for lt in leave_types %}
+                    <option value="{{ lt.id }}" {% if lt.id == req.leave_type.id %}selected{% endif %}>{{ lt.name }} ({{ lt.code }})</option>
+                  {% endfor %}
+                </select>
+              {% else %}
+                <div style="padding: 9px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 600; color: #1e293b;">
+                  {{ req.leave_type.name }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+              <div>
+                <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Start Date</label>
+                {% if is_officer or is_admin or is_owner and req.status == 'confirm' %}
+                  <input type="date" name="start_date" id="reqStartDate" value="{{ req.start_date|date:'Y-m-d' }}" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" onchange="recalcDays()">
+                {% else %}
+                  <div style="padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px;">
+                    {{ req.start_date|date:"d M Y" }}
+                  </div>
+                {% endif %}
+              </div>
+              <div>
+                <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">End Date</label>
+                {% if is_officer or is_admin or is_owner and req.status == 'confirm' %}
+                  <input type="date" name="end_date" id="reqEndDate" value="{{ req.end_date|date:'Y-m-d' }}" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" onchange="recalcDays()">
+                {% else %}
+                  <div style="padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px;">
+                    {{ req.end_date|date:"d M Y" }}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Duration (Days)</label>
+              {% if is_officer or is_admin %}
+                <input type="number" step="0.5" name="duration_days" id="reqDurationDays" value="{{ req.duration_days }}" style="width: 100%; max-width: 180px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+              {% else %}
+                <div style="padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 700;">
+                  {{ req.duration_days }} Days
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div>
+            <div style="margin-bottom: 18px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Status</label>
+              <div style="padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                {% if req.status == 'confirm' or req.status == 'Pending' %}
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
+                  <span style="color: #b45309;">To Approve</span>
+                {% elif req.status == 'validate' or req.status == 'Approved' %}
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                  <span style="color: #15803d;">Approved</span>
+                {% elif req.status == 'refuse' or req.status == 'Rejected' %}
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+                  <span style="color: #b91c1c;">Refused</span>
+                {% else %}
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
+                  <span style="color: #475569;">Draft</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div style="margin-bottom: 18px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Approver</label>
+              <div style="padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #334155;">
+                {{ req.approved_by.name|default:"Pending Review" }}
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Created / Requested On</label>
+              <div style="padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12.5px; color: #64748b;">
+                {{ req.created_at|date:"d M Y, g:i A"|default:"—" }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reason / Description -->
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; font-size: 12.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Reason / Description</label>
+          {% if is_officer or is_admin or is_owner and req.status == 'confirm' %}
+            <textarea name="reason" rows="3" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: inherit;">{{ req.reason }}</textarea>
+          {% else %}
+            <div style="padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #334155; min-height: 60px;">
+              {{ req.reason|default:"No reason specified." }}
+            </div>
+          {% endif %}
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function recalcDays() {
+  const sStr = document.getElementById('reqStartDate').value;
+  const eStr = document.getElementById('reqEndDate').value;
+  if (sStr && eStr) {
+    const s = new Date(sStr);
+    const e = new Date(eStr);
+    if (e >= s) {
+      const diffTime = Math.abs(e - s);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      const durInput = document.getElementById('reqDurationDays');
+      if (durInput) durInput.value = diffDays.toFixed(1);
+    }
+  }
+}
+</script>
+{% endblock %}

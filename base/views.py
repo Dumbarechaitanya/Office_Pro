@@ -2080,12 +2080,15 @@ def technical_views(request):
         {'name': 'model__model_name', 'label': 'Model'},
     ]
 
-    domain = get_domain_from_request(request)
-    group_by_field = get_group_by_from_request(request, groupable_fields)
+    query = request.GET.get('q', '')
+    try:
+        domain = json.loads(request.GET.get('domain') or '[]')
+    except (ValueError, TypeError):
+        domain = []
+    group_by_field = request.GET.get('group_by') or ''
 
     views_qs = IrUiView.objects.all().select_related('model', 'inherit_id')
-    if domain:
-        views_qs = apply_domain(views_qs, domain)
+    views_qs = apply_search(views_qs, domain, query, search_fields=['name', 'view_type', 'model__model_name', 'external_id'])
     views_qs = views_qs.order_by('name')
 
     groups = apply_group_by(views_qs, group_by_field) if group_by_field else None

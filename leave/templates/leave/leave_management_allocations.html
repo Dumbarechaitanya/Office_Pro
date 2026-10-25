@@ -37,8 +37,8 @@
       </thead>
       <tbody>
         {% for a in allocations %}
-          <tr>
-            <td><input type="checkbox" class="op-row-select-checkbox" value="{{ a.id }}" onchange="handleRowSelect(this, event)"></td>
+          <tr class="op-clickable-row" data-href="{% url 'leave_allocation_detail' a.id %}" onclick="if (!event.target.closest('.op-select-col') && !event.target.closest('button') && !event.target.closest('form')) window.location.href = this.dataset.href;" style="cursor: pointer;">
+            <td class="op-select-col" onclick="event.stopPropagation()"><input type="checkbox" class="op-row-select-checkbox" value="{{ a.id }}" onchange="handleRowSelect(this, event)"></td>
             <td><strong>{{ a.name }}</strong></td>
             <td>
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -77,7 +77,7 @@
                 Perpetual
               {% endif %}
             </td>
-            <td style="text-align: right;">
+            <td onclick="event.stopPropagation()" style="text-align: right;">
               {% if a.status == 'confirm' %}
                 <div style="display: inline-flex; gap: 4px;">
                   <form method="POST" action="{% url 'leave_allocation_action' a.id %}" style="display: inline; margin: 0;">

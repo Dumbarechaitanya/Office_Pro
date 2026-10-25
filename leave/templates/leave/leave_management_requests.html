@@ -46,7 +46,7 @@
             <!-- Column Cards Stack -->
             <div class="op-kanban-column-cards" style="display: flex; flex-direction: column; gap: 12px; min-height: 180px; flex: 1; border-radius: 6px; padding: 4px; transition: background 0.15s ease;">
               {% for req in grp.rows %}
-                <div class="leave-kanban-card" id="leaveCard_{{ req.id }}" data-record-id="{{ req.id }}" data-model="hr.leave" data-kanban-card="true" style="margin: 0;">
+                <div class="leave-kanban-card" id="leaveCard_{{ req.id }}" data-record-id="{{ req.id }}" data-model="hr.leave" data-kanban-card="true" data-href="{% url 'leave_request_detail' req.id %}" onclick="if (!event.target.closest('button') && !event.target.closest('form') && !event.target.closest('a')) window.location.href = this.dataset.href;" style="margin: 0; cursor: pointer;">
                   <!-- Diagonal Ribbon -->
                   <div class="op-ribbon-wrapper">
                     {% if req.status == 'confirm' or req.status == 'Pending' %}
@@ -297,7 +297,7 @@
 
               <!-- Child Rows for this Group -->
               {% for req in grp.rows %}
-              <tr class="op-group-row grp-{{ forloop.parentloop.counter }}" {% if not forloop.parentloop.first %}style="display: none;"{% endif %}>
+              <tr class="op-clickable-row op-group-row grp-{{ forloop.parentloop.counter }}" data-href="{% url 'leave_request_detail' req.id %}" onclick="if (!event.target.closest('.op-select-col') && !event.target.closest('button') && !event.target.closest('form')) window.location.href = this.dataset.href;" style="cursor: pointer;{% if not forloop.parentloop.first %} display: none;{% endif %}">
                 <td class="op-select-col" onclick="event.stopPropagation()" style="padding: 10px 14px; vertical-align: middle;"><input type="checkbox" class="op-row-select-checkbox" value="{{ req.id }}" onchange="handleRowSelect(this, event)"></td>
                 <td style="padding: 10px 14px; vertical-align: middle;">
                   <div style="display: flex; align-items: center; gap: 8px;">
@@ -332,7 +332,7 @@
                 <td style="padding: 10px 14px; font-size: 12px; color: #64748b; vertical-align: middle;">
                   {{ req.approved_by.name|default:"&mdash;" }}
                 </td>
-                <td style="padding: 10px 14px; text-align: right; vertical-align: middle;">
+                <td class="op-actions-col" onclick="event.stopPropagation()" style="padding: 10px 14px; text-align: right; vertical-align: middle;">
                   {% if req.status == 'confirm' or req.status == 'Pending' %}
                     <div style="display: inline-flex; gap: 4px;">
                       <form method="POST" action="{% url 'leave_request_action' req.id %}" style="display: inline; margin: 0;">
@@ -356,7 +356,7 @@
           {% else %}
             <!-- Flat Plain List Rows -->
             {% for req in requests %}
-              <tr>
+              <tr class="op-clickable-row" data-href="{% url 'leave_request_detail' req.id %}" onclick="if (!event.target.closest('.op-select-col') && !event.target.closest('button') && !event.target.closest('form')) window.location.href = this.dataset.href;" style="cursor: pointer;">
                 <td class="op-select-col" onclick="event.stopPropagation()" style="padding: 10px 14px; vertical-align: middle;"><input type="checkbox" class="op-row-select-checkbox" value="{{ req.id }}" onchange="handleRowSelect(this, event)"></td>
                 <td style="padding: 10px 14px; vertical-align: middle;">
                   <div style="display: flex; align-items: center; gap: 8px;">
@@ -391,7 +391,7 @@
                 <td style="padding: 10px 14px; font-size: 12px; color: #64748b; vertical-align: middle;">
                   {{ req.approved_by.name|default:"&mdash;" }}
                 </td>
-                <td style="padding: 10px 14px; text-align: right; vertical-align: middle;">
+                <td class="op-actions-col" onclick="event.stopPropagation()" style="padding: 10px 14px; text-align: right; vertical-align: middle;">
                   {% if req.status == 'confirm' or req.status == 'Pending' %}
                     <div style="display: inline-flex; gap: 4px;">
                       <form method="POST" action="{% url 'leave_request_action' req.id %}" style="display: inline; margin: 0;">
