@@ -17,7 +17,7 @@
     </thead>
     <tbody>
       {% for item in menu_list %}
-        <tr>
+        <tr class="op-clickable-row" data-href="{% url 'technical_menu_item_detail' item.obj.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
           <td>
             <a style="text-decoration: none; color: inherit; display: block;" href="{% url 'technical_menu_item_detail' item.obj.id %}">{{ item.full_path }}</a>
           </td>

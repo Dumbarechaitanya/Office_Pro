@@ -174,7 +174,7 @@
       </thead>
       <tbody>
         {% for pf in paperformats %}
-        <tr class="op-table-row" data-id="{{ pf.id }}">
+        <tr class="op-clickable-row op-table-row" data-id="{{ pf.id }}" data-href="{% url 'technical_paperformat_detail' pf.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
           <td style="text-align: center;" onclick="event.stopPropagation();">
             <input type="checkbox" class="op-row-check" value="{{ pf.id }}" onchange="updateSelectionState()">
           </td>

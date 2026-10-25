@@ -172,7 +172,7 @@
       </thead>
       <tbody>
         {% for rep in reports %}
-        <tr class="op-table-row" data-id="{{ rep.id }}">
+        <tr class="op-clickable-row op-table-row" data-id="{{ rep.id }}" data-href="{% url 'technical_report_detail' rep.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
           <td style="text-align: center;" onclick="event.stopPropagation();">
             <input type="checkbox" class="op-row-check" value="{{ rep.id }}" onchange="updateSelectionState()">
           </td>

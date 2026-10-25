@@ -69,7 +69,7 @@
     </thead>
     <tbody>
       {% for f in fields_list %}
-        <tr>
+        <tr class="op-clickable-row" data-href="{% url 'technical_field_detail' f.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
           <td class="op-check-cell" onclick="event.stopPropagation();">
             <input type="checkbox" class="op-row-check">
           </td>

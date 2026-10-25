@@ -206,7 +206,7 @@
       </thead>
       <tbody>
         {% for g in groups %}
-          <tr class="op-clickable-row" data-href="{% url 'settings_group_detail' g.id %}" style="cursor: pointer;">
+          <tr class="op-clickable-row" data-href="{% url 'settings_group_detail' g.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
             <td class="op-select-col" onclick="event.stopPropagation();">
 
               <input type="checkbox" class="op-row-select-checkbox" value="{{ g.id }}" onchange="handleRowSelect(this, event)">

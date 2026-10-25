@@ -90,7 +90,7 @@
     </thead>
     <tbody>
       {% for r in rules_list %}
-        <tr>
+        <tr class="op-clickable-row" data-href="{% url 'technical_record_rule_detail' r.id %}" onclick="window.location.href = this.dataset.href;" style="cursor: pointer;">
           <td class="op-check-cell" onclick="event.stopPropagation();">
             <input type="checkbox" class="op-row-check">
           </td>
