@@ -249,6 +249,36 @@ body.op-app-switcher-body {
   border-color: rgba(255, 255, 255, 0.35);
 }
 
+/* App-Specific Gradient & Glow Themes */
+.op-app-tile-mail {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  --app-tile-glow: rgba(59, 130, 246, 0.45);
+}
+.op-app-tile-employee {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
+  --app-tile-glow: rgba(16, 185, 129, 0.45);
+}
+.op-app-tile-apps {
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%) !important;
+  --app-tile-glow: rgba(99, 102, 241, 0.45);
+}
+.op-app-tile-dashboard {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  --app-tile-glow: rgba(2, 132, 199, 0.45);
+}
+.op-app-tile-attendance {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+  --app-tile-glow: rgba(13, 148, 136, 0.45);
+}
+.op-app-tile-leave {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  --app-tile-glow: rgba(245, 158, 11, 0.45);
+}
+.op-app-tile-settings {
+  background: linear-gradient(135deg, #64748b 0%, #334155 100%) !important;
+  --app-tile-glow: rgba(100, 116, 139, 0.45);
+}
+
 /* Glass glare highlight on icon */
 .op-app-icon-tile::after {
   content: "";

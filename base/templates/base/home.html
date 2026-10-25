@@ -174,7 +174,7 @@
     <div class="op-apps-grid">
       {% for app in apps_list %}
         <a href="{{ app.url }}" class="op-app-item" title="{{ app.name }}">
-          <div class="op-app-icon-tile" style="background: {{ app.icon_bg }}; --app-tile-glow: {{ app.glow_color }};">
+          <div class="op-app-icon-tile op-app-tile-{{ app.app_key }}" data-bg="{{ app.icon_bg }}" data-glow="{{ app.glow_color }}">
             {% if app.image_url %}
               <img src="{{ app.image_url }}" alt="{{ app.name }}" class="op-app-img-icon">
             {% else %}
@@ -499,6 +499,16 @@
       const dropdown = document.getElementById('switcherUserDropdown');
       if (menu && dropdown && !menu.contains(e.target)) {
         dropdown.classList.remove('show');
+      }
+    });
+
+    // Apply dynamic tile background & glow for any custom plugin apps
+    document.querySelectorAll('.op-app-icon-tile[data-bg]').forEach(function(el) {
+      if (el.dataset.bg && !el.style.background) {
+        el.style.background = el.dataset.bg;
+      }
+      if (el.dataset.glow) {
+        el.style.setProperty('--app-tile-glow', el.dataset.glow);
       }
     });
 
